@@ -1,0 +1,202 @@
+#!/bin/bash
+
+make="-j 12"
+
+#xtensa_branch=call0-4.8.2
+#xtensa_branch=call0-4.9.2
+#xtensa_branch=xtensa-ctng-esp-5.2.0
+xtensa_branch=xtensa-ctng-7.2.0
+
+cleangit ()
+{(
+	test -d "dl/$1" || { true; return; }
+	echo "cleaning $1"
+	cd dl
+	mv $1 $1.old
+	mkdir $1
+	mv $1.old/.git $1
+	rm -rf $1.old
+	cd $1
+	git reset --hard HEAD
+)}
+
+clean()
+{
+	rm -rf arena log.* ${unfinished}
+	cleangit binutils-gdb-xtensa
+	cleangit gcc-xtensa
+	cleangit newlib-xtensa
+	cleangit lx106-hal
+}
+
+set -e
+
+unfinished="zzz-not-fully-built-yet-zzz"
+
+case "$1" in
+	clean)    clean; exit 0;;
+	build)    :;;
+	*)        echo "need 'clean', 'build'"; exit 1;;
+esac
+
+install=$(pwd)/xtensa-lx106-elf
+mkdir -p ${install}
+log=$(pwd)/log
+touch ${unfinished}
+
+configure="--prefix=${install}"
+configure+=" --target=xtensa-lx106-elf"
+configure+=" --disable-shared"
+configure+=" --with-newlib --enable-threads=no --disable-__cxa_atexit --enable-target-optspace"
+configure+=" --disable-libgomp --disable-libmudflap --disable-nls --disable-multilib --enable-languages=c,c++"
+configure+=" --disable-bootstrap"
+configure+=" --enable-lto"
+configure+=" --disable-libstdcxx-verbose"
+configure+=" --with-endian=little"
+
+# at least checking for these tools
+which flex bison autogen makeinfo
+
+export CFLAGS="-I${install}/include -pipe"
+export LDFLAGS="-L${install}/lib"
+export PATH="${install}/bin:${PATH}"
+export LD_LIBRARY_PATH="${install}/lib"
+
+mkdir -p arena
+
+if [ ! -r arena/downloaded ]; then
+
+	mkdir -p dl
+	(
+		cd dl
+		test -d binutils-gdb-xtensa || git clone https://github.com/jcmvbkbc/binutils-gdb-xtensa.git
+		test -d gcc-xtensa          || git clone https://github.com/jcmvbkbc/gcc-xtensa.git
+		test -d newlib-xtensa       || git clone https://github.com/igrr/newlib-xtensa.git
+		test -d lx106-hal           || git clone https://github.com/tommie/lx106-hal.git
+	)
+
+	(cd dl/gcc-xtensa; git checkout ${xtensa_branch})
+
+	# download and put tools directly in gcc directory
+	# let gcc's configure deal with them in place
+
+	# use:
+	# isl-0.12.2 for gcc-4.x or 5.x
+	# isl-0.16.1 for gcc-7.2
+
+	gnu=ftp://gcc.gnu.org/pub/gcc/infrastructure
+	for url in \
+		${gnu}/gmp-6.1.0.tar.bz2 \
+		${gnu}/mpfr-3.1.4.tar.bz2 \
+		${gnu}/mpc-1.0.3.tar.gz \
+		${gnu}/isl-0.16.1.tar.bz2 \
+		${gnu}/cloog-0.18.1.tar.gz \
+		http://www.mr511.de/software/libelf-0.8.13.tar.gz \
+		; do
+	
+		archive=${url##*/}
+		name=${archive%.t*}
+		base=${name%-*}
+		ext=${archive##*.}
+	
+		echo "-------- getting $name"
+		(cd dl; test -r $archive || wget $url)
+		case "$ext" in
+			gz)  (cd dl/gcc-xtensa; tar xfz ../$archive);;
+			bz2) (cd dl/gcc-xtensa; tar xfj ../$archive);;
+			*) echo "can't unarchive $archive"; exit 1;;
+		esac
+		(cd dl/gcc-xtensa; ln -s $name $base)
+	done
+
+	touch arena/downloaded
+fi
+
+if [ ! -r arena/patched ]; then
+	echo "-------- patching and tweaking"
+	for p in patches/gcc-*.patch; do
+		test -r "$p" || continue
+		(cd dl/gcc-xtensa; echo -n "$p: "; patch -p1 < ../../$p)
+	done
+	for p in patches/bin-*.patch; do
+		test -r "$p" || continue
+		(cd dl/binutils-gdb-xtensa; echo -n "$p: "; patch -p1 < ../../$p)
+	done
+	
+	# dirty-force HAL definition to binutils and gcc
+	for overwrite in \
+		dl/gcc-xtensa/include/xtensa-config.h \
+		dl/binutils-gdb-xtensa/include/xtensa-config.h \
+		; do
+		(
+			cat \
+				dl/lx106-hal/include/xtensa/config/core-isa.h \
+				dl/lx106-hal/include/xtensa/config/system.h \
+			;
+			cat << EOF
+#define XCHAL_HAVE_FP_DIV           0
+#define XCHAL_HAVE_FP_RECIP         0
+#define XCHAL_HAVE_FP_SQRT          0
+#define XCHAL_HAVE_FP_RSQRT         0
+EOF
+		) > $overwrite
+	done
+	
+	touch arena/patched
+fi
+
+
+# configure build install binutils
+if [ ! -r arena/binutils/jobdone ]; then
+	echo "-------- gdb+binutils"
+	mkdir -p arena/binutils
+	(cd arena/binutils; ../../dl/binutils-gdb-xtensa/configure ${configure}) >& $log.01.binutils.conf.log
+	(cd arena/binutils; make ${make}) >& $log.02.binutils.make.log
+	touch arena/binutils/jobdone
+fi
+(cd arena/binutils; make install) >& $log.03.binutils.install.log
+
+# add/fix link cc->gcc
+(cd ${install}/bin; ln -sf xtensa-lx106-elf-gcc xtensa-lx106-elf-cc)
+
+if [ ! -r arena/gcc/jobdone-stage1 ]; then
+	echo "-------- gcc-stage1"
+	# configure gcc
+	mkdir -p arena/gcc
+	(cd arena/gcc; ../../dl/gcc-xtensa/configure ${configure} ${configuregcc}) >& $log.04.gcc.conf.log
+	# stage 1 (build compiler)
+	(cd arena/gcc; make ${make} all-gcc; make install-gcc) >& $log.05.gcc.stage1.log
+	touch arena/gcc/jobdone-stage1
+fi
+
+if [ ! -r arena/gcc/jobdone-newlib ]; then
+	echo "-------- newlib"
+	# configure and build newlib
+	mkdir -p arena/newlib
+	(cd arena/newlib; ../../dl/newlib-xtensa/configure ${configure}) >& $log.06.newlib.conf.log
+	(cd arena/newlib; make ${make}) >& $log.07.newlib.make.log
+	touch arena/gcc/jobdone-newlib
+fi
+(cd arena/newlib; make install) >& $log.08.newlib.install.log
+
+
+if [ ! -r arena/gcc/jobdone-stage2 ]; then
+	echo "-------- gcc-stage2"
+	# stage 2 (build libstdc++)
+	(cd arena/gcc; make ${make}) >& $log.09.gcc.stage2.log
+	touch arena/gcc/jobdone-stage2
+fi
+(cd arena/gcc; make install) >& $log.10.gcc.install.log
+
+if [ ! -r arena/hal/jobdone ]; then
+	echo "-------- HAL"
+	mkdir -p arena/hal
+	(cd dl/lx106-hal; autoreconf -i) >& $log.11.hal.boostrap.log
+	(cd arena/hal; ../../dl/lx106-hal/configure --host=xtensa-lx106-elf ${configure}) >& $log.12.hal.conf.log
+	(cd arena/hal; make ${make}) >& $log.14.hal.make.log
+	touch arena/hal/jobdone
+fi
+(cd arena/hal; make install) >& $log.15.hal.install.log
+
+echo "all done (${install})"
+rm -f ${unfinished}

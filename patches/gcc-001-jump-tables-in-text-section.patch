@@ -1,0 +1,13 @@
+diff --git a/gcc/config/xtensa/xtensa.h b/gcc/config/xtensa/xtensa.h
+index edd2494..61b5e4e 100644
+--- a/gcc/config/xtensa/xtensa.h
++++ b/gcc/config/xtensa/xtensa.h
+@@ -769,7 +769,7 @@ typedef struct xtensa_args
+ 
+ /* Indicate that jump tables go in the text section.  This is
+    necessary when compiling PIC code.  */
+-#define JUMP_TABLES_IN_TEXT_SECTION (flag_pic)
++#define JUMP_TABLES_IN_TEXT_SECTION 1
+ 
+ 
+ /* Define the strings to put out for each section in the object file.  */

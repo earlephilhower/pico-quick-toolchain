@@ -1,0 +1,19 @@
+diff --git a/gcc/config/xtensa/xtensa.h b/gcc/config/xtensa/xtensa.h
+index 8bc846f..0997743 100644
+--- a/gcc/config/xtensa/xtensa.h
++++ b/gcc/config/xtensa/xtensa.h
+@@ -41,6 +41,14 @@ along with GCC; see the file COPYING3.  If not see
+ #define XCHAL_HAVE_FP_POSTINC 0
+ #endif
+ #define TARGET_BIG_ENDIAN	XCHAL_HAVE_BE
++
++#define TARGET_LITTLE_ENDIAN	1
++#define TARGET_ENDIAN_DEFAULT	MASK_LITTLE_ENDIAN
++#define TARGET_ENDIAN_OPTION	"mlittle-endian"
++#if TARGET_BIG_ENDIAN || !TARGET_LITTLE_ENDIAN
++#error endian ?
++#endif
++
+ #define TARGET_DENSITY		XCHAL_HAVE_DENSITY
+ #define TARGET_MAC16		XCHAL_HAVE_MAC16
+ #define TARGET_MUL16		XCHAL_HAVE_MUL16
