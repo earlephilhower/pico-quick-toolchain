@@ -35,9 +35,12 @@ replace()
 		rm -f "$root/$dir/$old"
 		ln -s "$new" "$root/$dir/$old"
 	else
-		[ -r "$root/$dir/$old.orig" ] || { echo "not installed?"; exit 1; }
-		rm -f "$root/$dir/$old"
-		ln -s "$old.orig" "$root/$dir/$old"
+		if [ -r "$root/$dir/$old.orig" ]; then
+			rm -f "$root/$dir/$old"
+			mv "$root/$dir/$old.orig" "$root/$dir/$old"
+		else
+			echo "$root/$dir/$old was not installed"
+		fi
 	fi
 }
 
