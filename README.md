@@ -2,8 +2,8 @@
 WIP - Script for building a recent toolchain for esp8266 (g++-7.2) - WIP
 ------------------------------------------------------------------------
 
-Tested in esp8266/arduino only
-Working with linux only
+* Tested in esp8266/arduino only
+* Working with linux only
 
 Instructions
 ------------
