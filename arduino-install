@@ -48,3 +48,9 @@ replace tools xtensa-lx106-elf $(pwd)/xtensa-lx106-elf
 replace tools/sdk/lib libgcc.a $(pwd)/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/7.2.0/libgcc.a
 replace tools/sdk/lib libhal.a $(pwd)/xtensa-lx106-elf/lib/libhal.a
 replace tools/sdk/libc xtensa-lx106-elf $(pwd)/xtensa-lx106-elf/xtensa-lx106-elf
+
+echo ""
+echo "Current toolchain version:"
+echo ""
+"$root/tools/xtensa-lx106-elf/bin/xtensa-lx106-elf-gcc" -v
+echo ""
