@@ -1,0 +1,13 @@
+diff --git a/newlib/libc/include/assert.h b/newlib/libc/include/assert.h
+index 91bb040..268ade6 100644
+--- a/newlib/libc/include/assert.h
++++ b/newlib/libc/include/assert.h
+@@ -14,7 +14,7 @@ extern "C" {
+ # define assert(__e) ((void)0)
+ #else
+ # define assert(__e) ((__e) ? (void)0 : __assert_func (__FILE__, __LINE__, \
+-						       __ASSERT_FUNC, #__e))
++						       __ASSERT_FUNC, PSTR(#__e)))
+ 
+ # ifndef __ASSERT_FUNC
+   /* Use g++'s demangled names in C++.  */

@@ -1,5 +1,5 @@
 diff --git a/libstdc++-v3/libsupc++/eh_alloc.cc b/libstdc++-v3/libsupc++/eh_alloc.cc
-index 7ddd2b746d8..aca2e37799a 100644
+index 7ddd2b7..aca2e37 100644
 --- a/libstdc++-v3/libsupc++/eh_alloc.cc
 +++ b/libstdc++-v3/libsupc++/eh_alloc.cc
 @@ -73,6 +73,13 @@ using namespace __cxxabiv1;

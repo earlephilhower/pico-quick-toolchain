@@ -1,11 +1,17 @@
 #!/bin/bash
 
 make="-j 2"
+which nproc >& /dev/null && make="-j $(($(nproc) + 1))"
+gitopt="--depth 1 --single-branch"
 
-#xtensa_branch=call0-4.8.2
-#xtensa_branch=call0-4.9.2
-#xtensa_branch=xtensa-ctng-esp-5.2.0
-xtensa_branch=xtensa-ctng-7.2.0
+gcc=7.2
+
+case $gcc in
+	4.8|4.9) isl=0.12.2; xtensa_branch=call0-${gcc}.2;;
+	5.2)     isl=0.12.2; xtensa_branch=xtensa-ctng-esp-5.2.0;;
+	7.2)     isl=0.16.1; xtensa_branch=xtensa-ctng-7.2.0;;
+	*)       echo unhandled gcc version; exit 1;;
+esac
 
 cleangit ()
 {(
@@ -52,9 +58,8 @@ configure+=" --disable-libgomp --disable-libmudflap --disable-nls --disable-mult
 configure+=" --disable-bootstrap"
 configure+=" --enable-lto"
 configure+=" --disable-libstdcxx-verbose"
-configure+=" --with-endian=little"
 
-# at least checking for these tools
+echo "-------- at least checking presence of these tools:"
 which flex bison autogen makeinfo autoreconf
 
 export CFLAGS="-I${install}/include -pipe"
@@ -69,27 +74,24 @@ if [ ! -r arena/downloaded ]; then
 	mkdir -p dl
 	(
 		cd dl
-		test -d binutils-gdb-xtensa || git clone --depth=1 https://github.com/jcmvbkbc/binutils-gdb-xtensa.git
-		test -d gcc-xtensa          || git clone --depth=1 -b ${xtensa_branch} https://github.com/jcmvbkbc/gcc-xtensa.git
-		test -d newlib-xtensa       || git clone --depth=1 https://github.com/igrr/newlib-xtensa.git
-		test -d lx106-hal           || git clone --depth=1 https://github.com/tommie/lx106-hal.git
+		test -d binutils-gdb-xtensa || git clone ${gitopt} https://github.com/jcmvbkbc/binutils-gdb-xtensa.git
+		test -d gcc-xtensa          || git clone ${gitopt} https://github.com/jcmvbkbc/gcc-xtensa.git
+		test -d newlib-xtensa       || git clone ${gitopt} https://github.com/igrr/newlib-xtensa.git
+		test -d lx106-hal           || git clone ${gitopt} https://github.com/tommie/lx106-hal.git
+		
+		cd gcc-xtensa
+		git checkout ${xtensa_branch}
 	)
-
-  (cd dl/gcc-xtensa; git checkout ${xtensa_branch})
 
 	# download and put tools directly in gcc directory
 	# let gcc's configure deal with them in place
-
-	# use:
-	# isl-0.12.2 for gcc-4.x or 5.x
-	# isl-0.16.1 for gcc-7.2
 
 	gnu=ftp://gcc.gnu.org/pub/gcc/infrastructure
 	for url in \
 		${gnu}/gmp-6.1.0.tar.bz2 \
 		${gnu}/mpfr-3.1.4.tar.bz2 \
 		${gnu}/mpc-1.0.3.tar.gz \
-		${gnu}/isl-0.16.1.tar.bz2 \
+		${gnu}/isl-${isl}.tar.bz2 \
 		${gnu}/cloog-0.18.1.tar.gz \
 		http://www.mr511.de/software/libelf-0.8.13.tar.gz \
 		; do
@@ -114,13 +116,17 @@ fi
 
 if [ ! -r arena/patched ]; then
 	echo "-------- patching and tweaking"
-	for p in patches/gcc-*.patch; do
+	for p in patches/gcc-*.patch patches/gcc${gcc%%.*}/gcc-*.patch; do
 		test -r "$p" || continue
-		(cd dl/gcc-xtensa; echo -n "$p: "; patch -p1 < ../../$p)
+		(cd dl/gcc-xtensa; echo "---- $p:"; patch -p1 < ../../$p)
 	done
 	for p in patches/bin-*.patch; do
 		test -r "$p" || continue
-		(cd dl/binutils-gdb-xtensa; echo -n "$p: "; patch -p1 < ../../$p)
+		(cd dl/binutils-gdb-xtensa; echo "---- $p:"; patch -p1 < ../../$p)
+	done
+	for p in patches/lib-*.patch; do
+		test -r "$p" || continue
+		(cd dl/newlib-xtensa; echo "---- $p: "; patch -p1 < ../../$p)
 	done
 	
 	# dirty-force HAL definition to binutils and gcc
