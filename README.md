@@ -1,14 +1,26 @@
 
 WIP - Script for building a recent toolchain for esp8266 (g++-7.2) - WIP
 ------------------------------------------------------------------------
+or an older one with nice features - refs:
+* https://github.com/esp8266/Arduino/issues/1351#issuecomment-392838263
+* https://github.com/esp8266/Arduino/pull/4694
+* https://github.com/esp8266/Arduino/pull/4687
+* https://github.com/esp8266/Arduino/issues/4520)
+
+Status
+------
 
 * Tested in esp8266/arduino only
 * Working with linux only
+* g++7.2 requires lots of change in esp8266/arduino core
+* g++5.2 compiles and run little sketches, iram overflow with bigger sketches
+* g++4.8/4.9 not built yet, worth a try for exceptions handling
 
 Instructions
 ------------
 
 * Clone this repository somewhere into the es8266/arduino repository
+* edit `./build` to select gcc version
 * run `./build build`
 * once finished, run `./arduino-install install`
 * uninstall with `./arduino-install uninstall`
