@@ -58,6 +58,9 @@ configure+=" --disable-libgomp --disable-libmudflap --disable-nls --disable-mult
 configure+=" --disable-bootstrap"
 configure+=" --enable-lto"
 configure+=" --disable-libstdcxx-verbose"
+configure+=" CFLAGS_FOR_TARGET=-mlongcalls"
+configure+=" CXXFLAGS_FOR_TARGET=-mlongcalls"
+configure+=" SYSROOT_CFLAGS_FOR_TARGET=-mlongcalls"
 
 echo "-------- at least checking presence of these tools:"
 which flex bison autogen makeinfo autoreconf
