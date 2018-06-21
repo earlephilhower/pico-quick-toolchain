@@ -26,6 +26,11 @@ esac
 
 replace()
 {
+	if [ ! -z "$4" ]; then
+		echo "too may arguments, installation problem (check $(pwd)/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/ for only one version?)"
+		exit 1
+	fi
+
 	dir="$1"
 	old="$2"
 	new="$3"
@@ -45,7 +50,8 @@ replace()
 }
 
 replace tools xtensa-lx106-elf $(pwd)/xtensa-lx106-elf
-replace tools/sdk/lib libgcc.a $(pwd)/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/7.2.0/libgcc.a
+replace tools/sdk/lib libgcc.a $(pwd)/xtensa-lx106-elf/lib/gcc/xtensa-lx106-elf/*/libgcc.a
+replace tools/sdk/lib libstdc++.a $(pwd)/xtensa-lx106-elf/xtensa-lx106-elf/lib/libstdc++.a
 replace tools/sdk/lib libhal.a $(pwd)/xtensa-lx106-elf/lib/libhal.a
 replace tools/sdk/libc xtensa-lx106-elf $(pwd)/xtensa-lx106-elf/xtensa-lx106-elf
 

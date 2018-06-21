@@ -1,0 +1,27 @@
+diff --git a/libstdc++-v3/libsupc++/eh_alloc.cc b/libstdc++-v3/libsupc++/eh_alloc.cc
+index 752f5db..096528b 100644
+--- a/libstdc++-v3/libsupc++/eh_alloc.cc
++++ b/libstdc++-v3/libsupc++/eh_alloc.cc
+@@ -56,6 +56,13 @@ using namespace __cxxabiv1;
+ // so on a system with PSImode pointers we're talking about 56 bytes
+ // just for overhead.
+ 
++#if 1 // ESP8266
++
++#define EMERGENCY_OBJ_SIZE 256
++#define EMERGENCY_OBJ_COUNT 2
++
++#else // !ESP8266
++
+ #if INT_MAX == 32767
+ # define EMERGENCY_OBJ_SIZE	128
+ # define EMERGENCY_OBJ_COUNT	16
+@@ -67,6 +74,8 @@ using namespace __cxxabiv1;
+ # define EMERGENCY_OBJ_COUNT	64
+ #endif
+ 
++#endif // !ESP8266
++
+ #ifndef __GTHREADS
+ # undef EMERGENCY_OBJ_COUNT
+ # define EMERGENCY_OBJ_COUNT	4
