@@ -7,9 +7,9 @@ gitopt="--depth 1 --single-branch"
 gcc=7.2
 
 case $gcc in
-	4.8|4.9) isl=0.12.2; xtensa_branch=call0-${gcc}.2;;
-	5.2)     isl=0.12.2; xtensa_branch=xtensa-ctng-esp-5.2.0;;
-	7.2)     isl=0.16.1; xtensa_branch=xtensa-ctng-7.2.0;;
+	4.8|4.9) isl=0.12.2; xtensa_branch=call0-${gcc}.2;        lto=false;;
+	5.2)     isl=0.12.2; xtensa_branch=xtensa-ctng-esp-5.2.0; lto=false;;
+	7.2)     isl=0.16.1; xtensa_branch=xtensa-ctng-7.2.0;     lto=true;;
 	*)       echo unhandled gcc version; exit 1;;
 esac
 
@@ -58,9 +58,14 @@ configure+=" --disable-libgomp --disable-libmudflap --disable-nls --disable-mult
 configure+=" --disable-bootstrap"
 configure+=" --enable-lto"
 configure+=" --disable-libstdcxx-verbose"
-configure+=" CFLAGS_FOR_TARGET=-mlongcalls"
-configure+=" CXXFLAGS_FOR_TARGET=-mlongcalls"
-configure+=" SYSROOT_CFLAGS_FOR_TARGET=-mlongcalls"
+
+if $lto; then
+	export   CFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto'"
+	export CXXFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto'"
+else
+	export   CFLAGS_FOR_TARGET='-mlongcalls'"
+	export CXXFLAGS_FOR_TARGET='-mlongcalls'"
+fi
 
 echo "-------- at least checking presence of these tools:"
 which flex bison autogen makeinfo autoreconf
@@ -206,6 +211,11 @@ if [ ! -r arena/hal/jobdone ]; then
 	touch arena/hal/jobdone
 fi
 (cd arena/hal; make install) 2>&1 | gzip -c9 > $log.15.hal.install.log.gz
+
+echo "-------- applying post"
+for sh in post/${gcc}*.sh; do
+	[ -x "$sh" ] && $sh
+done
 
 echo "all done (${install})"
 rm -f ${unfinished}
