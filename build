@@ -6,10 +6,15 @@ gitopt="--depth 1 --single-branch"
 
 gcc=7.2
 
+# if using LTO, in arduino's platform.txt -gcc-ar must be used instead of -ar
+# -flto -Wl,-flto must be added in all {c, cpp, s}'s flags
+lto=false
+#lto=true
+
 case $gcc in
-	4.8|4.9) isl=0.12.2; xtensa_branch=call0-${gcc}.2;        lto=false;;
-	5.2)     isl=0.12.2; xtensa_branch=xtensa-ctng-esp-5.2.0; lto=false;;
-	7.2)     isl=0.16.1; xtensa_branch=xtensa-ctng-7.2.0;     lto=true;;
+	4.8|4.9) isl=0.12.2; xtensa_branch=call0-${gcc}.2;;
+	5.2)     isl=0.12.2; xtensa_branch=xtensa-ctng-esp-5.2.0;;
+	7.2)     isl=0.16.1; xtensa_branch=xtensa-ctng-7.2.0;;
 	*)       echo unhandled gcc version; exit 1;;
 esac
 
