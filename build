@@ -65,11 +65,11 @@ configure+=" --enable-lto"
 configure+=" --disable-libstdcxx-verbose"
 
 if $lto; then
-	export   CFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto'"
-	export CXXFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto'"
+	export   CFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto'
+	export CXXFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto'
 else
-	export   CFLAGS_FOR_TARGET='-mlongcalls'"
-	export CXXFLAGS_FOR_TARGET='-mlongcalls'"
+	export   CFLAGS_FOR_TARGET='-mlongcalls'
+	export CXXFLAGS_FOR_TARGET='-mlongcalls'
 fi
 
 echo "-------- Checking for required tools"
@@ -95,9 +95,6 @@ if [ ! -r arena/downloaded ]; then
 		test -d gcc-xtensa          || git clone ${gitopt} --branch ${xtensa_branch} https://github.com/jcmvbkbc/gcc-xtensa.git
 		test -d newlib-xtensa       || git clone ${gitopt} https://github.com/igrr/newlib-xtensa.git
 		test -d lx106-hal           || git clone ${gitopt} https://github.com/tommie/lx106-hal.git
-		
-#		cd gcc-xtensa
-#		git checkout ${xtensa_branch}
 	)
 
 	# download and put tools directly in gcc directory
