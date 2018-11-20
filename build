@@ -4,7 +4,7 @@ make="-j 2"
 which nproc >& /dev/null && make="-j $(($(nproc) + 1))"
 gitopt="--depth 1 --single-branch"
 
-gcc=7.2
+gcc=4.9
 
 # if using LTO, in arduino's platform.txt -gcc-ar must be used instead of -ar
 # -flto -Wl,-flto must be added in all {c, cpp, s}'s flags
@@ -72,8 +72,12 @@ else
 	export CXXFLAGS_FOR_TARGET='-mlongcalls'"
 fi
 
-echo "-------- at least checking presence of these tools:"
-which flex bison autogen makeinfo autoreconf
+echo "-------- Checking for required tools"
+MISS=0
+for i in flex bison autogen makeinfo autoreconf make gcc g++; do
+	which $i || ( echo "Missing: $i" && MISS=1 )
+done
+if [ $MISS -ne 0 ]; then exit; fi
 
 export CFLAGS="-I${install}/include -pipe"
 export LDFLAGS="-L${install}/lib"
@@ -88,12 +92,12 @@ if [ ! -r arena/downloaded ]; then
 	(
 		cd dl
 		test -d binutils-gdb-xtensa || git clone ${gitopt} https://github.com/jcmvbkbc/binutils-gdb-xtensa.git
-		test -d gcc-xtensa          || git clone ${gitopt} https://github.com/jcmvbkbc/gcc-xtensa.git
+		test -d gcc-xtensa          || git clone ${gitopt} --branch ${xtensa_branch} https://github.com/jcmvbkbc/gcc-xtensa.git
 		test -d newlib-xtensa       || git clone ${gitopt} https://github.com/igrr/newlib-xtensa.git
 		test -d lx106-hal           || git clone ${gitopt} https://github.com/tommie/lx106-hal.git
 		
-		cd gcc-xtensa
-		git checkout ${xtensa_branch}
+#		cd gcc-xtensa
+#		git checkout ${xtensa_branch}
 	)
 
 	# download and put tools directly in gcc directory
