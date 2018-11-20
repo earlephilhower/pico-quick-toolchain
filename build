@@ -55,7 +55,10 @@ mkdir -p ${install}
 log=$(pwd)/log
 touch ${unfinished}
 
+gccbuild=$(gcc -dumpmachine)
 configure="--prefix=${install}"
+configure+=" --build=${gccbuild}"
+configure+=" --host=x86_64-w64-mingw32"
 configure+=" --target=xtensa-lx106-elf"
 configure+=" --disable-shared"
 configure+=" --with-newlib --enable-threads=no --disable-__cxa_atexit --enable-target-optspace"
