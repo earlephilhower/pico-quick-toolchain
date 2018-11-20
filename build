@@ -170,11 +170,11 @@ fi
 if [ ! -r arena/binutils/jobdone ]; then
 	echo "-------- gdb+binutils"
 	mkdir -p arena/binutils
-	(cd arena/binutils; ../../dl/binutils-gdb-xtensa/configure ${configure}) 2>&1 | gzip -c9 > $log.01.binutils.conf.log.gz
-	(cd arena/binutils; make ${make}) 2>&1 | gzip -c9 > $log.02.binutils.make.log.gz
+	(cd arena/binutils; ../../dl/binutils-gdb-xtensa/configure ${configure}) 2>&1 > $log.01.binutils.conf.log
+	(cd arena/binutils; make ${make}) 2>&1 > $log.02.binutils.make.log
 	touch arena/binutils/jobdone
 fi
-(cd arena/binutils; make install) 2>&1 | gzip -c9 > $log.03.binutils.install.log.gz
+(cd arena/binutils; make install) 2>&1 > $log.03.binutils.install.log
 
 # add/fix link cc->gcc
 (cd ${install}/bin; ln -sf xtensa-lx106-elf-gcc xtensa-lx106-elf-cc)
@@ -183,9 +183,9 @@ if [ ! -r arena/gcc/jobdone-stage1 ]; then
 	echo "-------- gcc-stage1"
 	# configure gcc
 	mkdir -p arena/gcc
-	(cd arena/gcc; ../../dl/gcc-xtensa/configure ${configure} ${configuregcc}) 2>&1 | gzip -c9 > $log.04.gcc.conf.log.gz
+	(cd arena/gcc; ../../dl/gcc-xtensa/configure ${configure} ${configuregcc}) 2>&1 > $log.04.gcc.conf.log
 	# stage 1 (build compiler)
-	(cd arena/gcc; make ${make} all-gcc; make install-gcc) 2>&1 | gzip -c9 > $log.05.gcc.stage1.log.gz
+	(cd arena/gcc; make ${make} all-gcc; make install-gcc) 2>&1 > $log.05.gcc.stage1.log
 	touch arena/gcc/jobdone-stage1
 fi
 
@@ -193,30 +193,30 @@ if [ ! -r arena/gcc/jobdone-newlib ]; then
 	echo "-------- newlib"
 	# configure and build newlib
 	mkdir -p arena/newlib
-	(cd arena/newlib; ../../dl/newlib-xtensa/configure ${configure}) 2>&1 | gzip -c9 > $log.06.newlib.conf.log.gz
-	(cd arena/newlib; make ${make}) 2>&1 | gzip -c9 > $log.07.newlib.make.log.gz
+	(cd arena/newlib; ../../dl/newlib-xtensa/configure ${configure}) 2>&1 > $log.06.newlib.conf.log
+	(cd arena/newlib; make ${make}) 2>&1 > $log.07.newlib.make.log
 	touch arena/gcc/jobdone-newlib
 fi
-(cd arena/newlib; make install) 2>&1 | gzip -c9 > $log.08.newlib.install.log,gz
+(cd arena/newlib; make install) 2>&1 > $log.08.newlib.install.log,gz
 
 
 if [ ! -r arena/gcc/jobdone-stage2 ]; then
 	echo "-------- gcc-stage2"
 	# stage 2 (build libstdc++)
-	(cd arena/gcc; make ${make}) 2>&1 | gzip -c9 > $log.09.gcc.stage2.log.gz
+	(cd arena/gcc; make ${make}) 2>&1 > $log.09.gcc.stage2.log
 	touch arena/gcc/jobdone-stage2
 fi
-(cd arena/gcc; make install) 2>&1 | gzip -c9 > $log.10.gcc.install.log.gz
+(cd arena/gcc; make install) 2>&1 > $log.10.gcc.install.log
 
 if [ ! -r arena/hal/jobdone ]; then
 	echo "-------- HAL"
 	mkdir -p arena/hal
-	(cd dl/lx106-hal; autoreconf -i) 2>&1 | gzip -c9 > $log.11.hal.boostrap.log.gz
-	(cd arena/hal; ../../dl/lx106-hal/configure --host=xtensa-lx106-elf ${configure}) 2>&1 | gzip -c9 > $log.12.hal.conf.log.gz
-	(cd arena/hal; make ${make}) 2>&1 | gzip -c9 > $log.14.hal.make.log.gz
+	(cd dl/lx106-hal; autoreconf -i) 2>&1 > $log.11.hal.boostrap.log
+	(cd arena/hal; ../../dl/lx106-hal/configure --host=xtensa-lx106-elf ${configure}) 2>&1 > $log.12.hal.conf.log
+	(cd arena/hal; make ${make}) 2>&1 > $log.14.hal.make.log
 	touch arena/hal/jobdone
 fi
-(cd arena/hal; make install) 2>&1 | gzip -c9 > $log.15.hal.install.log.gz
+(cd arena/hal; make install) 2>&1 > $log.15.hal.install.log
 
 echo "-------- applying post"
 for sh in post/${gcc}*.sh; do
