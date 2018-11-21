@@ -4,19 +4,30 @@ make="-j 2"
 which nproc >& /dev/null && make="-j $(($(nproc) + 1))"
 gitopt="--depth 1 --single-branch"
 
-gcc=4.9
-
-# if using LTO, in arduino's platform.txt -gcc-ar must be used instead of -ar
-# -flto -Wl,-flto must be added in all {c, cpp, s}'s flags
-lto=false
-#lto=true
-
+gcc=${gcc:-4.9}
 case $gcc in
 	4.8|4.9) isl=0.12.2; xtensa_branch=call0-${gcc}.2;;
 	5.2)     isl=0.12.2; xtensa_branch=xtensa-ctng-esp-5.2.0;;
 	7.2)     isl=0.16.1; xtensa_branch=xtensa-ctng-7.2.0;;
 	*)       echo unhandled gcc version; exit 1;;
 esac
+
+# if using LTO, in arduino's platform.txt -gcc-ar must be used instead of -ar
+# -flto -Wl,-flto must be added in all {c, cpp, s}'s flags
+lto=${lto:-false}
+
+# Default to linux building if nothing else set
+host=${host:-linux}
+EXE=""
+case "$host" in
+	linux)	HOST=""; EXT=".x86_64";;
+	win32)	HOST="i686-w64-mingw32"; EXT=".win32"; EXE=".exe";;
+	win64)	HOST="x86_64-w64-mingw32"; EXT=".win64"; EXE=".exe";;
+	osx)	HOST="x86_64-apple-darwin14"; EXT=".osx";;
+	arm64)	HOST="aarch64-linux-gnu"; EXT=".arm64";;
+	*)	echo "Specify host as linux, win32, win64, osx, or arm64"; exit 2;;
+esac
+
 
 cleangit ()
 {(
@@ -50,14 +61,10 @@ case "$1" in
 	*)        echo "need 'clean', 'build'"; exit 1;;
 esac
 
-case "$2" in
-	linux)	HOST=""; EXT=".x86_64";;
-	win32)	HOST="i686-w64-mingw32"; EXT=".win32";;
-	win64)	HOST="x86_64-w64-mingw32"; EXT=".win64";;
-	osx)	HOST="x86_64-apple-darwin14"; EXT=".osx";;
-	arm64)	HOST="aarch64-linux-gnu"; EXT=".arm64";;
-	*)	echo "Specify host as linux, win32, win64, osx, or arm64"; exit 2;;
-esac
+
+echo "Building GCC-$gcc"
+echo "For architecture: $host"
+
 
 installnative=$(pwd)/xtensa-lx106-elf.x86_64
 install=$(pwd)/xtensa-lx106-elf${EXT}
@@ -192,7 +199,7 @@ fi
 (cd arena/binutils; make install) &> $log.03.binutils.install.log
 
 # add/fix link cc->gcc
-(cd ${install}/bin; ln -sf xtensa-lx106-elf-gcc xtensa-lx106-elf-cc)
+(cd ${install}/bin; ln -sf xtensa-lx106-elf-gcc${EXE} xtensa-lx106-elf-cc${EXE})
 
 if [ ! -r arena/gcc/jobdone-stage1 ]; then
 	echo "-------- gcc-stage1"
@@ -235,7 +242,7 @@ fi
 
 echo "-------- applying post"
 for sh in post/${gcc}*.sh; do
-	[ -x "$sh" ] && $sh
+	[ -x "$sh" ] && $sh ${EXT}
 done
 
 echo "all done (${install})"

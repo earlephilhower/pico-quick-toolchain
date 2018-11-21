@@ -1,20 +1,12 @@
 #/bin/bash
 
+gcc=${1:-4.9}
+echo Multiarch build for: $gcc
+
 cd /workdir
 
-./build build linux
-
-./build clean
-./build build win64
-
-./build clean
-./build build win32
-
-./build clean
-./build build osx
-
-./build clean
-./build build arm64
-
-./build clean
+for host in linux win64 win32 osx arm64; do
+	gcc=$gcc host=$host ./build build
+	./build clean
+done
 
