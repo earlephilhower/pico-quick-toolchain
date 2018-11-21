@@ -17,7 +17,7 @@ export PATH=$(pwd)/osxcross/target/bin:$PATH
 
 git clone https://github.com/earlephilhower/esp-quick-toolchain
 cd esp-quick-toolchain
-./build build native
+./build build linux
 
 ./build clean
 ./build build win64

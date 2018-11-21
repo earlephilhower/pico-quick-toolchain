@@ -211,7 +211,7 @@ if [ ! -r arena/gcc/jobdone-newlib ]; then
 	(cd arena/newlib; make ${make}) &> $log.07.newlib.make.log
 	touch arena/gcc/jobdone-newlib
 fi
-(cd arena/newlib; make install) &> $log.08.newlib.install.log,gz
+(cd arena/newlib; make install) &> $log.08.newlib.install.log
 
 
 if [ ! -r arena/gcc/jobdone-stage2 ]; then
