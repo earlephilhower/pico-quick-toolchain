@@ -55,7 +55,8 @@ case "$2" in
 	win32)	HOST="i686-w64-mingw32"; EXT=".win32";;
 	win64)	HOST="x86_64-w64-mingw32"; EXT=".win64";;
 	osx)	HOST="x86_64-apple-darwin14"; EXT=".osx";;
-	*)	echo "Specify host as linux, win32, win64, or osx"; exit 2;;
+	arm64)	HOST="aarch64-linux-gnu"; EXT=".arm64";;
+	*)	echo "Specify host as linux, win32, win64, osx, or arm64"; exit 2;;
 esac
 
 installnative=$(pwd)/xtensa-lx106-elf.x86_64

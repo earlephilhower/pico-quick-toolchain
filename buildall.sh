@@ -1,7 +1,7 @@
 #docker run ubuntu
 
 apt-get update
-apt-get install -y gcc g++ make flex bison texinfo autogen mingw-w64 git libgmp3-dev libmpfr-dev libmpc-dev zlib1g-dev clang wget autoconf
+apt-get install -y gcc g++ make flex bison texinfo autogen mingw-w64 git libgmp3-dev libmpfr-dev libmpc-dev zlib1g-dev clang wget autoconf gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 cd /workdir
 git clone https://github.com/earlephilhower/osxcross
 cd osxcross
@@ -28,4 +28,6 @@ cd esp-quick-toolchain
 ./build clean
 ./build build osx
 
+./build clean
+./build build arm64
 
