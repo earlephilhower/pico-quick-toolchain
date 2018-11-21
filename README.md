@@ -1,14 +1,31 @@
+# esp-quick-toolchain - Build ESP8266 toolchain for multiple architectures
 
-WIP - Script for building a recent toolchain for esp8266 (g++-7.2) - WIP
-------------------------------------------------------------------------
-or an older one with nice features - refs:
-* https://github.com/esp8266/Arduino/issues/1351#issuecomment-392838263
-* https://github.com/esp8266/Arduino/pull/4694
-* https://github.com/esp8266/Arduino/pull/4687
-* https://github.com/esp8266/Arduino/issues/4520)
+Allows building Win32, Win64, OSX, Linux x86_64, ARM64 (aarch64) ESP8266
+toolchains in a Docker containter.
 
-Status
-------
+## Work In Progesss
+
+Builds work for GCC 4.9, not tested for others,
+
+No actual testing of the built chain done yet/
+
+## Building only native mode binaries
+
+If you're only compiling natively, you can just clone this repo and run
+````
+./build build
+````
+
+## Building full suite architectures
+
+To build all architectures use the commands
+````
+git clone https://github.com/earlephilhower/esp-quick-toolchain
+cd esp-quick-toolchain
+docker run --rm -v $(pwd):/workdir earlephilhower/gcc-cross bash /workdir/buildall.sh
+````
+
+## Status
 
 * Tested in esp8266/arduino only
 * Working with linux only
@@ -16,8 +33,7 @@ Status
 * g++5.2 compiles and run little sketches, iram overflow with bigger sketches
 * g++4.8/4.9 not built yet, worth a try for exceptions handling
 
-Instructions
-------------
+## Instructions
 
 * Clone this repository somewhere into the es8266/arduino repository
 * edit `./build` to select gcc version
@@ -25,13 +41,3 @@ Instructions
 * once finished, run `./arduino-install install`
 * uninstall with `./arduino-install uninstall`
 
-```
-$ xtensa-lx106-elf/bin/xtensa-lx106-elf-g++ -v
-Using built-in specs.
-COLLECT_GCC=./xtensa-lx106-elf/bin/xtensa-lx106-elf-g++
-COLLECT_LTO_WRAPPER=[...]xtensa-lx106-elf/bin/../libexec/gcc/xtensa-lx106-elf/7.2.0/lto-wrapper
-Target: xtensa-lx106-elf
-Configured with: ../../dl/gcc-xtensa/configure --prefix=[...]xtensa-lx106-elf --target=xtensa-lx106-elf --disable-shared --with-newlib --enable-threads=no --disable-__cxa_atexit --enable-target-optspace --disable-libgomp --disable-libmudflap --disable-nls --disable-multilib --enable-languages=c,c++ --disable-bootstrap --enable-lto --disable-libstdcxx-verbose --with-endian=little
-Thread model: single
-gcc version 7.2.0 (GCC) 
-```
