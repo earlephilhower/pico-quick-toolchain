@@ -1,0 +1,28 @@
+
+diff --git a/gcc/system.h b/gcc/system.h
+index 42bc509f2..9a2d9852c 100644
+--- a/gcc/system.h
++++ b/gcc/system.h
+@@ -69,6 +69,9 @@ along with GCC; see the file COPYING3.  If not see
+    fputs_unlocked, fwrite_unlocked, and fprintf_unlocked are
+    extensions and need to be prototyped by hand (since we do not
+    define _GNU_SOURCE).  */
++#if defined(__MACH__)
++#undef HAVE_DECL_PUTC_UNLOCKED
++#endif
+ 
+ #if defined HAVE_DECL_PUTC_UNLOCKED && HAVE_DECL_PUTC_UNLOCKED
+ 
+@@ -463,8 +466,12 @@ extern char *stpcpy (char *, const char *);
+ #endif
+ 
+ #ifdef HAVE_MALLOC_H
++#if defined(__MACH__)
++#include <stdlib.h>
++#else
+ #include <malloc.h>
+ #endif
++#endif
+ 
+ #ifdef __cplusplus
+ extern "C" {
