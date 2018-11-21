@@ -50,15 +50,26 @@ case "$1" in
 	*)        echo "need 'clean', 'build'"; exit 1;;
 esac
 
-install=$(pwd)/xtensa-lx106-elf
+case "$2" in
+	linux)	HOST=""; EXT=".x86_64";;
+	win32)	HOST="i686-w64-mingw32"; EXT=".win32";;
+	win64)	HOST="x86_64-w64-mingw32"; EXT=".win64";;
+	osx)	HOST="x86_64-apple-darwin14"; EXT=".osx";;
+	*)	echo "Specify host as linux, win32, win64, or osx"; exit 2;;
+esac
+
+installnative=$(pwd)/xtensa-lx106-elf.x86_64
+install=$(pwd)/xtensa-lx106-elf${EXT}
 mkdir -p ${install}
 log=$(pwd)/log
 touch ${unfinished}
 
 gccbuild=$(gcc -dumpmachine)
 configure="--prefix=${install}"
-configure+=" --build=${gccbuild}"
-configure+=" --host=x86_64-w64-mingw32"
+if [ "$HOST" != "" ]; then
+	configure+=" --build=${gccbuild}"
+	configure+=" --host=${HOST}"
+fi
 configure+=" --target=xtensa-lx106-elf"
 configure+=" --disable-shared"
 configure+=" --with-newlib --enable-threads=no --disable-__cxa_atexit --enable-target-optspace"
@@ -84,8 +95,8 @@ if [ $MISS -ne 0 ]; then exit; fi
 
 export CFLAGS="-I${install}/include -pipe"
 export LDFLAGS="-L${install}/lib"
-export PATH="${install}/bin:${PATH}"
-export LD_LIBRARY_PATH="${install}/lib"
+export PATH="${installnative}/bin:${PATH}"
+export LD_LIBRARY_PATH="${installnative}/lib"
 
 mkdir -p arena
 
