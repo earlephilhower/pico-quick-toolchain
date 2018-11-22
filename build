@@ -119,7 +119,7 @@ if [ ! -r arena/downloaded ]; then
 		test -d lx106-hal           || git clone ${gitopt} https://github.com/earlephilhower/lx106-hal.git
 	)
 
-	( cd dl/gcc-xtensa && git checkout ${xtensa_branch}  )
+	( cd dl/gcc-xtensa && git reset --hard && git checkout ${xtensa_branch} )
 
 	# download and put tools directly in gcc directory
 	# let gcc's configure deal with them in place
