@@ -113,10 +113,10 @@ if [ ! -r arena/downloaded ]; then
 	mkdir -p dl
 	(
 		cd dl
-		test -d binutils-gdb-xtensa || git clone ${gitopt} https://github.com/jcmvbkbc/binutils-gdb-xtensa.git
-		test -d gcc-xtensa          || git clone https://github.com/jcmvbkbc/gcc-xtensa.git
-		test -d newlib-xtensa       || git clone ${gitopt} https://github.com/igrr/newlib-xtensa.git
-		test -d lx106-hal           || git clone ${gitopt} https://github.com/tommie/lx106-hal.git
+		test -d binutils-gdb-xtensa || git clone ${gitopt} https://github.com/earlephilhower/binutils-gdb-xtensa.git
+		test -d gcc-xtensa          || git clone https://github.com/earlephilhower/gcc-xtensa.git
+		test -d newlib-xtensa       || git clone ${gitopt} https://github.com/earlephilhower/newlib-xtensa.git
+		test -d lx106-hal           || git clone ${gitopt} https://github.com/earlephilhower/lx106-hal.git
 	)
 
 	( cd dl/gcc-xtensa && git checkout ${xtensa_branch}  )
