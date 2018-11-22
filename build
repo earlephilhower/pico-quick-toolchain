@@ -114,10 +114,12 @@ if [ ! -r arena/downloaded ]; then
 	(
 		cd dl
 		test -d binutils-gdb-xtensa || git clone ${gitopt} https://github.com/jcmvbkbc/binutils-gdb-xtensa.git
-		test -d gcc-xtensa          || git clone ${gitopt} --branch ${xtensa_branch} https://github.com/jcmvbkbc/gcc-xtensa.git
+		test -d gcc-xtensa          || git clone https://github.com/jcmvbkbc/gcc-xtensa.git
 		test -d newlib-xtensa       || git clone ${gitopt} https://github.com/igrr/newlib-xtensa.git
 		test -d lx106-hal           || git clone ${gitopt} https://github.com/tommie/lx106-hal.git
 	)
+
+	( cd dl/gcc-xtensa && git checkout ${xtensa_branch}  )
 
 	# download and put tools directly in gcc directory
 	# let gcc's configure deal with them in place

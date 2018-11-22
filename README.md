@@ -24,7 +24,7 @@ To build all architectures use the commands
 ````
 git clone https://github.com/earlephilhower/esp-quick-toolchain
 cd esp-quick-toolchain
-docker run --rm -v $(pwd):/workdir earlephilhower/gcc-cross bash /workdir/buildall.sh {4.8|4.9|5.2|7.2}
+docker run --user $(id -u):$(id -g) --rm -v $(pwd):/workdir earlephilhower/gcc-cross bash /workdir/buildall.sh {4.8|4.9|5.2|7.2}
 ````
 
 ## Status
