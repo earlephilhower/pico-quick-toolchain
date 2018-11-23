@@ -80,18 +80,18 @@ if [ "$HOST" != "" ]; then
 fi
 configure+=" --target=xtensa-lx106-elf"
 configure+=" --disable-shared"
-configure+=" --with-newlib --enable-threads=no --disable-__cxa_atexit --enable-target-optspace"
+configure+=" --with-newlib --enable-threads=no --disable-__cxa_atexit"
 configure+=" --disable-libgomp --disable-libmudflap --disable-nls --disable-multilib --enable-languages=c,c++"
 configure+=" --disable-bootstrap"
 configure+=" --enable-lto"
 configure+=" --disable-libstdcxx-verbose"
 
 if $lto; then
-	export   CFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto'
-	export CXXFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto'
+	export   CFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto -Os -g'
+	export CXXFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto -Os -g'
 else
-	export   CFLAGS_FOR_TARGET='-mlongcalls'
-	export CXXFLAGS_FOR_TARGET='-mlongcalls'
+	export   CFLAGS_FOR_TARGET='-mlongcalls -Os -g'
+	export CXXFLAGS_FOR_TARGET='-mlongcalls -Os -g'
 fi
 
 echo "-------- Checking for required tools"
