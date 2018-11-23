@@ -154,7 +154,8 @@ fi
 
 if [ ! -r arena/patched ]; then
 	echo "-------- patching and tweaking"
-	for p in patches/gcc-*.patch patches/gcc${gcc%%.*}/gcc-*.patch; do
+
+	for p in patches/gcc-*.patch patches/gcc${gcc}/gcc-*.patch; do
 		test -r "$p" || continue
 		(cd dl/gcc-xtensa; echo "---- $p:"; patch -p1 < ../../$p)
 	done
