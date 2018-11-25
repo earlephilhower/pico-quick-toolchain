@@ -4,7 +4,7 @@ make="-j 2"
 which nproc >& /dev/null && make="-j $(($(nproc) + 1))"
 gitopt="--depth 1 --single-branch"
 
-gcc=${gcc:-4.9}
+gcc=${gcc:-4.8}
 case $gcc in
 	4.8|4.9) isl=0.12.2; xtensa_branch=call0-${gcc}.2;;
 	5.2)     isl=0.12.2; xtensa_branch=xtensa-ctng-esp-5.2.0;;
@@ -20,7 +20,7 @@ lto=${lto:-false}
 host=${host:-linux}
 EXE=""
 case "$host" in
-	linux)	HOST=""; EXT=".x86_64";;
+	linux)	HOST="x86_64-linux-gnu"; EXT=".x86_64";;
 	win32)	HOST="i686-w64-mingw32"; EXT=".win32"; EXE=".exe";;
 	win64)	HOST="x86_64-w64-mingw32"; EXT=".win64"; EXE=".exe";;
 	osx)	HOST="x86_64-apple-darwin14"; EXT=".osx";;
@@ -238,11 +238,14 @@ if [ ! -r arena/hal/jobdone ]; then
 	echo "-------- HAL"
 	mkdir -p arena/hal
 	(cd dl/lx106-hal; autoreconf -i) &> $log.11.hal.boostrap.log
-	(cd arena/hal; ../../dl/lx106-hal/configure --host=xtensa-lx106-elf ${configure}) &> $log.12.hal.conf.log
+	(cd arena/hal; ../../dl/lx106-hal/configure --host=xtensa-lx106-elf $(echo ${configure} | sed 's/--host=[a-zA-Z0-9_-]*//')) &> $log.12.hal.conf.log
 	(cd arena/hal; make ${make}) &> $log.14.hal.make.log
 	touch arena/hal/jobdone
 fi
 (cd arena/hal; make install) &> $log.15.hal.install.log
+
+echo "-------- Stripping binaries"
+(${HOST}-strip ${install}/bin/* ${install}/libexec/gcc/xtensa-lx106-elf/*/c* ${install}/libexec/gcc/xtensa-lx106-elf/*/lto1 || true) >& $log.16.strip.log
 
 echo "-------- applying post"
 for sh in post/${gcc}*.sh; do
