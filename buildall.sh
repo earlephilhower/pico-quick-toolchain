@@ -1,6 +1,6 @@
 #/bin/bash
 
-gcc=${1:-4.9}
+gcc=${1:-4.8}
 echo Multiarch build for: $gcc
 
 cd /workdir
