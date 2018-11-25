@@ -25,7 +25,8 @@ case "$host" in
 	win64)	HOST="x86_64-w64-mingw32"; EXT=".win64"; EXE=".exe";;
 	osx)	HOST="x86_64-apple-darwin14"; EXT=".osx";;
 	arm64)	HOST="aarch64-linux-gnu"; EXT=".arm64";;
-	*)	echo "Specify host as linux, win32, win64, osx, or arm64"; exit 2;;
+	rpi)	HOST="arm-linux-gnueabihf"; EXT=".rpi";;
+	*)	echo "Specify host as linux, win32, win64, osx, arm64, or rpi"; exit 2;;
 esac
 
 
