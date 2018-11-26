@@ -142,7 +142,7 @@ if [ ! -r arena/downloaded ]; then
 			bz2) (cd dl/gcc-xtensa; tar xfj ../$archive);;
 			*) echo "can't unarchive $archive"; exit 1;;
 		esac
-		(cd dl/gcc-xtensa; ln -s $name $base)
+		(cd dl/gcc-xtensa; rm -f $base; ln -s $name $base)
 	done
 
 	touch arena/downloaded
