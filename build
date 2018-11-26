@@ -34,12 +34,7 @@ cleangit ()
 {(
 	test -d "dl/$1" || { true; return; }
 	echo "cleaning $1"
-	cd dl
-	mv $1 $1.old
-	mkdir $1
-	mv $1.old/.git $1
-	rm -rf $1.old
-	cd $1
+	cd dl/$1
 	git reset --hard HEAD
 )}
 
