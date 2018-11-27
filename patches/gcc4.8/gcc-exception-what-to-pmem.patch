@@ -730,19 +730,20 @@ index d05e4b9..39e5721 100644
 +
  #endif /* _STL_MAP_H */
 diff --git a/libstdc++-v3/src/c++11/system_error.cc b/libstdc++-v3/src/c++11/system_error.cc
-index 453c687..32e563c 100644
+index 453c687..e86e369 100644
 --- a/libstdc++-v3/src/c++11/system_error.cc
 +++ b/libstdc++-v3/src/c++11/system_error.cc
-@@ -28,6 +28,8 @@
+@@ -27,6 +27,9 @@
+ #include <system_error>
  #include <bits/functexcept.h>
  #include <limits>
- 
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#include <cstdlib>
 +
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
+ 
  namespace
  {
-   using std::string; 
-@@ -36,7 +38,7 @@ namespace
+@@ -36,14 +39,15 @@ namespace
    {
      virtual const char*
      name() const noexcept
@@ -751,7 +752,16 @@ index 453c687..32e563c 100644
  
      virtual string 
      message(int i) const
-@@ -51,7 +53,7 @@ namespace
+     {
+       // XXX locale issues: how does one get or set loc.
+       // _GLIBCXX_HAVE_STRERROR_L, strerror_l(i, cloc)
+-      return string(strerror(i));
++      char buff[16];
++      return string(itoa(i, buff, 10));
+     }
+   };
+ 
+@@ -51,14 +55,15 @@ namespace
    {
      virtual const char*
      name() const noexcept
@@ -760,3 +770,12 @@ index 453c687..32e563c 100644
  
      virtual string
      message(int i) const
+     {
+       // XXX locale issues: how does one get or set loc.
+       // _GLIBCXX_HAVE_STRERROR_L, strerror_l(i, cloc)
+-      return string(strerror(i));
++      char buff[16];
++      return string(itoa(i, buff, 10));
+     }
+   };
+ 
