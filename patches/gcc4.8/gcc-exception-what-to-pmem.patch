@@ -6,7 +6,7 @@ index 23bd9b9..93e00ed 100644
  #include <initializer_list>
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -107,7 +107,7 @@ index 317eb74..17a95ca 100644
  
  #pragma GCC system_header
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  #include <bits/cxxabi_forced.h>
  
@@ -296,7 +296,7 @@ index 0882fe6..078f50d 100644
  #ifndef _VECTOR_TCC
  #define _VECTOR_TCC 1
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -399,7 +399,7 @@ index 4891114..1e0a8be 100644
  
  #include "new"
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  std::bad_alloc::~bad_alloc() _GLIBCXX_USE_NOEXCEPT { }
  
@@ -417,7 +417,7 @@ index ad72084..ea0105a 100644
  
  #include <typeinfo>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std {
  
@@ -439,7 +439,7 @@ index 73cbf27..09fa5e8 100644
  
  #include <typeinfo>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std {
  
@@ -461,7 +461,7 @@ index 4fd8711..4f13761 100644
  #include "exception"
  #include <cxxabi.h>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  std::exception::~exception() _GLIBCXX_USE_NOEXCEPT { }
  
@@ -488,7 +488,7 @@ index 8d81f60..3186719 100644
  
  #include <functional>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -510,7 +510,7 @@ index ca5714a..bb7f1f0 100644
  
  #include <memory>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -532,7 +532,7 @@ index 69c6e27..5dbce77 100644
  #include <initializer_list>
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -561,7 +561,7 @@ index 89c5ef7..5b316c7 100644
  #ifndef _DEQUE_TCC
  #define _DEQUE_TCC 1
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -601,7 +601,7 @@ index 6f9b843..3276a87 100644
  #ifndef _HASHTABLE_POLICY_H
  #define _HASHTABLE_POLICY_H 1
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -639,7 +639,7 @@ index 422a98a..0d869b7 100644
  #include <initializer_list>
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -670,7 +670,7 @@ index 596760c..dbfe8c6 100644
  #include <initializer_list>
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -699,7 +699,7 @@ index d05e4b9..39e5721 100644
  #include <tuple>
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
