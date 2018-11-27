@@ -729,3 +729,34 @@ index d05e4b9..39e5721 100644
 +#undef __EXCSTR
 +
  #endif /* _STL_MAP_H */
+diff --git a/libstdc++-v3/src/c++11/system_error.cc b/libstdc++-v3/src/c++11/system_error.cc
+index 453c687..32e563c 100644
+--- a/libstdc++-v3/src/c++11/system_error.cc
++++ b/libstdc++-v3/src/c++11/system_error.cc
+@@ -28,6 +28,8 @@
+ #include <bits/functexcept.h>
+ #include <limits>
+ 
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++
+ namespace
+ {
+   using std::string; 
+@@ -36,7 +38,7 @@ namespace
+   {
+     virtual const char*
+     name() const noexcept
+-    { return "generic"; }
++    { return __EXCSTR("generic"); }
+ 
+     virtual string 
+     message(int i) const
+@@ -51,7 +53,7 @@ namespace
+   {
+     virtual const char*
+     name() const noexcept
+-    { return "system"; }
++    { return __EXCSTR("system"); }
+ 
+     virtual string
+     message(int i) const
