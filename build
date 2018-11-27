@@ -36,6 +36,7 @@ cleangit ()
 	echo "cleaning $1"
 	cd dl/$1
 	git reset --hard HEAD
+	git clean -f -d
 )}
 
 clean()
