@@ -94,7 +94,7 @@ fi
 echo "-------- Checking for required tools"
 MISS=0
 for i in flex bison autogen makeinfo autoreconf make gcc g++; do
-	which $i || ( echo "Missing: $i" && MISS=1 )
+	which $i >& /dev/null || ( echo "Missing: $i" && MISS=1 )
 done
 if [ $MISS -ne 0 ]; then exit; fi
 
