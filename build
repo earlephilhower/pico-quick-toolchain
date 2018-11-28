@@ -21,15 +21,14 @@ lto=${lto:-false}
 host=${host:-linux}
 EXE=""
 case "$host" in
-	linux)	HOST="x86_64-linux-gnu"; EXT=".x86_64";;
-	win32)	HOST="i686-w64-mingw32"; EXT=".win32"; EXE=".exe";;
-	win64)	HOST="x86_64-w64-mingw32"; EXT=".win64"; EXE=".exe";;
-	osx)	HOST="x86_64-apple-darwin14"; EXT=".osx";;
-	arm64)	HOST="aarch64-linux-gnu"; EXT=".arm64";;
-	rpi)	HOST="arm-linux-gnueabihf"; EXT=".rpi";;
+	linux)	HOST="x86_64-linux-gnu";      AHOST="x86_64-pc-linux-gnu"; EXT=".x86_64";;
+	win32)	HOST="i686-w64-mingw32";      AHOST="i686-mingw32";        EXT=".win32";    EXE=".exe";;
+	win64)	HOST="x86_64-w64-mingw32";    AHOST="x86_64-mingw32";      EXT=".win64";    EXE=".exe";;
+	osx)	HOST="x86_64-apple-darwin14"; AHOST="x86_64-apple-darwin"; EXT=".osx";;
+	arm64)	HOST="aarch64-linux-gnu";     AHOST="aarch64-linux-gnu";   EXT=".arm64";;
+	rpi)	HOST="arm-linux-gnueabihf";   AHOST="arm-linux-gnueabihf"; EXT=".rpi";;
 	*)	echo "Specify host as linux, win32, win64, osx, arm64, or rpi"; exit 2;;
 esac
-
 
 cleangit ()
 {(
@@ -250,12 +249,12 @@ for sh in post/${gcc}*.sh; do
 done
 
 echo "-------- creating package tgz"
-tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).tgz
+tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).tar.gz
 (rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && tar zcf ../${tarball} xtensa-lx106-elf/)
 tarballsize=$(stat -c%s ${tarball})
 tarballsha256=$(sha256sum ${tarball} | cut -f1 -d" ")
 ( echo '            {' &&
-  echo '              "host": "'$HOST'",' &&
+  echo '              "host": "'$AHOST'",' &&
   echo '              "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/'${rel}'/'${tarball}'",' &&
   echo '              "archiveFileName": "'${tarball}'",' &&
   echo '              "checksum": "SHA-256:'${tarballsha256}'",' &&
