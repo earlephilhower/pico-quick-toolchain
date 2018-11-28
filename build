@@ -1,5 +1,6 @@
 #!/bin/bash
 
+rel=${rel:-2.5.0}
 make="-j 2"
 which nproc >& /dev/null && make="-j $(($(nproc) + 1))"
 gitopt="--depth 1 --single-branch"
@@ -247,6 +248,20 @@ echo "-------- applying post"
 for sh in post/${gcc}*.sh; do
 	[ -x "$sh" ] && $sh ${EXT}
 done
+
+echo "-------- creating package tgz"
+tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).tgz
+(rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && tar zcf ../${tarball} xtensa-lx106-elf/)
+tarballsize=$(stat -c%s ${tarball})
+tarballsha256=$(sha256sum ${tarball} | cut -f1 -d" ")
+( echo '            {' &&
+  echo '              "host": "'$HOST'",' &&
+  echo '              "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/'${rel}'/'${tarball}'",' &&
+  echo '              "archiveFileName": "'${tarball}'",' &&
+  echo '              "checksum": "SHA-256:'${tarballsha256}'",' &&
+  echo '              "size": "'${tarballsize}'"' &&
+  echo '            },') > ${tarball}.json
+rm -rf pkg
 
 echo "all done (${install})"
 rm -f ${unfinished}
