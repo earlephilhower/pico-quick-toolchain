@@ -249,8 +249,13 @@ for sh in post/${gcc}*.sh; do
 done
 
 echo "-------- creating package tgz"
-tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).tar.gz
-(rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && tar zcf ../${tarball} xtensa-lx106-elf/)
+if [ "$EXE" == ".exe" ]; then
+  tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).zip
+  (rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && zip -rq ../${tarball} xtensa-lx106-elf/)
+else
+  tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).tar.gz
+  (rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && tar zcf ../${tarball} xtensa-lx106-elf/)
+fi
 tarballsize=$(stat -c%s ${tarball})
 tarballsha256=$(sha256sum ${tarball} | cut -f1 -d" ")
 ( echo '            {' &&
