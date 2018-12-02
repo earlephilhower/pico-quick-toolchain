@@ -329,7 +329,7 @@ tarballsize=$(stat -c%s ${tarball})
 tarballsha256=$(sha256sum ${tarball} | cut -f1 -d" ")
 ( echo '            {' &&
   echo '              "host": "'$AHOST'",' &&
-  echo '              "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/'${rel}'/'${tarball}'",' &&
+  echo '              "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/'${rel}-${subrel}'/'${tarball}'",' &&
   echo '              "archiveFileName": "'${tarball}'",' &&
   echo '              "checksum": "SHA-256:'${tarballsha256}'",' &&
   echo '              "size": "'${tarballsize}'"' &&
