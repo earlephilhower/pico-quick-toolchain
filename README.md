@@ -5,9 +5,7 @@ Pi ESP8266 toolchains in a Docker container.
 
 ## Work In Progesss
 
-Builds work for GCC 4.9, not tested for others,
-
-No actual testing of the built chain done yet/
+Builds work for GCC 4.8, others not fully tested but were building last time they were tested
 
 ## Building only native mode binaries
 
@@ -25,4 +23,11 @@ To build all architectures use the commands
 git clone https://github.com/earlephilhower/esp-quick-toolchain
 cd esp-quick-toolchain
 docker run --user $(id -u):$(id -g) --rm -v $(pwd):/workdir earlephilhower/gcc-cross bash /workdir/buildall.sh {4.8|4.9|5.2|7.2}
+````
+
+Then to install the libraries and headers into the Arduino core (not including the toolchain exes) just
+````
+rel=2.5.0 subrel=(1...999999) ./build install
+<in Arduino dir>
+git commit -a
 ````

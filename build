@@ -1,9 +1,12 @@
 #!/bin/bash
 
 rel=${rel:-2.5.0}
+subrel=${subrel:-1}
 make="-j 2"
 which nproc >& /dev/null && make="-j $(($(nproc) + 1))"
 gitopt="--depth 1 --single-branch"
+
+arduino=${arduino:-$HOME/Arduino/hardware/esp8266com/esp8266}
 
 gcc=${gcc:-4.8}
 case $gcc in
@@ -48,20 +51,59 @@ clean()
 	cleangit lx106-hal
 }
 
+
+install()
+{
+	# Need to rebuild and make install on newlib to get proper headers.  Crufty, but we have an odd dir structure
+	echo "-------- Building installable newlib"
+	rm -rf arena/newlib-install
+	mkdir -p arena/newlib-install
+	(cd arena/newlib-install; ../../dl/newlib-xtensa/configure ${configurenewlibinstall}) &> $log.20.newlib.conf.log
+	(cd arena/newlib-install; CROSS_CFLAGS="-DSIGNAL_PROVIDED -DABORT_PROVIDED -DMALLOC_PROVIDED" make ${make}) &> $log.21.newlib.make.log
+	(cd arena/newlib-install; make install) &> $log.22.newlib.install.log
+	echo "-------- Building installable hal"
+	rm -rf arena/hal-install
+	mkdir -p arena/hal-install
+	(cd arena/hal-install; ../../dl/lx106-hal/configure --prefix=${arduino}/tools/sdk/libc --libdir=${arduino}/tools/sdk/lib --host=xtensa-lx106-elf $(echo ${configure} | sed 's/--host=[a-zA-Z0-9_-]*//' | sed 's/--prefix=[a-zA-Z0-9_-\\]*//')) &> $log.23.hal.conf.log
+	(cd arena/hal-install; make ${make}) &> $log.24.hal.make.log
+	(cd arena/hal-install; make install) &> $log.25.hal.install.log
+	echo "-------- Copying GCC libs"
+	cp ${installnative}/lib/gcc/xtensa-lx106-elf/*/libgcc.a ${arduino}/tools/sdk/lib/.
+	cp ${installnative}/xtensa-lx106-elf/lib/libstdc++.a ${arduino}/tools/sdk/lib/.
+	echo "-------- Copying toolchain directory"
+	rm -rf ${arduino}/tools/sdk/xtensa-lx106-elf
+	cp -a ${installnative}/xtensa-lx106-elf ${arduino}/tools/sdk/xtensa-lx106-elf
+	echo "-------- Updating package.json"
+	git=$(git rev-parse --short HEAD)
+	ver=${rel}-${git}-${subrel}
+	pkgfile=${arduino}/package/package_esp8266com_index.template.json
+	(cat <<EOF
+import glob
+import json
+import os
+with open("$pkgfile") as f:
+    data = json.load(f)
+for i in range(0, len(data["packages"][0]["platforms"][0]["toolsDependencies"])):
+    if data["packages"][0]["platforms"][0]["toolsDependencies"][i]["name"] == "xtensa-lx106-elf-gcc":
+        data["packages"][0]["platforms"][0]["toolsDependencies"][i]["version"] = "$ver"
+for i in range(0, len(data["packages"][0]["tools"])):
+    if data["packages"][0]["tools"][i]["name"] == "xtensa-lx106-elf-gcc":
+        data["packages"][0]["tools"][i]["version"] = "$ver"
+        data["packages"][0]["tools"][i]["systems"] = []
+        for j in glob.glob("*xtensa-lx106-elf*"+"$git"+"*json"):
+            with open(j) as s:
+                part = json.load(s)
+                data["packages"][0]["tools"][i]["systems"].append(part)
+print json.dumps(data, indent=3, separators=(',',': '))
+EOF
+) | python > $pkgfile.new
+	mv -f ${pkgfile}.new ${pkgfile}
+	echo "Install done"
+}
+
 set -e
 
 unfinished="zzz-not-fully-built-yet-zzz"
-
-case "$1" in
-	clean)    clean; exit 0;;
-	build)    :;;
-	*)        echo "need 'clean', 'build'"; exit 1;;
-esac
-
-
-echo "Building GCC-$gcc"
-echo "For architecture: $host"
-
 
 installnative=$(pwd)/xtensa-lx106-elf.x86_64
 install=$(pwd)/xtensa-lx106-elf${EXT}
@@ -83,6 +125,19 @@ configure+=" --disable-bootstrap"
 configure+=" --enable-lto"
 configure+=" --disable-libstdcxx-verbose"
 
+configurenewlibcom=" --with-newlib --enable-multilib --disable-newlib-io-c99-formats --disable-newlib-supplied-syscalls"
+configurenewlibcom+=" --enable-newlib-nano-formatted-io --enable-newlib-reent-small --enable-target-optspace"
+configurenewlibcom+=" --disable-option-checking"
+configurenewlibcom+=" --target=xtensa-lx106-elf"
+configurenewlibcom+=" --disable-shared"
+
+
+configurenewlibinstall="--prefix=${arduino}/tools/sdk/libc --with-target-subdir=xtensa-lx106-elf"
+configurenewlibinstall+=${configurenewlibcom}
+
+configurenewlib="--prefix=${install}"
+configurenewlib+=${configurenewlibcom}
+
 if $lto; then
 	export   CFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto -Os -g'
 	export CXXFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto -Os -g'
@@ -91,17 +146,31 @@ else
 	export CXXFLAGS_FOR_TARGET='-mlongcalls -Os -g'
 fi
 
+export CFLAGS="-I${install}/include -pipe"
+export LDFLAGS="-L${install}/lib"
+export PATH="${installnative}/bin:${PATH}"
+export LD_LIBRARY_PATH="${installnative}/lib"
+
+
+case "$1" in
+	clean)    clean; exit 0;;
+	build)    :;;
+	install)  install; exit 0;;
+	*)        echo "need 'clean', 'build', or 'install'"; exit 1;;
+esac
+
+
+echo "Building GCC-$gcc"
+echo "For architecture: $host"
+
+
+
 echo "-------- Checking for required tools"
 MISS=0
 for i in flex bison autogen makeinfo autoreconf make gcc g++; do
 	which $i >& /dev/null || ( echo "Missing: $i" && MISS=1 )
 done
 if [ $MISS -ne 0 ]; then exit; fi
-
-export CFLAGS="-I${install}/include -pipe"
-export LDFLAGS="-L${install}/lib"
-export PATH="${installnative}/bin:${PATH}"
-export LD_LIBRARY_PATH="${installnative}/lib"
 
 mkdir -p arena
 
@@ -215,8 +284,8 @@ if [ ! -r arena/gcc/jobdone-newlib ]; then
 	echo "-------- newlib"
 	# configure and build newlib
 	mkdir -p arena/newlib
-	(cd arena/newlib; ../../dl/newlib-xtensa/configure ${configure}) &> $log.06.newlib.conf.log
-	(cd arena/newlib; make ${make}) &> $log.07.newlib.make.log
+	(cd arena/newlib; ../../dl/newlib-xtensa/configure ${configurenewlib}) &> $log.06.newlib.conf.log
+	(cd arena/newlib; CROSS_CFLAGS="-DSIGNAL_PROVIDED -DABORT_PROVIDED -DMALLOC_PROVIDED" make ${make}) &> $log.07.newlib.make.log
 	touch arena/gcc/jobdone-newlib
 fi
 (cd arena/newlib; make install) &> $log.08.newlib.install.log
@@ -264,7 +333,7 @@ tarballsha256=$(sha256sum ${tarball} | cut -f1 -d" ")
   echo '              "archiveFileName": "'${tarball}'",' &&
   echo '              "checksum": "SHA-256:'${tarballsha256}'",' &&
   echo '              "size": "'${tarballsize}'"' &&
-  echo '            },') > ${tarball}.json
+  echo '            }') > ${tarball}.json
 rm -rf pkg
 
 echo "all done (${install})"
