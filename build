@@ -378,7 +378,7 @@ done
 echo "-------- Creating package tgz"
 markrevinfo >& build-rev-info
 tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).${tarext}
-(rm -rf pkg && mkdir pkg && markrevinfo > pkg/build-rev-info && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && ${tarcmd} ${taropts} ../${tarball} xtensa-lx106-elf/)
+(rm -rf pkg && mkdir pkg && markrevinfo > pkg/build-rev-info && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && mv ../build-rev-info . && ${tarcmd} ${taropts} ../${tarball} xtensa-lx106-elf/)
 makejson
 
 tool=mkspiffs CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1" maketool
