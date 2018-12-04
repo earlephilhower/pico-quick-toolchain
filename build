@@ -23,11 +23,12 @@ lto=${lto:-false}
 # Default to linux building if nothing else set
 host=${host:-linux}
 EXE=""
+MKSPIFFSTGT="linux"
 case "$host" in
 	linux)	HOST="x86_64-linux-gnu";      AHOST="x86_64-pc-linux-gnu"; EXT=".x86_64";;
-	win32)	HOST="i686-w64-mingw32";      AHOST="i686-mingw32";        EXT=".win32";    EXE=".exe";;
-	win64)	HOST="x86_64-w64-mingw32";    AHOST="x86_64-mingw32";      EXT=".win64";    EXE=".exe";;
-	osx)	HOST="x86_64-apple-darwin14"; AHOST="x86_64-apple-darwin"; EXT=".osx";;
+	win32)	HOST="i686-w64-mingw32";      AHOST="i686-mingw32";        EXT=".win32";    EXE=".exe"; MKSPIFFSTGT='windows';;
+	win64)	HOST="x86_64-w64-mingw32";    AHOST="x86_64-mingw32";      EXT=".win64";    EXE=".exe"; MKSPIFFSTGT='windows';;
+	osx)	HOST="x86_64-apple-darwin14"; AHOST="x86_64-apple-darwin"; EXT=".osx";      MKSPIFFSTGT='osx';;
 	arm64)	HOST="aarch64-linux-gnu";     AHOST="aarch64-linux-gnu";   EXT=".arm64";;
 	rpi)	HOST="arm-linux-gnueabihf";   AHOST="arm-linux-gnueabihf"; EXT=".rpi";;
 	*)	echo "Specify host as linux, win32, win64, osx, arm64, or rpi"; exit 2;;
@@ -49,8 +50,51 @@ clean()
 	cleangit gcc-xtensa
 	cleangit newlib-xtensa
 	cleangit lx106-hal
+	cleangit mkspiffs
+	cleangit esptool
 }
 
+distclean()
+{
+	clean
+	rm -rf *.json *.tar.gz *.zip xtensa-lx106-elf.*
+}
+
+maketool()
+{
+	if [ ! -r arena/jobdone-${tool} ]; then
+		echo "-------- ${tool}"
+		( rm -rf arena/${tool};
+		  cp -a dl/${tool} arena/${tool};
+		  pushd arena/${tool};
+		  TARGET_OS=${MKSPIFFSTGT} CC=${HOST}-gcc CXX=${HOST}-g++ STRIP=${HOST}-strip \
+		      make clean ${tool}${EXE} BUILD_CONFIG_NAME="-arduino-esp8266" ${extra_opts};
+		  popd;
+		  mkdir -p ${install}/${tool};
+		  cp -a arena/${tool}/${tool}${EXE} ${install}/${tool}/.;
+		  pushd arena/${tool} && name=${tool}-$(git rev-parse --short HEAD) && popd;
+		  pushd ${install};
+		  tarball=${HOST}-$name.${tarext};
+		  ${tarcmd} ${taropts} ../${tarball} ${tool};
+		  popd;
+		  makejson;
+		  touch arena/jobdone-${tool};
+		) >& $log.${tool}.log
+	fi
+}
+
+makejson()
+{
+	tarballsize=$(stat -c%s ${tarball})
+	tarballsha256=$(sha256sum ${tarball} | cut -f1 -d" ")
+	( echo '{' &&
+	  echo ' "host": "'$AHOST'",' &&
+	  echo ' "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/'${rel}-${subrel}'/'${tarball}'",' &&
+	  echo ' "archiveFileName": "'${tarball}'",' &&
+	  echo ' "checksum": "SHA-256:'${tarballsha256}'",' &&
+	  echo ' "size": "'${tarballsize}'"' &&
+	  echo '}') > ${tarball}.json
+}
 
 install()
 {
@@ -80,27 +124,9 @@ install()
 	git=$(git rev-parse --short HEAD)
 	ver=${rel}-${git}-${subrel}
 	pkgfile=${arduino}/package/package_esp8266com_index.template.json
-	(cat <<EOF
-import glob
-import json
-import os
-with open("$pkgfile") as f:
-    data = json.load(f)
-for i in range(0, len(data["packages"][0]["platforms"][0]["toolsDependencies"])):
-    if data["packages"][0]["platforms"][0]["toolsDependencies"][i]["name"] == "xtensa-lx106-elf-gcc":
-        data["packages"][0]["platforms"][0]["toolsDependencies"][i]["version"] = "$ver"
-for i in range(0, len(data["packages"][0]["tools"])):
-    if data["packages"][0]["tools"][i]["name"] == "xtensa-lx106-elf-gcc":
-        data["packages"][0]["tools"][i]["version"] = "$ver"
-        data["packages"][0]["tools"][i]["systems"] = []
-        for j in glob.glob("*xtensa-lx106-elf*"+"$git"+"*json"):
-            with open(j) as s:
-                part = json.load(s)
-                data["packages"][0]["tools"][i]["systems"].append(part)
-print json.dumps(data, indent=3, separators=(',',': '))
-EOF
-) | python > $pkgfile.new
-	mv -f ${pkgfile}.new ${pkgfile}
+	./patch_json.py --pkgfile "${pkgfile}" --tool xtensa-lx106-elf-gcc --ver "${ver}" --glob '*xtensa-lx106-elf*.json'
+	./patch_json.py --pkgfile "${pkgfile}" --tool esptool --ver "${ver}" --glob '*esptool*json'
+	./patch_json.py --pkgfile "${pkgfile}" --tool mkspiffs --ver "${ver}" --glob '*mkspiffs*json'
 	echo "Install done"
 }
 
@@ -141,6 +167,17 @@ configurenewlibinstall+=${configurenewlibcom}
 configurenewlib="--prefix=${install}"
 configurenewlib+=${configurenewlibcom}
 
+
+if [ "${EXE}" == "" ]; then
+	tarext="tar.gz"
+	tarcmd="tar"
+	taropts="zcf"
+else
+	tarext="zip"
+	tarcmd="zip"
+	taropts="-rq"
+fi
+
 if $lto; then
 	export   CFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto -Os -g'
 	export CXXFLAGS_FOR_TARGET='-mlongcalls -flto -Wl,-flto -Os -g'
@@ -157,9 +194,10 @@ export LD_LIBRARY_PATH="${installnative}/lib"
 
 case "$1" in
 	clean)    clean; exit 0;;
+	distclean)    distclean; exit 0;;
 	build)    :;;
 	install)  install; exit 0;;
-	*)        echo "need 'clean', 'build', or 'install'"; exit 1;;
+	*)        echo "need 'clean', 'distclean', 'build', or 'install'"; exit 1;;
 esac
 
 
@@ -185,10 +223,13 @@ if [ ! -r arena/downloaded ]; then
 		test -d binutils-gdb-xtensa || git clone ${gitopt} https://github.com/earlephilhower/binutils-gdb-xtensa.git
 		test -d gcc-xtensa          || git clone https://github.com/earlephilhower/gcc-xtensa.git
 		test -d newlib-xtensa       || git clone ${gitopt} https://github.com/earlephilhower/newlib-xtensa.git
-		test -d lx106-hal           || git clone ${gitopt} https://github.com/earlephilhower/lx106-hal.git
+		test -d lx106-hal           || git clone https://github.com/earlephilhower/lx106-hal.git
+		test -d mkspiffs            || git clone https://github.com/earlephilhower/mkspiffs.git
+		test -d esptool             || git clone https://github.com/earlephilhower/esptool-ck.git esptool
 	)
 
 	( cd dl/gcc-xtensa && git reset --hard && git checkout ${xtensa_branch} )
+	( cd dl/mkspiffs && git submodule update )
 
 	# download and put tools directly in gcc directory
 	# let gcc's configure deal with them in place
@@ -259,7 +300,6 @@ EOF
 	touch arena/patched
 fi
 
-
 # configure build install binutils
 if [ ! -r arena/binutils/jobdone ]; then
 	echo "-------- gdb+binutils"
@@ -291,7 +331,6 @@ if [ ! -r arena/gcc/jobdone-newlib ]; then
 	(cd arena/newlib; make install) &> $log.08.newlib.install.log
 	touch arena/gcc/jobdone-newlib
 fi
-
 
 if [ ! -r arena/gcc/jobdone-stage2 ]; then
 	echo "-------- gcc-stage2"
@@ -330,23 +369,13 @@ for sh in post/${gcc}*.sh; do
 done
 
 echo "-------- creating package tgz"
-if [ "$EXE" == ".exe" ]; then
-  tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).zip
-  (rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && zip -rq ../${tarball} xtensa-lx106-elf/)
-else
-  tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).tar.gz
-  (rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && tar zcf ../${tarball} xtensa-lx106-elf/)
-fi
-tarballsize=$(stat -c%s ${tarball})
-tarballsha256=$(sha256sum ${tarball} | cut -f1 -d" ")
-( echo '            {' &&
-  echo '              "host": "'$AHOST'",' &&
-  echo '              "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/'${rel}-${subrel}'/'${tarball}'",' &&
-  echo '              "archiveFileName": "'${tarball}'",' &&
-  echo '              "checksum": "SHA-256:'${tarballsha256}'",' &&
-  echo '              "size": "'${tarballsize}'"' &&
-  echo '            }') > ${tarball}.json
-rm -rf pkg
+tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).${tarext}
+(rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && ${tarcmd} ${taropts} ../${tarball} xtensa-lx106-elf/)
+makejson
+
+tool=mkspiffs CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1" maketool
+
+tool=esptool extra_opts='' maketool
 
 echo "all done (${install})"
 rm -f ${unfinished}
