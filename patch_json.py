@@ -23,7 +23,7 @@ for i in range(0, len(data["packages"][0]["platforms"][0]["toolsDependencies"]))
 
 for i in range(0, len(data["packages"][0]["tools"])):
     if data["packages"][0]["tools"][i]["name"] == args.tool:
-        print "Patching tool: " + args.tool
+        print "Patching tool: " + args.tool + " to ver: " + args.ver
         data["packages"][0]["tools"][i]["version"] = args.ver
         data["packages"][0]["tools"][i]["systems"] = []
         for j in glob.glob(args.glob):

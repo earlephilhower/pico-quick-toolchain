@@ -10,6 +10,6 @@ cd /workdir
 
 ./build distclean
 for host in linux win64 win32 osx arm64 rpi; do
-	gcc=$gcc host=$host rel=$rel subrel=$subrel ./build build
+	gcc=${gcc} host=${host} rel=${rel} subrel=${subrel} ./build build
 	./build clean
 done

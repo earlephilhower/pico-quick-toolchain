@@ -40,7 +40,7 @@ cleangit ()
 	echo "cleaning $1"
 	cd dl/$1
 	git reset --hard HEAD
-	git clean -f -d
+	git clean -f -d >& /dev/null
 )}
 
 clean()
@@ -60,6 +60,15 @@ distclean()
 	rm -rf *.json *.tar.gz *.zip xtensa-lx106-elf.*
 }
 
+# Put an artifact in a target dir describing what was built
+markrevinfo()
+{(
+	git rev-parse HEAD
+	git remote -v
+	uname -a
+	git diff
+)}
+
 maketool()
 {
 	if [ ! -r arena/jobdone-${tool} ]; then
@@ -69,9 +78,10 @@ maketool()
 		  pushd arena/${tool};
 		  TARGET_OS=${MKSPIFFSTGT} CC=${HOST}-gcc CXX=${HOST}-g++ STRIP=${HOST}-strip \
 		      make clean ${tool}${EXE} BUILD_CONFIG_NAME="-arduino-esp8266" ${extra_opts};
+		  markrevinfo >& build-rev-info
 		  popd;
 		  mkdir -p ${install}/${tool};
-		  cp -a arena/${tool}/${tool}${EXE} ${install}/${tool}/.;
+		  cp -a arena/${tool}/${tool}${EXE} arena/${tool}/build-rev-info ${install}/${tool}/.;
 		  pushd arena/${tool} && name=${tool}-$(git rev-parse --short HEAD) && popd;
 		  pushd ${install};
 		  tarball=${HOST}-$name.${tarext};
@@ -200,11 +210,8 @@ case "$1" in
 	*)        echo "need 'clean', 'distclean', 'build', or 'install'"; exit 1;;
 esac
 
-
-echo "Building GCC-$gcc"
-echo "For architecture: $host"
-
-
+echo "-----------------------------------------------------------------------------"
+echo "Building GCC-${gcc} for architecture ${host} and release ${rel}-${subrel}"
 
 echo "-------- Checking for required tools"
 MISS=0
@@ -267,15 +274,15 @@ if [ ! -r arena/patched ]; then
 
 	for p in patches/gcc-*.patch patches/gcc${gcc}/gcc-*.patch; do
 		test -r "$p" || continue
-		(cd dl/gcc-xtensa; echo "---- $p:"; patch -p1 < ../../$p)
+		(cd dl/gcc-xtensa; echo "---- $p:"; patch -s -p1 < ../../$p)
 	done
 	for p in patches/bin-*.patch; do
 		test -r "$p" || continue
-		(cd dl/binutils-gdb-xtensa; echo "---- $p:"; patch -p1 < ../../$p)
+		(cd dl/binutils-gdb-xtensa; echo "---- $p:"; patch -s -p1 < ../../$p)
 	done
 	for p in patches/lib-*.patch; do
 		test -r "$p" || continue
-		(cd dl/newlib-xtensa; echo "---- $p: "; patch -p1 < ../../$p)
+		(cd dl/newlib-xtensa; echo "---- $p: "; patch -s -p1 < ../../$p)
 	done
 	
 	# dirty-force HAL definition to binutils and gcc
@@ -363,14 +370,15 @@ fi
 echo "-------- Stripping binaries"
 (${HOST}-strip ${install}/bin/* ${install}/libexec/gcc/xtensa-lx106-elf/*/c* ${install}/libexec/gcc/xtensa-lx106-elf/*/lto1 || true) >& $log.16.strip.log
 
-echo "-------- applying post"
+echo "-------- Applying post"
 for sh in post/${gcc}*.sh; do
 	[ -x "$sh" ] && $sh ${EXT}
 done
 
-echo "-------- creating package tgz"
+echo "-------- Creating package tgz"
+markrevinfo >& build-rev-info
 tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).${tarext}
-(rm -rf pkg && mkdir pkg && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && ${tarcmd} ${taropts} ../${tarball} xtensa-lx106-elf/)
+(rm -rf pkg && mkdir pkg && markrevinfo > pkg/build-rev-info && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && ${tarcmd} ${taropts} ../${tarball} xtensa-lx106-elf/)
 makejson
 
 tool=mkspiffs CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1" maketool
