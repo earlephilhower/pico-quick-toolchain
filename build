@@ -72,6 +72,7 @@ install()
 	echo "-------- Copying GCC libs"
 	cp ${installnative}/lib/gcc/xtensa-lx106-elf/*/libgcc.a ${arduino}/tools/sdk/lib/.
 	cp ${installnative}/xtensa-lx106-elf/lib/libstdc++.a ${arduino}/tools/sdk/lib/.
+	cp ${installnative}/xtensa-lx106-elf/lib/libstdc++-nox.a ${arduino}/tools/sdk/lib/.
 	echo "-------- Copying toolchain directory"
 	rm -rf ${arduino}/tools/sdk/xtensa-lx106-elf
 	cp -a ${installnative}/xtensa-lx106-elf ${arduino}/tools/sdk/xtensa-lx106-elf
@@ -265,12 +266,11 @@ if [ ! -r arena/binutils/jobdone ]; then
 	mkdir -p arena/binutils
 	(cd arena/binutils; ../../dl/binutils-gdb-xtensa/configure ${configure}) &> $log.01.binutils.conf.log
 	(cd arena/binutils; make ${make}) &> $log.02.binutils.make.log
+	(cd arena/binutils; make install) &> $log.03.binutils.install.log
+	# add/fix link cc->gcc
+	(cd ${install}/bin; ln -sf xtensa-lx106-elf-gcc${EXE} xtensa-lx106-elf-cc${EXE})
 	touch arena/binutils/jobdone
 fi
-(cd arena/binutils; make install) &> $log.03.binutils.install.log
-
-# add/fix link cc->gcc
-(cd ${install}/bin; ln -sf xtensa-lx106-elf-gcc${EXE} xtensa-lx106-elf-cc${EXE})
 
 if [ ! -r arena/gcc/jobdone-stage1 ]; then
 	echo "-------- gcc-stage1"
@@ -288,18 +288,28 @@ if [ ! -r arena/gcc/jobdone-newlib ]; then
 	mkdir -p arena/newlib
 	(cd arena/newlib; ../../dl/newlib-xtensa/configure ${configurenewlib}) &> $log.06.newlib.conf.log
 	(cd arena/newlib; CROSS_CFLAGS="-DSIGNAL_PROVIDED -DABORT_PROVIDED -DMALLOC_PROVIDED" make ${make}) &> $log.07.newlib.make.log
+	(cd arena/newlib; make install) &> $log.08.newlib.install.log
 	touch arena/gcc/jobdone-newlib
 fi
-(cd arena/newlib; make install) &> $log.08.newlib.install.log
 
 
 if [ ! -r arena/gcc/jobdone-stage2 ]; then
 	echo "-------- gcc-stage2"
 	# stage 2 (build libstdc++)
 	(cd arena/gcc; make ${make}) &> $log.09.gcc.stage2.log
+	(cd arena/gcc; make install) &> $log.10.gcc.install.log
 	touch arena/gcc/jobdone-stage2
 fi
-(cd arena/gcc; make install) &> $log.10.gcc.install.log
+
+if [ ! -r arena/gcc/jobdone-nox ]; then
+	echo "-------- gcc-stage3 - noexceptions"
+	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
+	rm -rf arena/gcc/xtensa-lx106-elf/libstdc++-v3-nox
+	cp -a arena/gcc/xtensa-lx106-elf/libstdc++-v3 arena/gcc/xtensa-lx106-elf/libstdc++-v3-nox
+	(cd arena/gcc/xtensa-lx106-elf/libstdc++-v3-nox; make clean; find . -name Makefile -exec sed -i 's/mlongcalls/mlongcalls -fno-exceptions/' \{\} \; ; make ${make}; ) >& $log.10a.gcc.nox.log
+	(cp arena/gcc/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf${EXT}/xtensa-lx106-elf/lib/libstdc++-nox.a) >& $log.10a.gcc.nox.log
+	touch arena/gcc/jobdone-nox
+fi
 
 if [ ! -r arena/hal/jobdone ]; then
 	echo "-------- HAL"
@@ -307,9 +317,9 @@ if [ ! -r arena/hal/jobdone ]; then
 	(cd dl/lx106-hal; autoreconf -i) &> $log.11.hal.boostrap.log
 	(cd arena/hal; ../../dl/lx106-hal/configure --host=xtensa-lx106-elf $(echo ${configure} | sed 's/--host=[a-zA-Z0-9_-]*//')) &> $log.12.hal.conf.log
 	(cd arena/hal; make ${make}) &> $log.14.hal.make.log
+	(cd arena/hal; make install) &> $log.15.hal.install.log
 	touch arena/hal/jobdone
 fi
-(cd arena/hal; make install) &> $log.15.hal.install.log
 
 echo "-------- Stripping binaries"
 (${HOST}-strip ${install}/bin/* ${install}/libexec/gcc/xtensa-lx106-elf/*/c* ${install}/libexec/gcc/xtensa-lx106-elf/*/lto1 || true) >& $log.16.strip.log
