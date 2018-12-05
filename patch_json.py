@@ -26,7 +26,8 @@ for i in range(0, len(data["packages"][0]["tools"])):
         print "Patching tool: " + args.tool + " to ver: " + args.ver
         data["packages"][0]["tools"][i]["version"] = args.ver
         data["packages"][0]["tools"][i]["systems"] = []
-        for j in glob.glob(args.glob):
+        bins = glob.glob(args.glob)
+        for j in sorted(glob.glob(args.glob)):
             with open(j) as s:
                 print "Adding: " + j
                 part = json.load(s, object_pairs_hook=collections.OrderedDict)

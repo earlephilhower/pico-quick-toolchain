@@ -5,8 +5,7 @@ subrel=${subrel:-1}
 make="-j 2"
 which nproc >& /dev/null && make="-j $(($(nproc) + 1))"
 gitopt="--depth 1 --single-branch"
-
-arduino=${arduino:-$HOME/Arduino/hardware/esp8266com/esp8266}
+arduino=${arduino:-${PWD}/arduino}
 
 gcc=${gcc:-4.8}
 case $gcc in
@@ -108,6 +107,10 @@ makejson()
 
 install()
 {
+	# Get a fresh copy of the Arduino tree
+	rm -rf ${arduino}
+	git clone https://github.com/earlephilhower/Arduino ${arduino}
+
 	# Need to rebuild and make install on newlib to get proper headers.  Crufty, but we have an odd dir structure
 	echo "-------- Building installable newlib"
 	rm -rf arena/newlib-install
@@ -132,7 +135,7 @@ install()
 	cp -a ${installnative}/xtensa-lx106-elf ${arduino}/tools/sdk/xtensa-lx106-elf
 	echo "-------- Updating package.json"
 	git=$(git rev-parse --short HEAD)
-	ver=${rel}-${git}-${subrel}
+	ver=${rel}-${subrel}-${git}
 	pkgfile=${arduino}/package/package_esp8266com_index.template.json
 	./patch_json.py --pkgfile "${pkgfile}" --tool xtensa-lx106-elf-gcc --ver "${ver}" --glob '*xtensa-lx106-elf*.json'
 	./patch_json.py --pkgfile "${pkgfile}" --tool esptool --ver "${ver}" --glob '*esptool*json'
@@ -378,7 +381,7 @@ done
 echo "-------- Creating package tgz"
 markrevinfo >& build-rev-info
 tarball=$HOST.xtensa-lx106-elf-$(git rev-parse --short HEAD).${tarext}
-(rm -rf pkg && mkdir pkg && markrevinfo > pkg/build-rev-info && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && mv ../build-rev-info . && ${tarcmd} ${taropts} ../${tarball} xtensa-lx106-elf/)
+(rm -rf pkg && mkdir pkg && markrevinfo > pkg/build-rev-info && cd pkg && cp -a ../xtensa-lx106-elf${EXT} xtensa-lx106-elf && mv build-rev-info xtensa-lx106-elf && ${tarcmd} ${taropts} ../${tarball} xtensa-lx106-elf/)
 makejson
 
 tool=mkspiffs CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1" maketool
