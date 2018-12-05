@@ -239,7 +239,7 @@ if [ ! -r arena/downloaded ]; then
 	)
 
 	( cd dl/gcc-xtensa && git reset --hard && git checkout ${xtensa_branch} )
-	( cd dl/mkspiffs && git submodule update )
+	( cd dl/mkspiffs && git checkout 0.2.0 && git submodule update )
 
 	# download and put tools directly in gcc directory
 	# let gcc's configure deal with them in place
