@@ -239,7 +239,7 @@ if [ ! -r arena/downloaded ]; then
 	)
 
 	( cd dl/gcc-xtensa && git reset --hard && git checkout ${xtensa_branch} )
-	( cd dl/mkspiffs && git checkout 0.2.0 && git submodule update )
+	( cd dl/mkspiffs && git checkout 0.2.0 && git reset --hard && patch -p1 < ../../patches/mkspiffs/0.2.0-makefile.patch && git submodule update )
 
 	# download and put tools directly in gcc directory
 	# let gcc's configure deal with them in place
@@ -310,6 +310,9 @@ EOF
 	touch arena/patched
 fi
 
+tool=mkspiffs CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1" maketool
+tool=esptool extra_opts='' maketool
+exit
 # configure build install binutils
 if [ ! -r arena/binutils/jobdone ]; then
 	echo "-------- gdb+binutils"

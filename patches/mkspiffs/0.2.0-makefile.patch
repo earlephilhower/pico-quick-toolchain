@@ -1,0 +1,75 @@
+diff --git a/Makefile b/Makefile
+index e21c970..edd1ac8 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,5 +1,7 @@
+ BUILD_CONFIG_NAME ?= 
+ 
++ifndef TARGET_OS
++
+ ifeq ($(OS),Windows_NT)
+ 	TARGET_OS := WINDOWS
+ 	DIST_SUFFIX := windows
+@@ -36,6 +38,31 @@ else
+ 	TARGET := mkspiffs
+ endif
+ 
++endif
++
++# OS-specific settings and build flags
++ifeq ($(TARGET_OS),windows)
++	ARCHIVE ?= zip
++	TARGET := mkspiffs.exe
++	TARGET_CFLAGS = -mno-ms-bitfields
++	TARGET_LDFLAGS = -Wl,-static -static-libgcc -static-libstdc++
++else
++	ARCHIVE ?= tar
++	TARGET := mkspiffs
++endif
++
++# Packaging into archive (for 'dist' target)
++ifeq ($(ARCHIVE), zip)
++	ARCHIVE_CMD := zip -r
++	ARCHIVE_EXTENSION := zip
++endif
++ifeq ($(ARCHIVE), tar)
++	ARCHIVE_CMD := tar czf
++	ARCHIVE_EXTENSION := tar.gz
++endif
++
++
++
+ VERSION ?= $(shell git describe --always)
+ 
+ OBJ		:= main.o \
+@@ -56,6 +83,8 @@ DIST_NAME := mkspiffs-$(VERSION)$(BUILD_CONFIG_NAME)-$(DIST_SUFFIX)
+ DIST_DIR := $(DIST_NAME)
+ DIST_ARCHIVE := $(DIST_NAME).$(ARCHIVE_EXTENSION)
+ 
++STRIP ?= strip
++
+ .PHONY: all clean dist
+ 
+ all: $(TARGET)
+@@ -68,7 +97,7 @@ $(DIST_ARCHIVE): $(TARGET) $(DIST_DIR)
+ 
+ $(TARGET): $(OBJ)
+ 	$(CXX) $^ -o $@ $(LDFLAGS)
+-	strip $(TARGET)
++	$(STRIP) $(TARGET)
+ 
+ $(DIST_DIR):
+ 	@mkdir -p $@
+diff --git a/main.cpp b/main.cpp
+index c82b91b..2f24829 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -305,7 +305,7 @@ bool dirCreate(const char* path) {
+ 
+     // platform stuff...
+ #if defined(_WIN32)
+-    if (_mkdir(path) != 0) {
++    if (mkdir(path) != 0) {
+ #else
+     if (mkdir(path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0) {
+ #endif
