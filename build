@@ -116,9 +116,7 @@ install()
 	rm -rf arena/newlib-install
 	mkdir -p arena/newlib-install
 	(cd arena/newlib-install; ../../dl/newlib-xtensa/configure ${configurenewlibinstall}) &> $log.20.newlib.conf.log
-	(cd arena/newlib-install; CROSS_CFLAGS="-DSIGNAL_PROVIDED -DABORT_PROVIDED -DMALLOC_PROVIDED" make ${make}) &> $log.21.newlib.make.log
-	# Remove atexit() from newlib
-	(cd arena/newlib-install; for i in _atexit.o lib_a-atexit.o; do ar d ./xtensa-lx106-elf/newlib/libc.a $i; done )
+	(cd arena/newlib-install; make ${make}) &> $log.21.newlib.make.log
 	(cd arena/newlib-install; make install) &> $log.22.newlib.install.log
 	echo "-------- Building installable hal"
 	rm -rf arena/hal-install
@@ -337,7 +335,7 @@ if [ ! -r arena/gcc/jobdone-newlib ]; then
 	# configure and build newlib
 	mkdir -p arena/newlib
 	(cd arena/newlib; ../../dl/newlib-xtensa/configure ${configurenewlib}) &> $log.06.newlib.conf.log
-	(cd arena/newlib; CROSS_CFLAGS="-DSIGNAL_PROVIDED -DABORT_PROVIDED -DMALLOC_PROVIDED" make ${make}) &> $log.07.newlib.make.log
+	(cd arena/newlib; make ${make}) &> $log.07.newlib.make.log
 	(cd arena/newlib; make install) &> $log.08.newlib.install.log
 	touch arena/gcc/jobdone-newlib
 fi
