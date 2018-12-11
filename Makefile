@@ -15,11 +15,11 @@ REPODIR  := $(PWD)/repo
 PATCHDIR := $(PWD)/patches
 
 # For uploading, the GH user and password
-USER    := $(if $(GHUSER),$(GHUSER),$(cat .ghuser))
-PASS    := $(if $(GHPASS),$(GHPASS),$(cat .ghpass))
-ifeq ($(USER),)
+GHUSER := $(if $(GHUSER),$(GHUSER),$(cat .ghuser))
+GHPASS := $(if $(GHPASS),$(GHPASS),$(cat .ghpass))
+ifeq ($(GHUSER),)
     $(error Need to specify GH username on the command line "GHUSER=xxxx" or in .ghuser)
-else ifeq ($(PASS),)
+else ifeq ($(GHPASS),)
     $(error Need to specify GH password on the command line "GHPASS=xxxx" or in .gphass)
 endif
 
@@ -162,7 +162,7 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
 	   tarballsha256=$$(sha256sum $${tarball} | cut -f1 -d" "); \
 	   ( echo '{' && \
 	     echo ' "host": "'$(call ahost,$(1))'",' && \
-	     echo ' "url": "https://github.com/$(USER)/esp-quick-toolchain/releases/download/'$(REL)-$(SUBREL)'/'$${tarball}'",' && \
+	     echo ' "url": "https://github.com/$(GHUSER)/esp-quick-toolchain/releases/download/'$(REL)-$(SUBREL)'/'$${tarball}'",' && \
 	     echo ' "archiveFileName": "'$${tarball}'",' && \
 	     echo ' "checksum": "SHA-256:'$${tarballsha256}'",' && \
 	     echo ' "size": "'$${tarballsize}'"' && \
@@ -190,12 +190,12 @@ clean: .clean.gits
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 .stage.download: .clean.gits
 	mkdir -p $(REPODIR)
-	test -d $(REPODIR)/binutils-gdb || git clone https://github.com/$(USER)/binutils-gdb-xtensa.git $(REPODIR)/binutils-gdb
-	test -d $(REPODIR)/gcc          || git clone https://github.com/$(USER)/gcc-xtensa.git          $(REPODIR)/gcc
-	test -d $(REPODIR)/newlib       || git clone https://github.com/$(USER)/newlib-xtensa.git       $(REPODIR)/newlib
-	test -d $(REPODIR)/lx106-hal    || git clone https://github.com/$(USER)/lx106-hal.git           $(REPODIR)/lx106-hal
-	test -d $(REPODIR)/mkspiffs     || git clone https://github.com/$(USER)/mkspiffs.git            $(REPODIR)/mkspiffs
-	test -d $(REPODIR)/esptool      || git clone https://github.com/$(USER)/esptool-ck.git          $(REPODIR)/esptool
+	test -d $(REPODIR)/binutils-gdb || git clone https://github.com/$(GHUSER)/binutils-gdb-xtensa.git $(REPODIR)/binutils-gdb
+	test -d $(REPODIR)/gcc          || git clone https://github.com/$(GHUSER)/gcc-xtensa.git          $(REPODIR)/gcc
+	test -d $(REPODIR)/newlib       || git clone https://github.com/$(GHUSER)/newlib-xtensa.git       $(REPODIR)/newlib
+	test -d $(REPODIR)/lx106-hal    || git clone https://github.com/$(GHUSER)/lx106-hal.git           $(REPODIR)/lx106-hal
+	test -d $(REPODIR)/mkspiffs     || git clone https://github.com/$(GHUSER)/mkspiffs.git            $(REPODIR)/mkspiffs
+	test -d $(REPODIR)/esptool      || git clone https://github.com/$(GHUSER)/esptool-ck.git          $(REPODIR)/esptool
 	#for git in binutils-gdb gcc newlib lx106-hal mkspiffs esptool; do cd $(REPODIR)/$${url}; git pull; done
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz http://www.mr511.de/software/libelf-0.8.13.tar.gz ; do \
@@ -208,12 +208,14 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	    esac ; \
 	    (cd $(REPODIR)/gcc; rm -f $${base}; ln -s $${name} $${base}) \
 	done
+	touch $@
 
 
 # Checkout any required branches
 .stage.checkout: .stage.download
 	cd $(REPODIR)/gcc && git reset --hard && git checkout $(GCC_BRANCH)
 	cd $(REPODIR)/mkspiffs && git reset --hard && git checkout $(MKSPIFFS_BRANCH) && git submodule update
+	touch $@
 
 # Apply our patches
 .stage.patch: .stage.checkout
@@ -244,6 +246,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
               echo '#define XCHAL_HAVE_FP_RSQRT 0' ) > $${ow} ; \
         done
 	cd $(REPODIR)/lx106-hal && autoreconf -i
+	touch $@
 
 .stage.LINUX.start:
 	echo "Beginning native build"
@@ -255,31 +258,44 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	rm -rf $(call install,$@)
 
 # Build binutils
-.stage.%.binutils: .stage.patch .stage.%.cleaninst
+.stage.%.binutils-config: .stage.patch .stage.%.cleaninst
 	rm -rf $(call arena,$@)/binutils-gdb
 	mkdir -p $(call arena,$@)/binutils-gdb
 	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(REPODIR)/binutils-gdb/configure $(call configure,$@)
+	touch $@
+
+.stage.%.binutils-make: .stage.%.binutils-config
 	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE)
 	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) install
 	cd $(call install,$@)/bin; ln -sf xtensa-lx106-elf-gcc$(call exe,$@) xtensa-lx106-elf-cc$(call exe,$@)
+	touch $@
 
-.stage.%.gcc1: .stage.%.binutils
+.stage.%.gcc1-config: .stage.%.binutils-make
 	rm -rf $(call arena,$@)/gcc
 	mkdir -p $(call arena,$@)/gcc
 	cd $(call arena,$@)/gcc; $(call setenv,$@); $(REPODIR)/gcc/configure $(call configure,$@)
-	cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) all-gcc; $(MAKE) install-gcc
+	touch $@
 
-.stage.%.newlib: .stage.%.gcc1
+.stage.%.gcc1-make: .stage.%.gcc1-config
+	cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) all-gcc; $(MAKE) install-gcc
+	touch $@
+
+.stage.%.newlib-config: .stage.%.gcc1-make
 	rm -rf $(call arena,$@)/newlib
 	mkdir -p $(call arena,$@)/newlib
 	cd $(call arena,$@)/newlib; $(call setenv,$@); $(REPODIR)/newlib/configure $(call configurenewlib,$@)
+	touch $@
+
+.stage.%.newlib-make: .stage.%.newlib-config
 	cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE)
 	cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE) install
+	touch $@
 
-.stage.%.libstdcpp: .stage.%.newlib
+.stage.%.libstdcpp: .stage.%.newlib-make
 	# stage 2 (build libstdc++)
 	cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE)
 	cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) install
+	touch $@
 
 .stage.%.libsdtcpp-nox: .stage.%.libstdcpp
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
@@ -287,21 +303,28 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	cp -a $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3 $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox
 	cd $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/mlongcalls/mlongcalls -fno-exceptions/' \{\} \; ; $(MAKE)
 	cp $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++-nox.a
+	touch $@
 
-.stage.%.hal: .stage.%.libsdtcpp-nox
+.stage.%.hal-config: .stage.%.libsdtcpp-nox
 	rm -rf $(call arena,$@)/hal
 	mkdir -p $(call arena,$@)/hal
 	cd $(call arena,$@)/hal; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//')
+	touch $@
+
+.stage.%.hal-make: .stage.%.hal-config
 	cd $(call arena,$@)/hal; $(call setenv,$@); $(MAKE)
 	cd $(call arena,$@)/hal; $(call setenv,$@); $(MAKE) install
+	touch $@
 
-.stage.%.strip: .stage.%.hal
+.stage.%.strip: .stage.%.hal-make
 	$(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/* $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/c* $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/lto1 || true
+	touch $@
 
 .stage.%.post: .stage.%.strip
 	for sh in post/$(GCC)*.sh; do \
 	    [ -x "$${sh}" ] && $${sh} $(call ext,$@) ; \
 	done
+	touch $@
 
 .stage.%.package: .stage.%.post
 	rm -rf pkg.$(call arch,$@)
@@ -343,9 +366,10 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	rm -rf $(call arena,$@)
 	echo Done building $(call arch,$@)
 
-.stage.LINUX.install:
+# Only the native version has to be done to install libs to GIT
+.stage.LINUX.install: .stage.LINUX.done
 	rm -rf $(ARDUINO)
-	git clone https://github.com/$(USER)/Arduino $(ARDUINO)
+	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
 	echo "-------- Building installable newlib"
 	rm -rf arena/newlib-install; mkdir -p arena/newlib-install
 	cd arena/newlib-install; $(call setenv,$@); $(REPODIR)/newlib/configure $(CONFIGURENEWLIBINSTALL); $(MAKE); $(MAKE) install
@@ -367,12 +391,12 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'
 	echo "Install done"
 
-.stage.LINUX.upload:
+.stage.LINUX.upload: .stage.LINUX.install
 	rm -rf ./venv; mkdir ./venv
 	virtualenv --no-site-packages venv;
 	cd ./venv; source bin/activate; \
 	    pip install -q pygithub ; \
-	    python ../upload_release.py --user "$(USER)" --pw "$(PASS)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/esp8266/Arduino for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" ../*.tar.gz ../*.zip ;
+	    python ../upload_release.py --user "$(GHUSER)" --pw "$(GHPASS)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/esp8266/Arduino for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" ../*.tar.gz ../*.zip ;
 	rm -rf ./venv
 
 dumpvars:
