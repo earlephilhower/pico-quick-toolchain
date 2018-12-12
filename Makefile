@@ -374,7 +374,8 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo Done building $(call arch,$@)
 
 # Only the native version has to be done to install libs to GIT
-.stage.LINUX.install: .stage.LINUX.done
+install: .stage.LINUX.install
+.stage.LINUX.install:
 	rm -rf $(ARDUINO)
 	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
 	echo "-------- Building installable newlib"
@@ -399,7 +400,8 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo "Install done"
 
 # Upload a draft toolchain release
-.stage.LINUX.upload: .stage.LINUX.install
+upload: .stage.LINUX.upload
+.stage.LINUX.upload:
 	rm -rf ./venv; mkdir ./venv
 	virtualenv --no-site-packages venv
 	cd ./venv; . bin/activate; \
