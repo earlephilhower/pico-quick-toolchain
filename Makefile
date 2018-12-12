@@ -170,25 +170,26 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
 
 # The recpies begin here.
 
+# Build all toolchain versions
 all: .stage.LINUX.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
 	echo All complete
 
-clean: .clean.gits
-	rm -rf .stage* arena.* *.json *.tar.gz *.zip xtensa-lx106-elf.* venv $(ARDUINO) pkg.*
-
-# Cross-compile cannot start until Linux is built
+# Other cross-compile cannot start until Linux is built
 .stage.WIN32.start .stage.WIN64.start .stage.OSX.start .stage.ARM64.start .stage.RPI.start: .stage.LINUX.done
 
-# Completely clean out a git directory, removing any untracked files
-.clean.%.git:
-	echo "Cleaning $(call arch,$@)"
-	(test -d $(REPODIR)/$(call arch,$@) && cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d) || true
 
-.clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git
+# Clean all temporary outputs
+clean: .cleaninst.LINUX.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
+	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.*
+
+# Clean an individual architecture and arena dir
+.cleaninst.%.clean:
+	rm -rf $(call install,$@)
+	rm -rf $(call arena,$@)
 
 # Download the needed GIT and tarballs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
-.stage.download: .clean.gits
+.stage.download:
 	mkdir -p $(REPODIR)
 	test -d $(REPODIR)/binutils-gdb || git clone https://github.com/$(GHUSER)/binutils-gdb-xtensa.git $(REPODIR)/binutils-gdb
 	test -d $(REPODIR)/gcc          || git clone https://github.com/$(GHUSER)/gcc-xtensa.git          $(REPODIR)/gcc
@@ -196,7 +197,16 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	test -d $(REPODIR)/lx106-hal    || git clone https://github.com/$(GHUSER)/lx106-hal.git           $(REPODIR)/lx106-hal
 	test -d $(REPODIR)/mkspiffs     || git clone https://github.com/$(GHUSER)/mkspiffs.git            $(REPODIR)/mkspiffs
 	test -d $(REPODIR)/esptool      || git clone https://github.com/$(GHUSER)/esptool-ck.git          $(REPODIR)/esptool
-	#for git in binutils-gdb gcc newlib lx106-hal mkspiffs esptool; do cd $(REPODIR)/$${url}; git pull; done
+	touch $@
+
+# Completely clean out a git directory, removing any untracked files
+.clean.%.git:
+	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
+
+.clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git
+
+# Prep the git repos with no patches and any required libraries for gcc
+.stage.prepgit: .stage.download .clean.gits
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz http://www.mr511.de/software/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
@@ -210,9 +220,8 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	done
 	touch $@
 
-
 # Checkout any required branches
-.stage.checkout: .stage.download
+.stage.checkout: .stage.prepgit
 	cd $(REPODIR)/gcc && git reset --hard && git checkout $(GCC_BRANCH)
 	cd $(REPODIR)/mkspiffs && git reset --hard && git checkout $(MKSPIFFS_BRANCH) && git submodule update
 	touch $@
@@ -248,17 +257,12 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	cd $(REPODIR)/lx106-hal && autoreconf -i
 	touch $@
 
-.stage.LINUX.start:
-	echo "Beginning native build"
-
-.stage.%.start:
+.stage.%.start: .stage.patch
 	echo "Beginning $(call arch,$@) build"
-
-.stage.%.cleaninst: .stage.%.start
-	rm -rf $(call install,$@)
+	mkdir -p $(call arena,$@)
 
 # Build binutils
-.stage.%.binutils-config: .stage.patch .stage.%.cleaninst
+.stage.%.binutils-config: .stage.%.start
 	rm -rf $(call arena,$@)/binutils-gdb
 	mkdir -p $(call arena,$@)/binutils-gdb
 	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(REPODIR)/binutils-gdb/configure $(call configure,$@)
@@ -333,12 +337,13 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	tarball=$(call host,$@).xtensa-lx106-elf-$$(git rev-parse --short HEAD).$(call tarext,$@) ; \
 	cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)
 	rm -rf pkg.$(call arch,$@)
+	touch $@
 
-.stage.%.mkspiffs: .stage.%.package
+.stage.%.mkspiffs: .stage.%.start
 	rm -rf $(call arena,$@)/mkspiffs
 	cp -a $(REPODIR)/mkspiffs $(call arena,$@)/mkspiffs
 	cd $(call arena,$@)/mkspiffs;\
-	    $(call setenv,$@) \
+	    $(call setenv,$@); \
 	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
             $(MAKE) clean mkspiffs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266" CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1"
 	rm -rf pkg.mkspiffs.$(call arch,$@)
@@ -347,8 +352,9 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	tarball=$(call host,$@).mkspiffs-$$(cd $(REPODIR)/mkspiffs && git rev-parse --short HEAD).$(call tarext,$@) ; \
 	cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)
 	rm -rf pkg.mkspiffs.$(call arch,$@)
+	touch $@
 
-.stage.%.esptool: .stage.%.package
+.stage.%.esptool: .stage.%.start
 	rm -rf $(call arena,$@)/esptool
 	cp -a $(REPODIR)/esptool $(call arena,$@)/esptool
 	cd $(call arena,$@)/esptool;\
@@ -361,6 +367,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	tarball=$(call host,$@).esptool-$$(cd $(REPODIR)/esptool && git rev-parse --short HEAD).$(call tarext,$@) ; \
 	cd pkg.esptool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} esptool; cd ..; $(call makejson,$@)
 	rm -rf pkg.esptool.$(call arch,$@)
+	touch $@
 
 .stage.%.done: .stage.%.package .stage.%.mkspiffs .stage.%.esptool
 	rm -rf $(call arena,$@)
@@ -391,10 +398,11 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'
 	echo "Install done"
 
+# Upload a draft toolchain release
 .stage.LINUX.upload: .stage.LINUX.install
 	rm -rf ./venv; mkdir ./venv
-	virtualenv --no-site-packages venv;
-	cd ./venv; source bin/activate; \
+	virtualenv --no-site-packages venv
+	cd ./venv; . bin/activate; \
 	    pip install -q pygithub ; \
 	    python ../upload_release.py --user "$(GHUSER)" --pw "$(GHPASS)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/esp8266/Arduino for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" ../*.tar.gz ../*.zip ;
 	rm -rf ./venv
