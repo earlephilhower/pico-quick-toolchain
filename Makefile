@@ -15,8 +15,8 @@ REPODIR  := $(PWD)/repo
 PATCHDIR := $(PWD)/patches
 
 # For uploading, the GH user and password
-GHUSER := $(if $(GHUSER),$(GHUSER),$(cat .ghuser))
-GHPASS := $(if $(GHPASS),$(GHPASS),$(cat .ghpass))
+GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
+GHPASS := $(if $(GHPASS),$(GHPASS),$(shell cat .ghpass))
 ifeq ($(GHUSER),)
     $(error Need to specify GH username on the command line "GHUSER=xxxx" or in .ghuser)
 else ifeq ($(GHPASS),)
