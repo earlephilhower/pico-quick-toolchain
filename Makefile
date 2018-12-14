@@ -321,7 +321,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	touch $@
 
 .stage.%.strip: .stage.%.hal-make
-	$(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/* $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/c* $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/lto1 || true
+	$(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/c*$(call exe,$@) $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/lto1$(call exe,$@) || true
 	touch $@
 
 .stage.%.post: .stage.%.strip
