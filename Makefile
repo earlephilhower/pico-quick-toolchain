@@ -113,6 +113,7 @@ configure += --disable-multilib
 configure += --disable-bootstrap
 configure += --enable-languages=c,c++
 configure += --enable-lto
+configure += --enable-static=yes
 configure += --disable-libstdcxx-verbose
 
 # Newlib configuration common
@@ -269,7 +270,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	touch $@
 
 .stage.%.binutils-make: .stage.%.binutils-config
-	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE)
+	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) LDFLAGS=-static
 	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) install
 	cd $(call install,$@)/bin; ln -sf xtensa-lx106-elf-gcc$(call exe,$@) xtensa-lx106-elf-cc$(call exe,$@)
 	touch $@
