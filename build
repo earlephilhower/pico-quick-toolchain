@@ -313,7 +313,7 @@ if [ ! -r arena/binutils/jobdone ]; then
 	echo "-------- gdb+binutils"
 	mkdir -p arena/binutils
 	(cd arena/binutils; ../../dl/binutils-gdb-xtensa/configure ${configure}) &> $log.01.binutils.conf.log
-	(cd arena/binutils; make ${make}) &> $log.02.binutils.make.log
+	(cd arena/binutils; make ${make} LDFLAGS=-static) &> $log.02.binutils.make.log
 	(cd arena/binutils; make install) &> $log.03.binutils.install.log
 	# add/fix link cc->gcc
 	(cd ${install}/bin; ln -sf xtensa-lx106-elf-gcc${EXE} xtensa-lx106-elf-cc${EXE})
