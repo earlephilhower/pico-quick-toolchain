@@ -48,56 +48,77 @@ MKSPIFFS_BRANCH := 0.2.0
 LTO := $(if $(lto),$(lto),false)
 
 # Define the build and output naming, don't use directly (see below)
-LINUX_HOST  := x86_64-linux-gnu
-LINUX_AHOST := x86_64-pc-linux-gnu
-LINUX_EXT   := .x86_64
-LINUX_EXE   := 
-LINUX_MKTGT := linux
-LINUX_BFLGS := LDFLAGS=-static
+LINUX_HOST   := x86_64-linux-gnu
+LINUX_AHOST  := x86_64-pc-linux-gnu
+LINUX_EXT    := .x86_64
+LINUX_EXE    := 
+LINUX_MKTGT  := linux
+LINUX_BFLGS  := LDFLAGS=-static
+LINUX_TARCMD := tar
+LINUX_TAROPT := zcf
+LINUX_TAREXT := tar.gz
 
-WIN32_HOST  := i686-w64-mingw32
-WIN32_AHOST := i686-mingw32
-WIN32_EXT   := .win32
-WIN32_EXE   := .exe
-WIN32_MKTGT := windows
-WIN32_BFLGS := LDFLAGS=-static
+WIN32_HOST   := i686-w64-mingw32
+WIN32_AHOST  := i686-mingw32
+WIN32_EXT    := .win32
+WIN32_EXE    := .exe
+WIN32_MKTGT  := windows
+WIN32_BFLGS  := LDFLAGS=-static
+WIN32_TARCMD := zip
+WIN32_TAROPT := -rq
+WIN32_TAREXT := zip
 
-WIN64_HOST  := x86_64-w64-mingw32
-WIN64_AHOST := x86_64-mingw32
-WIN64_EXT   := .win64
-WIN64_EXE   := .exe
-WIN64_MKTGT := windows
-WIN64_BFLGS := LDFLAGS=-static
+WIN64_HOST   := x86_64-w64-mingw32
+WIN64_AHOST  := x86_64-mingw32
+WIN64_EXT    := .win64
+WIN64_EXE    := .exe
+WIN64_MKTGT  := windows
+WIN64_BFLGS  := LDFLAGS=-static
+WIN64_TARCMD := zip
+WIN64_TAROPT := -rq
+WIN64_TAREXT := zip
 
-OSX_HOST  := x86_64-apple-darwin14
-OSX_AHOST := x86_64-apple-darwin
-OSX_EXT   := .osx
-OSX_EXE   := 
-OSX_MKTGT := osx
-OSX_BFLGS :=
+OSX_HOST   := x86_64-apple-darwin14
+OSX_AHOST  := x86_64-apple-darwin
+OSX_EXT    := .osx
+OSX_EXE    := 
+OSX_MKTGT  := osx
+OSX_BFLGS  :=
+OSX_TARCMD := tar
+OSX_TAROPT := zcf
+OSX_TAREXT := tar.gz
 
-ARM64_HOST  := aarch64-linux-gnu
-ARM64_AHOST := aarch64-linux-gnu
-ARM64_EXT   := .arm64
-ARM64_EXE   := 
-ARM64_MKTGT := linux
-ARM64_BFLGS := LDFLAGS=-static
+ARM64_HOST   := aarch64-linux-gnu
+ARM64_AHOST  := aarch64-linux-gnu
+ARM64_EXT    := .arm64
+ARM64_EXE    := 
+ARM64_MKTGT  := linux
+ARM64_BFLGS  := LDFLAGS=-static
+ARM64_TARCMD := tar
+ARM64_TAROPT := zcf
+ARM64_TAREXT := tar.gz
 
-RPI_HOST  := arm-linux-gnueabihf
-RPI_AHOST := arm-linux-gnueabihf
-RPI_EXT   := .rpi
-RPI_EXE   := 
-RPI_MKTGT := linux
-RPI_BFLGS := LDFLAGS=-static
+RPI_HOST   := arm-linux-gnueabihf
+RPI_AHOST  := arm-linux-gnueabihf
+RPI_EXT    := .rpi
+RPI_EXE    := 
+RPI_MKTGT  := linux
+RPI_BFLGS  := LDFLAGS=-static
+RPI_TARCMD := tar
+RPI_TAROPT := zcf
+RPI_TAREXT := tar.gz
 
 # Call with $@ to get the appropriate variable for this architecture
-host  = $($(call arch,$(1))_HOST)
-ahost = $($(call arch,$(1))_AHOST)
-ext   = $($(call arch,$(1))_EXT)
-exe   = $($(call arch,$(1))_EXE)
-mktgt = $($(call arch,$(1))_MKTGT)
-bflgs = $($(call arch,$(1))_BFLGS)
-log   = log$(1)
+host   = $($(call arch,$(1))_HOST)
+ahost  = $($(call arch,$(1))_AHOST)
+ext    = $($(call arch,$(1))_EXT)
+exe    = $($(call arch,$(1))_EXE)
+mktgt  = $($(call arch,$(1))_MKTGT)
+bflgs  = $($(call arch,$(1))_BFLGS)
+tarcmd = $($(call arch,$(1))_TARCMD)
+taropt = $($(call arch,$(1))_TAROPT)
+tarext = $($(call arch,$(1))_TAREXT)
+log    = log$(1)
 
 # The build directory per architecture
 arena = $(PWD)/arena$(call ext,$(1))
@@ -145,11 +166,6 @@ configurenewlib += $(CONFIGURENEWLIBCOM)
 CONFIGURENEWLIBINSTALL  = --prefix=$(ARDUINO)/tools/sdk/libc
 CONFIGURENEWLIBINSTALL += --with-target-subdir=xtensa-lx106-elf
 CONFIGURENEWLIBINSTALL += $(CONFIGURENEWLIBCOM)
-
-# Commands to make a compressed release artifact
-tarcmd = $(if ifeq(windows,$(call mktgt,$(1))),tar,zip)
-taropt = $(if ifeq(windows,$(call mktgt,$(1))),zcf,-rq)
-tarext = $(if ifeq(windows,$(call mktgt,$(1))),tar.gz,zip)
 
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
 ifeq ($(LTO),true)
@@ -379,7 +395,6 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/mkspiffs > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/mkspiffs $(call arena,$@)/mkspiffs >> $(call log,$@) 2>&1
-	ls -latR $(call arena,$@) >> $(call log,$@) 2>&1
 	# Dependencies borked in mkspiffs makefile, so don't use parallel make
 	(cd $(call arena,$@)/mkspiffs;\
 	    $(call setenv,$@); \
