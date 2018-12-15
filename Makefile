@@ -171,12 +171,14 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
 
 # The recpies begin here.
 
+default: .stage.LINUX.done
+
 # Build all toolchain versions
 all: .stage.LINUX.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
 	echo All complete
 
 # Other cross-compile cannot start until Linux is built
-.stage.WIN32.start .stage.WIN64.start .stage.OSX.start .stage.ARM64.start .stage.RPI.start: .stage.LINUX.done
+.stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.OSX.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
 
 
 # Clean all temporary outputs
@@ -207,7 +209,8 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 .clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git
 
 # Prep the git repos with no patches and any required libraries for gcc
-.stage.prepgit: .stage.download .clean.gits
+.stage.prepgit: .stage.download
+	for i in binutils-gdb gcc newlib lx106-hal mkspiffs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git clean -f -d; done
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz http://www.mr511.de/software/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
@@ -270,7 +273,8 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	touch $@
 
 .stage.%.binutils-make: .stage.%.binutils-config
-	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) LDFLAGS=-static
+	# Need LDFLAGS override to guarantee gdb is made static
+	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) LDFLAGS="-static"
 	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) install
 	cd $(call install,$@)/bin; ln -sf xtensa-lx106-elf-gcc$(call exe,$@) xtensa-lx106-elf-cc$(call exe,$@)
 	touch $@
@@ -371,7 +375,6 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	touch $@
 
 .stage.%.done: .stage.%.package .stage.%.mkspiffs .stage.%.esptool
-	rm -rf $(call arena,$@)
 	echo Done building $(call arch,$@)
 
 # Only the native version has to be done to install libs to GIT
