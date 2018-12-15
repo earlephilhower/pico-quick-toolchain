@@ -1,4 +1,5 @@
 
+.SILENT:
 
 # General rule is that CAPITAL variables are constants and can be used
 # via $(VARNAME), while lowercase variables are dynamic and need to be
@@ -89,6 +90,7 @@ ahost = $($(call arch,$(1))_AHOST)
 ext   = $($(call arch,$(1))_EXT)
 exe   = $($(call arch,$(1))_EXE)
 mktgt = $($(call arch,$(1))_MKTGT)
+log   = log$(1)
 
 # The build directory per architecture
 arena = $(PWD)/arena$(call ext,$(1))
@@ -171,9 +173,9 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
 
 # The recpies begin here.
 
-default: .stage.LINUX.done
+linux default: .stage.LINUX.done
 
-.PRECIOUS: .stage.*
+.PRECIOUS: .stage.%
 
 # Build all toolchain versions
 all: .stage.LINUX.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
@@ -187,25 +189,25 @@ all: .stage.LINUX.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stag
 # Clean all temporary outputs
 clean: .cleaninst.LINUX.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
 	echo STAGE: $@
-	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.*
+	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
 
 # Clean an individual architecture and arena dir
 .cleaninst.%.clean:
 	echo STAGE: $@
-	rm -rf $(call install,$@)
-	rm -rf $(call arena,$@)
+	rm -rf $(call install,$@) > /dev/null 2>&1
+	rm -rf $(call arena,$@) > /dev/null 2>&1
 
 # Download the needed GIT and tarballs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 .stage.download:
 	echo STAGE: $@
-	mkdir -p $(REPODIR)
-	test -d $(REPODIR)/binutils-gdb || git clone https://github.com/$(GHUSER)/binutils-gdb-xtensa.git $(REPODIR)/binutils-gdb
-	test -d $(REPODIR)/gcc          || git clone https://github.com/$(GHUSER)/gcc-xtensa.git          $(REPODIR)/gcc
-	test -d $(REPODIR)/newlib       || git clone https://github.com/$(GHUSER)/newlib-xtensa.git       $(REPODIR)/newlib
-	test -d $(REPODIR)/lx106-hal    || git clone https://github.com/$(GHUSER)/lx106-hal.git           $(REPODIR)/lx106-hal
-	test -d $(REPODIR)/mkspiffs     || git clone https://github.com/$(GHUSER)/mkspiffs.git            $(REPODIR)/mkspiffs
-	test -d $(REPODIR)/esptool      || git clone https://github.com/$(GHUSER)/esptool-ck.git          $(REPODIR)/esptool
+	mkdir -p $(REPODIR) > $(call log,$@) 2>&1
+	(test -d $(REPODIR)/binutils-gdb || git clone https://github.com/$(GHUSER)/binutils-gdb-xtensa.git $(REPODIR)/binutils-gdb) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/gcc          || git clone https://github.com/$(GHUSER)/gcc-xtensa.git          $(REPODIR)/gcc         ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/newlib       || git clone https://github.com/$(GHUSER)/newlib-xtensa.git       $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/lx106-hal    || git clone https://github.com/$(GHUSER)/lx106-hal.git           $(REPODIR)/lx106-hal   ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/mkspiffs     || git clone https://github.com/$(GHUSER)/mkspiffs.git            $(REPODIR)/mkspiffs    ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/esptool      || git clone https://github.com/$(GHUSER)/esptool-ck.git          $(REPODIR)/esptool     ) >> $(call log,$@) 2>&1
 	touch $@
 
 # Completely clean out a git directory, removing any untracked files
@@ -218,7 +220,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 # Prep the git repos with no patches and any required libraries for gcc
 .stage.prepgit: .stage.download
 	echo STAGE: $@
-	for i in binutils-gdb gcc newlib lx106-hal mkspiffs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git clean -f -d; done
+	for i in binutils-gdb gcc newlib lx106-hal mkspiffs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git clean -f -d; done   > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz http://www.mr511.de/software/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
@@ -229,36 +231,35 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	        bz2) (cd $(REPODIR)/gcc; tar xfj ../$${archive});; \
 	    esac ; \
 	    (cd $(REPODIR)/gcc; rm -f $${base}; ln -s $${name} $${base}) \
-	done
+	done >> $(call log,$@) 2>&1
 	touch $@
 
 # Checkout any required branches
 .stage.checkout: .stage.prepgit
 	echo STAGE: $@
-	cd $(REPODIR)/gcc && git reset --hard && git checkout $(GCC_BRANCH)
-	cd $(REPODIR)/mkspiffs && git reset --hard && git checkout $(MKSPIFFS_BRANCH) && git submodule update
+	(cd $(REPODIR)/gcc && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
+	(cd $(REPODIR)/mkspiffs && git reset --hard && git checkout $(MKSPIFFS_BRANCH) && git submodule update) >> $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
 .stage.patch: .stage.checkout
 	echo STAGE: $@
-	echo "Patching source files"
 	for p in $(PATCHDIR)/gcc-*.patch $(PATCHDIR)/gcc$(GCC)/gcc-*.patch; do \
 	    test -r "$$p" || continue ; \
 	    (cd $(REPODIR)/gcc; echo "---- $$p:"; patch -s -p1 < $$p) ; \
-	done
+	done > $(call log,$@) 2>&1
 	for p in $(PATCHDIR)/bin-*.patch; do \
 	    test -r "$$p" || continue ; \
 	    (cd $(REPODIR)/binutils-gdb; echo "---- $$p:"; patch -s -p1 < $$p) ; \
-	done
+	done >> $(call log,$@) 2>&1
 	for p in $(PATCHDIR)/lib-*.patch; do \
 	    test -r "$$p" || continue ; \
 	    (cd $(REPODIR)/newlib; echo "---- $$p: "; patch -s -p1 < $$p) ; \
-	done
+	done >> $(call log,$@) 2>&1
 	for p in $(PATCHDIR)/mkspiffs/$(MKSPIFFS_BRANCH)*.patch; do \
 	    test -r "$$p" || continue ; \
 	    (cd $(REPODIR)/mkspiffs; echo "---- $$p: "; patch -s -p1 < $$p) ; \
-	done
+	done >> $(call log,$@) 2>&1
 	# Dirty-force HAL definition to binutils and gcc
 	for ow in $(REPODIR)/gcc/include/xtensa-config.h $(REPODIR)/binutils-gdb/include/xtensa-config.h; do \
 	    ( cat $(REPODIR)/lx106-hal/include/xtensa/config/core-isa.h; \
@@ -267,137 +268,138 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
               echo '#define XCHAL_HAVE_FP_RECIP 0' ; \
               echo '#define XCHAL_HAVE_FP_SQRT  0' ; \
               echo '#define XCHAL_HAVE_FP_RSQRT 0' ) > $${ow} ; \
-        done
-	cd $(REPODIR)/lx106-hal && autoreconf -i
+        done >> $(call log,$@) 2>&1
+	cd $(REPODIR)/lx106-hal && autoreconf -i >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.start: .stage.patch
 	echo STAGE: $@
-	echo "Beginning $(call arch,$@) build"
-	mkdir -p $(call arena,$@)
+	mkdir -p $(call arena,$@) > $(call log,$@) 2>&1
 
 # Build binutils
 .stage.%.binutils-config: .stage.%.start
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/binutils-gdb
-	mkdir -p $(call arena,$@)/binutils-gdb
-	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(REPODIR)/binutils-gdb/configure $(call configure,$@)
+	rm -rf $(call arena,$@)/binutils-gdb > $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/binutils-gdb >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(REPODIR)/binutils-gdb/configure $(call configure,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.binutils-make: .stage.%.binutils-config
 	echo STAGE: $@
 	# Need LDFLAGS override to guarantee gdb is made static
-	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) LDFLAGS="-static"
-	cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) install
-	cd $(call install,$@)/bin; ln -sf xtensa-lx106-elf-gcc$(call exe,$@) xtensa-lx106-elf-cc$(call exe,$@)
+	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) LDFLAGS="-static") > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
+	(cd $(call install,$@)/bin; ln -sf xtensa-lx106-elf-gcc$(call exe,$@) xtensa-lx106-elf-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.gcc1-config: .stage.%.binutils-make
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/gcc
-	mkdir -p $(call arena,$@)/gcc
-	cd $(call arena,$@)/gcc; $(call setenv,$@); $(REPODIR)/gcc/configure $(call configure,$@)
+	rm -rf $(call arena,$@)/gcc > $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/gcc >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gcc; $(call setenv,$@); $(REPODIR)/gcc/configure $(call configure,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.gcc1-make: .stage.%.gcc1-config
 	echo STAGE: $@
-	cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) all-gcc; $(MAKE) install-gcc
+	(cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) all-gcc; $(MAKE) install-gcc) > $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.newlib-config: .stage.%.gcc1-make
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/newlib
-	mkdir -p $(call arena,$@)/newlib
-	cd $(call arena,$@)/newlib; $(call setenv,$@); $(REPODIR)/newlib/configure $(call configurenewlib,$@)
+	rm -rf $(call arena,$@)/newlib > $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/newlib >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(REPODIR)/newlib/configure $(call configurenewlib,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.newlib-make: .stage.%.newlib-config
 	echo STAGE: $@
-	cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE)
-	cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE) install
+	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.libstdcpp: .stage.%.newlib-make
 	echo STAGE: $@
 	# stage 2 (build libstdc++)
-	cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE)
-	cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) install
+	(cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.libsdtcpp-nox: .stage.%.libstdcpp
 	echo STAGE: $@
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
-	rm -rf $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox
-	cp -a $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3 $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox
-	cd $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/mlongcalls/mlongcalls -fno-exceptions/' \{\} \; ; $(MAKE)
-	cp $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++-nox.a
+	rm -rf $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox > $(call log,$@) 2>&1
+	cp -a $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3 $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/mlongcalls/mlongcalls -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++-nox.a >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.hal-config: .stage.%.libsdtcpp-nox
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/hal
-	mkdir -p $(call arena,$@)/hal
-	cd $(call arena,$@)/hal; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//')
+	rm -rf $(call arena,$@)/hal > $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/hal >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/hal; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//')) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.hal-make: .stage.%.hal-config
 	echo STAGE: $@
-	cd $(call arena,$@)/hal; $(call setenv,$@); $(MAKE)
-	cd $(call arena,$@)/hal; $(call setenv,$@); $(MAKE) install
+	(cd $(call arena,$@)/hal; $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/hal; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.strip: .stage.%.hal-make
 	echo STAGE: $@
-	$(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/c*$(call exe,$@) $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/lto1$(call exe,$@) || true
+	($(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/c*$(call exe,$@) $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/lto1$(call exe,$@) || true ) > $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.post: .stage.%.strip
 	echo STAGE: $@
 	for sh in post/$(GCC)*.sh; do \
 	    [ -x "$${sh}" ] && $${sh} $(call ext,$@) ; \
-	done
+	done > $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.package: .stage.%.post
 	echo STAGE: $@
-	rm -rf pkg.$(call arch,$@)
-	mkdir -p pkg.$(call arch,$@)
-	cp -a $(call install,$@) pkg.$(call arch,$@)/xtensa-lx106-elf
-	tarball=$(call host,$@).xtensa-lx106-elf-$$(git rev-parse --short HEAD).$(call tarext,$@) ; \
-	cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)
-	rm -rf pkg.$(call arch,$@)
+	rm -rf pkg.$(call arch,$@) > $(call log,$@) 2>&1
+	mkdir -p pkg.$(call arch,$@) >> $(call log,$@) 2>&1
+	cp -a $(call install,$@) pkg.$(call arch,$@)/xtensa-lx106-elf >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).xtensa-lx106-elf-$$(git rev-parse --short HEAD).$(call tarext,$@) ; \
+	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.mkspiffs: .stage.%.start
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/mkspiffs
-	cp -a $(REPODIR)/mkspiffs $(call arena,$@)/mkspiffs
-	cd $(call arena,$@)/mkspiffs;\
+	rm -rf $(call arena,$@)/mkspiffs > $(call log,$@) 2>&1
+	cp -a $(REPODIR)/mkspiffs $(call arena,$@)/mkspiffs >> $(call log,$@) 2>&1
+	ls -latR $(call arena,$@) >> $(call log,$@) 2>&1
+	# Dependencies borked in mkspiffs makefile, so don't use parallel make
+	(cd $(call arena,$@)/mkspiffs;\
 	    $(call setenv,$@); \
 	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
-            $(MAKE) clean mkspiffs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266" CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1"
-	rm -rf pkg.mkspiffs.$(call arch,$@)
-	mkdir -p pkg.mkspiffs.$(call arch,$@)/mkspiffs
-	cp $(call arena,$@)/mkspiffs/mkspiffs$(call exe,$@) pkg.mkspiffs.$(call arch,$@)/mkspiffs/.
-	tarball=$(call host,$@).mkspiffs-$$(cd $(REPODIR)/mkspiffs && git rev-parse --short HEAD).$(call tarext,$@) ; \
-	cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)
-	rm -rf pkg.mkspiffs.$(call arch,$@)
+            make -j1 clean mkspiffs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266" CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1") >> $(call log,$@) 2>&1
+	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
+	mkdir -p pkg.mkspiffs.$(call arch,$@)/mkspiffs >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/mkspiffs/mkspiffs$(call exe,$@) pkg.mkspiffs.$(call arch,$@)/mkspiffs/. >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).mkspiffs-$$(cd $(REPODIR)/mkspiffs && git rev-parse --short HEAD).$(call tarext,$@) ; \
+	    cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.esptool: .stage.%.start
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/esptool
-	cp -a $(REPODIR)/esptool $(call arena,$@)/esptool
-	cd $(call arena,$@)/esptool;\
+	rm -rf $(call arena,$@)/esptool > $(call log,$@) 2>&1
+	cp -a $(REPODIR)/esptool $(call arena,$@)/esptool >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/esptool;\
 	    $(call setenv,$@); \
 	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
-            $(MAKE) clean esptool$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266"
-	rm -rf pkg.esptool.$(call arch,$@)
-	mkdir -p pkg.esptool.$(call arch,$@)/esptool
-	cp $(call arena,$@)/esptool/esptool$(call exe,$@) pkg.esptool.$(call arch,$@)/esptool/.
-	tarball=$(call host,$@).esptool-$$(cd $(REPODIR)/esptool && git rev-parse --short HEAD).$(call tarext,$@) ; \
-	cd pkg.esptool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} esptool; cd ..; $(call makejson,$@)
-	rm -rf pkg.esptool.$(call arch,$@)
+            $(MAKE) clean esptool$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266") >> $(call log,$@) 2>&1
+	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
+	mkdir -p pkg.esptool.$(call arch,$@)/esptool >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/esptool/esptool$(call exe,$@) pkg.esptool.$(call arch,$@)/esptool/. >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).esptool-$$(cd $(REPODIR)/esptool && git rev-parse --short HEAD).$(call tarext,$@) ; \
+	    cd pkg.esptool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} esptool; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.done: .stage.%.package .stage.%.mkspiffs .stage.%.esptool
