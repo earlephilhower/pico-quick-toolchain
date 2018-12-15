@@ -53,36 +53,42 @@ LINUX_AHOST := x86_64-pc-linux-gnu
 LINUX_EXT   := .x86_64
 LINUX_EXE   := 
 LINUX_MKTGT := linux
+LINUX_BFLGS := LDFLAGS=-static
 
 WIN32_HOST  := i686-w64-mingw32
 WIN32_AHOST := i686-mingw32
 WIN32_EXT   := .win32
 WIN32_EXE   := .exe
 WIN32_MKTGT := windows
+WIN32_BFLGS := LDFLAGS=-static
 
 WIN64_HOST  := x86_64-w64-mingw32
 WIN64_AHOST := x86_64-mingw32
 WIN64_EXT   := .win64
 WIN64_EXE   := .exe
 WIN64_MKTGT := windows
+WIN64_BFLGS := LDFLAGS=-static
 
 OSX_HOST  := x86_64-apple-darwin14
 OSX_AHOST := x86_64-apple-darwin
 OSX_EXT   := .osx
 OSX_EXE   := 
 OSX_MKTGT := osx
+OSX_BFLGS :=
 
 ARM64_HOST  := aarch64-linux-gnu
 ARM64_AHOST := aarch64-linux-gnu
 ARM64_EXT   := .arm64
 ARM64_EXE   := 
 ARM64_MKTGT := linux
+ARM64_BFLGS := LDFLAGS=-static
 
 RPI_HOST  := arm-linux-gnueabihf
 RPI_AHOST := arm-linux-gnueabihf
 RPI_EXT   := .rpi
 RPI_EXE   := 
 RPI_MKTGT := linux
+RPI_BFLGS := LDFLAGS=-static
 
 # Call with $@ to get the appropriate variable for this architecture
 host  = $($(call arch,$(1))_HOST)
@@ -90,6 +96,7 @@ ahost = $($(call arch,$(1))_AHOST)
 ext   = $($(call arch,$(1))_EXT)
 exe   = $($(call arch,$(1))_EXE)
 mktgt = $($(call arch,$(1))_MKTGT)
+bflgs = $($(call arch,$(1))_BFLGS)
 log   = log$(1)
 
 # The build directory per architecture
@@ -175,7 +182,7 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
 
 linux default: .stage.LINUX.done
 
-.PRECIOUS: .stage.%
+.PRECIOUS: .stage.% .stage.%.%
 
 # Build all toolchain versions
 all: .stage.LINUX.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
@@ -287,7 +294,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 .stage.%.binutils-make: .stage.%.binutils-config
 	echo STAGE: $@
 	# Need LDFLAGS override to guarantee gdb is made static
-	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) LDFLAGS="-static") > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) $(call bflgs,$@)) > $(call log,$@) 2>&1
 	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	(cd $(call install,$@)/bin; ln -sf xtensa-lx106-elf-gcc$(call exe,$@) xtensa-lx106-elf-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
@@ -390,10 +397,11 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/esptool > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/esptool $(call arena,$@)/esptool >> $(call log,$@) 2>&1
+	# Dependencies borked in esptool makefile, so don't use parallel make
 	(cd $(call arena,$@)/esptool;\
 	    $(call setenv,$@); \
 	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
-            $(MAKE) clean esptool$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266") >> $(call log,$@) 2>&1
+            make -j1 clean esptool$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266") >> $(call log,$@) 2>&1
 	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.esptool.$(call arch,$@)/esptool >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/esptool/esptool$(call exe,$@) pkg.esptool.$(call arch,$@)/esptool/. >> $(call log,$@) 2>&1
