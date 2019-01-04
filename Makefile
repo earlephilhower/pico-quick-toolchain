@@ -58,6 +58,16 @@ LINUX_TARCMD := tar
 LINUX_TAROPT := zcf
 LINUX_TAREXT := tar.gz
 
+LINUX32_HOST   := i686-linux-gnu
+LINUX32_AHOST  := i686-pc-linux-gnu
+LINUX32_EXT    := .i686
+LINUX32_EXE    := 
+LINUX32_MKTGT  := linux
+LINUX32_BFLGS  := LDFLAGS=-static
+LINUX32_TARCMD := tar
+LINUX32_TAROPT := zcf
+LINUX32_TAREXT := tar.gz
+
 WIN32_HOST   := i686-w64-mingw32
 WIN32_AHOST  := i686-mingw32
 WIN32_EXT    := .win32
@@ -201,16 +211,16 @@ linux default: .stage.LINUX.done
 .PRECIOUS: .stage.% .stage.%.%
 
 # Build all toolchain versions
-all: .stage.LINUX.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
+all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
 	echo STAGE: $@
 	echo All complete
 
 # Other cross-compile cannot start until Linux is built
-.stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.OSX.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
+.stage.LINUX32.gcc1-make .stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.OSX.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
 
 
 # Clean all temporary outputs
-clean: .cleaninst.LINUX.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
+clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
 	echo STAGE: $@
 	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
 
@@ -353,7 +363,8 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	rm -rf $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox > $(call log,$@) 2>&1
 	cp -a $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3 $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/mlongcalls/mlongcalls -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++-nox.a >> $(call log,$@) 2>&1
+	cp xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++-exc.a >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.hal-config: .stage.%.libsdtcpp-nox
