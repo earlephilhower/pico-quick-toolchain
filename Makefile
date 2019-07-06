@@ -467,15 +467,20 @@ install: .stage.LINUX.install
 	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'
 	echo "Install done"
 
+# Generate the python placeholder file.  Need to use binary copy and not just make a new tarball so that the signature in the JSON will match.
+python-placeholder.tar.gz:
+	echo STAGE: $@
+	echo 'H4sIAKtyklwAA+3TQQqDMBCF4RwlNzCpiTmOpNWiICpRF7191bbQlW3BLKT/txlCBmbgMf1trLo2\nETGpmbN2qdpZ9V5fhE7NzOmTSYXS88sJaaNu9TQNow9SitKHptzo+/R/UP0j/77xl7LqmqIM+bUL\nuQ/FVLfdPjOWgDNjvsg/czad+3SmjRZS7TN+G/mv+a8l0oz1/p374f6t1UbIUzINITnXUdf78/wB\nAAAAAAAAAAAAAABwbHeXFxQFACgAAA==' | base64 -d > python-placeholder.tar.gz
+
 # Upload a draft toolchain release
 upload: .stage.LINUX.upload
-.stage.LINUX.upload:
+.stage.LINUX.upload: python-placeholder.tar.gz
 	echo STAGE: $@
 	rm -rf ./venv; mkdir ./venv
 	virtualenv --no-site-packages venv
 	cd ./venv; . bin/activate; \
 	    pip install -q pygithub ; \
-	    python ../upload_release.py --user "$(GHUSER)" --pw "$(GHPASS)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/esp8266/Arduino for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" ../*.tar.gz ../*.zip ;
+	    python ../upload_release.py --user "$(GHUSER)" --pw "$(GHPASS)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/esp8266/Arduino for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
 	rm -rf ./venv
 
 dumpvars:
