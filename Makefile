@@ -455,8 +455,8 @@ install: .stage.LINUX.install
 	cd arena/hal-install; $(call setenv,$@); $(MAKE) ; $(MAKE) install
 	echo "-------- Copying GCC libs"
 	cp $(call install,$@)/lib/gcc/xtensa-lx106-elf/*/libgcc.a  $(ARDUINO)/tools/sdk/lib/.
+	cp $(call install,$@)/xtensa-lx106-elf/lib/libstdc++-exc.a $(ARDUINO)/tools/sdk/lib/.
 	cp $(call install,$@)/xtensa-lx106-elf/lib/libstdc++.a     $(ARDUINO)/tools/sdk/lib/.
-	cp $(call install,$@)/xtensa-lx106-elf/lib/libstdc++-nox.a $(ARDUINO)/tools/sdk/lib/.
 	echo "-------- Copying toolchain directory"
 	rm -rf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
 	cp -a $(call install,$@)/xtensa-lx106-elf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
