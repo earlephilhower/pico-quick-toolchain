@@ -223,7 +223,7 @@ all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .
 
 
 # Clean all temporary outputs
-clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
+clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean .clean.gits
 	echo STAGE: $@
 	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
 
@@ -254,7 +254,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 .clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git
 
 # Prep the git repos with no patches and any required libraries for gcc
-.stage.prepgit: .stage.download
+.stage.prepgit: .stage.download .clean.gits
 	echo STAGE: $@
 	for i in binutils-gdb gcc newlib lx106-hal mkspiffs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git clean -f -d; done   > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
