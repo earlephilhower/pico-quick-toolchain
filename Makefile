@@ -213,6 +213,8 @@ linux default: .stage.LINUX.done
 
 .PRECIOUS: .stage.% .stage.%.%
 
+.PHONY: .stage.download
+
 # Build all toolchain versions
 all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
 	echo STAGE: $@
@@ -243,6 +245,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	(test -d $(REPODIR)/newlib       || git clone https://github.com/$(GHUSER)/newlib-xtensa.git       $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/lx106-hal    || git clone https://github.com/$(GHUSER)/lx106-hal.git           $(REPODIR)/lx106-hal   ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/mkspiffs     || git clone https://github.com/$(GHUSER)/mkspiffs.git            $(REPODIR)/mkspiffs    ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/mklittlefs   || git clone https://github.com/$(GHUSER)/mklittlefs.git          $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/esptool      || git clone https://github.com/$(GHUSER)/esptool-ck.git          $(REPODIR)/esptool     ) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -251,12 +254,12 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo STAGE: $@
 	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
 
-.clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git
+.clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git .clean.mklittlefs.git
 
 # Prep the git repos with no patches and any required libraries for gcc
 .stage.prepgit: .stage.download .clean.gits
 	echo STAGE: $@
-	for i in binutils-gdb gcc newlib lx106-hal mkspiffs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git clean -f -d; done   > $(call log,$@) 2>&1
+	for i in binutils-gdb gcc newlib lx106-hal mkspiffs mklittlefs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz http://www.mr511.de/software/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
@@ -422,6 +425,23 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
+.stage.%.mklittlefs: .stage.%.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/mklittlefs > $(call log,$@) 2>&1
+	cp -a $(REPODIR)/mklittlefs $(call arena,$@)/mklittlefs >> $(call log,$@) 2>&1
+	# Dependencies borked in mklittlefs makefile, so don't use parallel make
+	(cd $(call arena,$@)/mklittlefs;\
+	    $(call setenv,$@); \
+	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
+            make -j1 clean mklittlefs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266" CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1") >> $(call log,$@) 2>&1
+	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
+	mkdir -p pkg.mklittlefs.$(call arch,$@)/mklittlefs >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/mklittlefs/mklittlefs$(call exe,$@) pkg.mklittlefs.$(call arch,$@)/mklittlefs/. >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).mklittlefs-$$(cd $(REPODIR)/mklittlefs && git rev-parse --short HEAD).$(call tarext,$@) ; \
+	    cd pkg.mklittlefs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mklittlefs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
+	touch $@
+
 .stage.%.esptool: .stage.%.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/esptool > $(call log,$@) 2>&1
@@ -439,7 +459,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.done: .stage.%.package .stage.%.mkspiffs .stage.%.esptool
+.stage.%.done: .stage.%.package .stage.%.mkspiffs .stage.%.esptool .stage.%.mklittlefs
 	echo STAGE: $@
 	echo Done building $(call arch,$@)
 
@@ -468,7 +488,8 @@ install: .stage.LINUX.install
 	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_esp8266com_index.template.json; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool xtensa-lx106-elf-gcc --ver "$${ver}" --glob '*xtensa-lx106-elf*.json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool esptool --ver "$${ver}" --glob '*esptool*json' ; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'
+	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool mklittlefs --ver "$${ver}" --glob '*mklittlefs*json'
 	echo "Install done"
 
 # Generate the python placeholder file.  Need to use binary copy and not just make a new tarball so that the signature in the JSON will match.
