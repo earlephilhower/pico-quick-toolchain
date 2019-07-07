@@ -177,6 +177,9 @@ CONFIGURENEWLIBINSTALL  = --prefix=$(ARDUINO)/tools/sdk/libc
 CONFIGURENEWLIBINSTALL += --with-target-subdir=xtensa-lx106-elf
 CONFIGURENEWLIBINSTALL += $(CONFIGURENEWLIBCOM)
 
+# The branch in which to store the new toolchain
+INSTALLBRANCH ?= master
+
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
 ifeq ($(LTO),true)
     CFFT := "-mlongcalls -flto -Wl,-flto -Os -g"
@@ -446,6 +449,7 @@ install: .stage.LINUX.install
 	echo STAGE: $@
 	rm -rf $(ARDUINO)
 	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
+	(cd $(ARDUINO); git checkout $(INSTALLBRANCH))
 	echo "-------- Building installable newlib"
 	rm -rf arena/newlib-install; mkdir -p arena/newlib-install
 	cd arena/newlib-install; $(call setenv,$@); $(REPODIR)/newlib/configure $(CONFIGURENEWLIBINSTALL); $(MAKE); $(MAKE) install
