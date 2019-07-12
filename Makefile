@@ -38,6 +38,9 @@ else ifeq ($(GCC),5.2)
 else ifeq ($(GCC),7.2)
     ISL        := 0.16.1
     GCC_BRANCH := xtensa-ctng-7.2.0
+else ifeq ($(GCC), 9.1)
+    ISL        := 0.18
+    GCC_BRANCH := gcc-9_1_0-release
 else
     $(error Need to specify a supported GCC version "GCC={4.8, 4.9, 5.2, 7.2}")
 endif
