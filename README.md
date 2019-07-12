@@ -22,7 +22,7 @@ To build all architectures use the commands
 ````
 git clone https://github.com/earlephilhower/esp-quick-toolchain
 cd esp-quick-toolchain
-docker run --user $(id -u):$(id -g) --rm -v $(pwd):/workdir earlephilhower/gcc-cross bash -c "cd /workdir; make -j32 GCC={4.8|4.9|5.2|7.2} REL=2.5.0 SUBREL=3"
+docker run --user $(id -u):$(id -g) --rm -v $(pwd):/workdir earlephilhower/gcc-cross bash -c "cd /workdir; make -j32 GCC={4.8|4.9|5.2|7.2} REL=2.5.0 SUBREL=3 all"
 ````
 
 To make a draft release of the binaries:
@@ -32,7 +32,7 @@ make GCC={4.8|4.9|5.2|7.2} REL=2.5.0 SUBREL=3 upload
 
 Then to install the libraries and headers into the Arduino core (not including the toolchain exes) just
 ````
-make GCC={4.8|4.9|5.2|7.2} REL=2.5.0 SUBREL=3 install
+make GCC={4.8|4.9|5.2|7.2} REL=2.5.0 SUBREL=3 install  (INSTALLBRANCH=xxx may be added to apply against a predefined branch otehr than master)
 <in Arduino dir>
 git commit -a
 ````

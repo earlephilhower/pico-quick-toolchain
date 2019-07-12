@@ -14,6 +14,7 @@ GCC     := $(if $(GCC),$(GCC),4.8)
 PWD      := $(shell pwd)
 REPODIR  := $(PWD)/repo
 PATCHDIR := $(PWD)/patches
+STAMP    := $(shell date +%s)
 
 # For uploading, the GH user and password
 GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
@@ -177,6 +178,9 @@ CONFIGURENEWLIBINSTALL  = --prefix=$(ARDUINO)/tools/sdk/libc
 CONFIGURENEWLIBINSTALL += --with-target-subdir=xtensa-lx106-elf
 CONFIGURENEWLIBINSTALL += $(CONFIGURENEWLIBCOM)
 
+# The branch in which to store the new toolchain
+INSTALLBRANCH ?= master
+
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
 ifeq ($(LTO),true)
     CFFT := "-mlongcalls -flto -Wl,-flto -Os -g"
@@ -210,6 +214,8 @@ linux default: .stage.LINUX.done
 
 .PRECIOUS: .stage.% .stage.%.%
 
+.PHONY: .stage.download
+
 # Build all toolchain versions
 all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
 	echo STAGE: $@
@@ -220,7 +226,7 @@ all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .
 
 
 # Clean all temporary outputs
-clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
+clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean .clean.gits
 	echo STAGE: $@
 	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
 
@@ -240,6 +246,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	(test -d $(REPODIR)/newlib       || git clone https://github.com/$(GHUSER)/newlib-xtensa.git       $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/lx106-hal    || git clone https://github.com/$(GHUSER)/lx106-hal.git           $(REPODIR)/lx106-hal   ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/mkspiffs     || git clone https://github.com/$(GHUSER)/mkspiffs.git            $(REPODIR)/mkspiffs    ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/mklittlefs   || git clone https://github.com/$(GHUSER)/mklittlefs.git          $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/esptool      || git clone https://github.com/$(GHUSER)/esptool-ck.git          $(REPODIR)/esptool     ) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -248,12 +255,12 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo STAGE: $@
 	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
 
-.clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git
+.clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git .clean.mklittlefs.git
 
 # Prep the git repos with no patches and any required libraries for gcc
-.stage.prepgit: .stage.download
+.stage.prepgit: .stage.download .clean.gits
 	echo STAGE: $@
-	for i in binutils-gdb gcc newlib lx106-hal mkspiffs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git clean -f -d; done   > $(call log,$@) 2>&1
+	for i in binutils-gdb gcc newlib lx106-hal mkspiffs mklittlefs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz http://www.mr511.de/software/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
@@ -397,7 +404,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	rm -rf pkg.$(call arch,$@) > $(call log,$@) 2>&1
 	mkdir -p pkg.$(call arch,$@) >> $(call log,$@) 2>&1
 	cp -a $(call install,$@) pkg.$(call arch,$@)/xtensa-lx106-elf >> $(call log,$@) 2>&1
-	(tarball=$(call host,$@).xtensa-lx106-elf-$$(git rev-parse --short HEAD).$(call tarext,$@) ; \
+	(tarball=$(call host,$@).xtensa-lx106-elf-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
@@ -414,9 +421,26 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.mkspiffs.$(call arch,$@)/mkspiffs >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/mkspiffs/mkspiffs$(call exe,$@) pkg.mkspiffs.$(call arch,$@)/mkspiffs/. >> $(call log,$@) 2>&1
-	(tarball=$(call host,$@).mkspiffs-$$(cd $(REPODIR)/mkspiffs && git rev-parse --short HEAD).$(call tarext,$@) ; \
+	(tarball=$(call host,$@).mkspiffs-$$(cd $(REPODIR)/mkspiffs && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
+	touch $@
+
+.stage.%.mklittlefs: .stage.%.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/mklittlefs > $(call log,$@) 2>&1
+	cp -a $(REPODIR)/mklittlefs $(call arena,$@)/mklittlefs >> $(call log,$@) 2>&1
+	# Dependencies borked in mklittlefs makefile, so don't use parallel make
+	(cd $(call arena,$@)/mklittlefs;\
+	    $(call setenv,$@); \
+	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
+            make -j1 clean mklittlefs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266") >> $(call log,$@) 2>&1
+	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
+	mkdir -p pkg.mklittlefs.$(call arch,$@)/mklittlefs >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/mklittlefs/mklittlefs$(call exe,$@) pkg.mklittlefs.$(call arch,$@)/mklittlefs/. >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).mklittlefs-$$(cd $(REPODIR)/mklittlefs && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd pkg.mklittlefs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mklittlefs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.esptool: .stage.%.start
@@ -431,12 +455,12 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.esptool.$(call arch,$@)/esptool >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/esptool/esptool$(call exe,$@) pkg.esptool.$(call arch,$@)/esptool/. >> $(call log,$@) 2>&1
-	(tarball=$(call host,$@).esptool-$$(cd $(REPODIR)/esptool && git rev-parse --short HEAD).$(call tarext,$@) ; \
+	(tarball=$(call host,$@).esptool-$$(cd $(REPODIR)/esptool && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.esptool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} esptool; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.done: .stage.%.package .stage.%.mkspiffs .stage.%.esptool
+.stage.%.done: .stage.%.package .stage.%.mkspiffs .stage.%.esptool .stage.%.mklittlefs
 	echo STAGE: $@
 	echo Done building $(call arch,$@)
 
@@ -446,6 +470,7 @@ install: .stage.LINUX.install
 	echo STAGE: $@
 	rm -rf $(ARDUINO)
 	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
+	(cd $(ARDUINO); git checkout $(INSTALLBRANCH))
 	echo "-------- Building installable newlib"
 	rm -rf arena/newlib-install; mkdir -p arena/newlib-install
 	cd arena/newlib-install; $(call setenv,$@); $(REPODIR)/newlib/configure $(CONFIGURENEWLIBINSTALL); $(MAKE); $(MAKE) install
@@ -464,18 +489,15 @@ install: .stage.LINUX.install
 	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_esp8266com_index.template.json; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool xtensa-lx106-elf-gcc --ver "$${ver}" --glob '*xtensa-lx106-elf*.json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool esptool --ver "$${ver}" --glob '*esptool*json' ; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'
+	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool mklittlefs --ver "$${ver}" --glob '*mklittlefs*json'
 	echo "Install done"
-
-# Generate the python placeholder file.  Need to use binary copy and not just make a new tarball so that the signature in the JSON will match.
-python-placeholder.tar.gz:
-	echo STAGE: $@
-	echo 'H4sIAKtyklwAA+3TQQqDMBCF4RwlNzCpiTmOpNWiICpRF7191bbQlW3BLKT/txlCBmbgMf1trLo2\nETGpmbN2qdpZ9V5fhE7NzOmTSYXS88sJaaNu9TQNow9SitKHptzo+/R/UP0j/77xl7LqmqIM+bUL\nuQ/FVLfdPjOWgDNjvsg/czad+3SmjRZS7TN+G/mv+a8l0oz1/p374f6t1UbIUzINITnXUdf78/wB\nAAAAAAAAAAAAAABwbHeXFxQFACgAAA==' | base64 -d > python-placeholder.tar.gz
 
 # Upload a draft toolchain release
 upload: .stage.LINUX.upload
-.stage.LINUX.upload: python-placeholder.tar.gz
+.stage.LINUX.upload:
 	echo STAGE: $@
+	cp -f blobs/* .
 	rm -rf ./venv; mkdir ./venv
 	virtualenv --no-site-packages venv
 	cd ./venv; . bin/activate; \
