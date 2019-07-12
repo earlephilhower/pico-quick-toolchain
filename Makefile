@@ -262,7 +262,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo STAGE: $@
 	for i in binutils-gdb gcc newlib lx106-hal mkspiffs mklittlefs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
-	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz http://www.mr511.de/software/libelf-0.8.13.tar.gz ; do \
+	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/esp-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
 	    echo "-------- getting $${name}" ; \
 	    cd $(REPODIR) && ( test -r $${archive} || wget $${url} ) ; \
