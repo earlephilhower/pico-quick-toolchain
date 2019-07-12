@@ -221,12 +221,14 @@ all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .
 	echo STAGE: $@
 	echo All complete
 
+download: .stage.download
+
 # Other cross-compile cannot start until Linux is built
 .stage.LINUX32.gcc1-make .stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.OSX.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
 
 
 # Clean all temporary outputs
-clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean .clean.gits
+clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
 	echo STAGE: $@
 	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
 
@@ -278,7 +280,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 .stage.checkout: .stage.prepgit
 	echo STAGE: $@
 	(cd $(REPODIR)/gcc && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
-	(cd $(REPODIR)/mkspiffs && git reset --hard && git checkout $(MKSPIFFS_BRANCH) && git submodule update) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/mkspiffs && git reset --hard && git submodule deinit --all && git clean -f -d && git checkout $(MKSPIFFS_BRANCH) && git submodule init && git submodule update) >> $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
