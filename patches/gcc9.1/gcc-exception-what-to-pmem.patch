@@ -703,15 +703,6 @@ index b38e8e0ecef..9853370a29a 100644
        return __p->_M_v().second;
      }
  
-@@ -1519,7 +1521,7 @@ namespace __detail
-   template<typename _Tp>
-     struct _Hash_code_storage<_Tp, true>
-     {
--      static_assert( std::is_empty<_Tp>::value, "Type must be empty" );
-+      static_assert( std::is_empty<_Tp>::value, __EXCSTR("Type must be empty") );
- 
-       // As _Tp is an empty type there will be no bytes written/read through
-       // the cast pointer, so no strict-aliasing violation.
 @@ -2142,4 +2144,6 @@ namespace __detail
  _GLIBCXX_END_NAMESPACE_VERSION
  } // namespace std
