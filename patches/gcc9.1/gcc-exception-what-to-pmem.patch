@@ -641,29 +641,31 @@ index a952a9ee392..9e4e1e05907 100644
  #ifdef __GTHREADS
    namespace
 diff --git a/libstdc++-v3/src/c++11/system_error.cc b/libstdc++-v3/src/c++11/system_error.cc
-index 61dbc3fb5bb..763f8069c86 100644
+index d67e3a4f975..3b855b7d9ff 100644
 --- a/libstdc++-v3/src/c++11/system_error.cc
 +++ b/libstdc++-v3/src/c++11/system_error.cc
-@@ -29,6 +29,9 @@
- #include <system_error>
+@@ -30,8 +30,11 @@
  #include <bits/functexcept.h>
  #include <limits>
+ #include <errno.h>
 +#include <cstdlib>
-+
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
  #undef __sso_string
- 
+
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++
  namespace
-@@ -39,7 +42,7 @@ namespace
+ {
+   using std::string;
+@@ -40,7 +43,7 @@ namespace
    {
      virtual const char*
      name() const noexcept
 -    { return "generic"; }
 +    { return __EXCSTR("generic"); }
- 
+
      _GLIBCXX_DEFAULT_ABI_TAG
      virtual string
-@@ -47,7 +50,9 @@ namespace
+@@ -48,7 +51,9 @@ namespace
      {
        // XXX locale issues: how does one get or set loc.
        // _GLIBCXX_HAVE_STRERROR_L, strerror_l(i, cloc)
@@ -673,17 +675,17 @@ index 61dbc3fb5bb..763f8069c86 100644
 +      return string(itoa(i, buff, 10));
      }
    };
- 
-@@ -55,7 +60,7 @@ namespace
+
+@@ -56,7 +61,7 @@ namespace
    {
      virtual const char*
      name() const noexcept
 -    { return "system"; }
 +    { return __EXCSTR("system"); }
- 
+
      _GLIBCXX_DEFAULT_ABI_TAG
      virtual string
-@@ -63,7 +68,9 @@ namespace
+@@ -64,7 +69,9 @@ namespace
      {
        // XXX locale issues: how does one get or set loc.
        // _GLIBCXX_HAVE_STRERROR_L, strerror_l(i, cloc)
@@ -692,5 +694,5 @@ index 61dbc3fb5bb..763f8069c86 100644
 +      char buff[16];
 +      return string(itoa(i, buff, 10));
      }
-   };
- 
+
+     virtual std::error_condition
