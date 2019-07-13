@@ -310,44 +310,6 @@ index 38a6e82aaef..38d408ade1a 100644
  _GLIBCXX_END_NAMESPACE_CONTAINER
  } // namespace std
  
-diff --git a/libstdc++-v3/include/bits/hashtable_policy.h b/libstdc++-v3/include/bits/hashtable_policy.h
-index 8af8c498de2..9d53445511e 100644
---- a/libstdc++-v3/include/bits/hashtable_policy.h
-+++ b/libstdc++-v3/include/bits/hashtable_policy.h
-@@ -33,6 +33,8 @@
- 
- #include <bits/stl_algobase.h> // for std::min.
- 
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
-+
- namespace std _GLIBCXX_VISIBILITY(default)
- {
- _GLIBCXX_BEGIN_NAMESPACE_VERSION
-@@ -771,7 +773,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
-       __node_type* __p = __h->_M_find_node(__n, __k, __code);
- 
-       if (!__p)
--	__throw_out_of_range(__N("_Map_base::at"));
-+	__throw_out_of_range(__EXCSTR(__N("_Map_base::at")));
-       return __p->_M_v().second;
-     }
- 
-@@ -790,7 +792,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
-       __node_type* __p = __h->_M_find_node(__n, __k, __code);
- 
-       if (!__p)
--	__throw_out_of_range(__N("_Map_base::at"));
-+	__throw_out_of_range(__EXCSTR(__N("_Map_base::at")));
-       return __p->_M_v().second;
-     }
- 
-@@ -2126,4 +2128,6 @@ _GLIBCXX_END_NAMESPACE_VERSION
- } // namespace __detail
- } // namespace std
- 
-+#undef __EXCSTR
-+
- #endif // _HASHTABLE_POLICY_H
 diff --git a/libstdc++-v3/include/bits/stl_bvector.h b/libstdc++-v3/include/bits/stl_bvector.h
 index 37e000ad962..832308dc698 100644
 --- a/libstdc++-v3/include/bits/stl_bvector.h
@@ -732,3 +694,50 @@ index 497d9f72247..c833aa306f8 100644
  #endif // C++11
  
  #undef _GLIBCXX_ASAN_ANNOTATE_REINIT
+diff --git a/libstdc++-v3/include/bits/hashtable_policy.h b/libstdc++-v3/include/bits/hashtable_policy.h
+index b38e8e0ecef..9853370a29a 100644
+--- a/libstdc++-v3/include/bits/hashtable_policy.h
++++ b/libstdc++-v3/include/bits/hashtable_policy.h
+@@ -35,6 +35,8 @@
+ #include <limits>		// for std::numeric_limits
+ #include <bits/stl_algobase.h>	// for std::min.
+ 
++#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -747,7 +749,7 @@ namespace __detail
+       __node_type* __p = __h->_M_find_node(__n, __k, __code);
+ 
+       if (!__p)
+-	__throw_out_of_range(__N("_Map_base::at"));
++	__throw_out_of_range(__EXCSTR(__N("_Map_base::at")));
+       return __p->_M_v().second;
+     }
+ 
+@@ -766,7 +768,7 @@ namespace __detail
+       __node_type* __p = __h->_M_find_node(__n, __k, __code);
+ 
+       if (!__p)
+-	__throw_out_of_range(__N("_Map_base::at"));
++	__throw_out_of_range(__EXCSTR(__N("_Map_base::at")));
+       return __p->_M_v().second;
+     }
+ 
+@@ -1519,7 +1521,7 @@ namespace __detail
+   template<typename _Tp>
+     struct _Hash_code_storage<_Tp, true>
+     {
+-      static_assert( std::is_empty<_Tp>::value, "Type must be empty" );
++      static_assert( std::is_empty<_Tp>::value, __EXCSTR("Type must be empty") );
+ 
+       // As _Tp is an empty type there will be no bytes written/read through
+       // the cast pointer, so no strict-aliasing violation.
+@@ -2142,4 +2144,6 @@ namespace __detail
+ _GLIBCXX_END_NAMESPACE_VERSION
+ } // namespace std
+ 
++#undef __EXCSTR
++
+ #endif // _HASHTABLE_POLICY_H
