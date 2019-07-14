@@ -63,7 +63,7 @@ else ifeq ($(GCC), 9.1)
     BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else
-    $(error Need to specify a supported GCC version "GCC={4.8, 4.9, 5.2, 7.2}")
+    $(error Need to specify a supported GCC version "GCC={4.8, 4.9, 5.2, 7.2, 9.1}")
 endif
 
 # MKSPIFFS must stay at 0.2.0 until Arduino boards.txt.py fixes non-page-aligned sizes
