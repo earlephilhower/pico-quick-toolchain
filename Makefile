@@ -26,18 +26,42 @@ else ifeq ($(GHPASS),)
 endif
 
 # Depending on the GCC version get proper branch and support libs
+GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 ifeq ($(GCC),4.8)
-    ISL        := 0.12.2
-    GCC_BRANCH := call0-4.8.2
+    ISL           := 0.12.2
+    GCC_BRANCH    := call0-4.8.2
+    GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
+    GCC_DIR       := gcc
+    BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
+    BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),4.9)
-    ISL        := 0.12.2
-    GCC_BRANCH := call0-4.9.2
+    ISL           := 0.12.2
+    GCC_BRANCH    := call0-4.9.2
+    GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
+    GCC_DIR       := gcc
+    BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
+    BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),5.2)
-    ISL        := 0.12.2
-    GCC_BRANCH := xtensa-ctng-esp-5.2.0
+    ISL           := 0.12.2
+    GCC_BRANCH    := xtensa-ctng-esp-5.2.0
+    GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
+    GCC_DIR       := gcc
+    BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
+    BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),7.2)
-    ISL        := 0.16.1
-    GCC_BRANCH := xtensa-ctng-7.2.0
+    ISL           := 0.16.1
+    GCC_BRANCH    := xtensa-ctng-7.2.0
+    GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
+    GCC_DIR       := gcc
+    BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
+    BINUTILS_DIR  := binutils-gdb
+else ifeq ($(GCC), 9.1)
+    ISL           := 0.18
+    GCC_BRANCH    := gcc-9_1_0-release
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
 else
     $(error Need to specify a supported GCC version "GCC={4.8, 4.9, 5.2, 7.2}")
 endif
@@ -239,17 +263,16 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf $(call arena,$@) > /dev/null 2>&1
 
 # Download the needed GIT and tarballs
-GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 .stage.download:
 	echo STAGE: $@
 	mkdir -p $(REPODIR) > $(call log,$@) 2>&1
-	(test -d $(REPODIR)/binutils-gdb || git clone https://github.com/$(GHUSER)/binutils-gdb-xtensa.git $(REPODIR)/binutils-gdb) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/gcc          || git clone https://github.com/$(GHUSER)/gcc-xtensa.git          $(REPODIR)/gcc         ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/newlib       || git clone https://github.com/$(GHUSER)/newlib-xtensa.git       $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/lx106-hal    || git clone https://github.com/$(GHUSER)/lx106-hal.git           $(REPODIR)/lx106-hal   ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/mkspiffs     || git clone https://github.com/$(GHUSER)/mkspiffs.git            $(REPODIR)/mkspiffs    ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/mklittlefs   || git clone https://github.com/$(GHUSER)/mklittlefs.git          $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/esptool      || git clone https://github.com/$(GHUSER)/esptool-ck.git          $(REPODIR)/esptool     ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/$(BINUTILS_DIR) || git clone $(BINUTILS_REPO)                               $(REPODIR)/$(BINUTILS_DIR) ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/$(GCC_DIR)      || git clone $(GCC_REPO)                                    $(REPODIR)/$(GCC_DIR) ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/newlib          || git clone https://github.com/$(GHUSER)/newlib-xtensa.git $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/lx106-hal       || git clone https://github.com/$(GHUSER)/lx106-hal.git     $(REPODIR)/lx106-hal   ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/mkspiffs        || git clone https://github.com/$(GHUSER)/mkspiffs.git      $(REPODIR)/mkspiffs    ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/mklittlefs      || git clone https://github.com/$(GHUSER)/mklittlefs.git    $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/esptool         || git clone https://github.com/$(GHUSER)/esptool-ck.git    $(REPODIR)/esptool     ) >> $(call log,$@) 2>&1
 	touch $@
 
 # Completely clean out a git directory, removing any untracked files
@@ -257,7 +280,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo STAGE: $@
 	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
 
-.clean.gits: .clean.binutils-gdb.git .clean.gcc.git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git .clean.mklittlefs.git
+.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git .clean.mklittlefs.git
 
 # Prep the git repos with no patches and any required libraries for gcc
 .stage.prepgit: .stage.download .clean.gits
@@ -269,17 +292,17 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	    echo "-------- getting $${name}" ; \
 	    cd $(REPODIR) && ( test -r $${archive} || wget $${url} ) ; \
 	    case "$${ext}" in \
-	        gz)  (cd $(REPODIR)/gcc; tar xfz ../$${archive});; \
-	        bz2) (cd $(REPODIR)/gcc; tar xfj ../$${archive});; \
+	        gz)  (cd $(REPODIR)/$(GCC_DIR); tar xfz ../$${archive});; \
+	        bz2) (cd $(REPODIR)/$(GCC_DIR); tar xfj ../$${archive});; \
 	    esac ; \
-	    (cd $(REPODIR)/gcc; rm -f $${base}; ln -s $${name} $${base}) \
+	    (cd $(REPODIR)/$(GCC_DIR); rm -f $${base}; ln -s $${name} $${base}) \
 	done >> $(call log,$@) 2>&1
 	touch $@
 
 # Checkout any required branches
 .stage.checkout: .stage.prepgit
 	echo STAGE: $@
-	(cd $(REPODIR)/gcc && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
+	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/mkspiffs && git reset --hard && git submodule deinit --all && git clean -f -d && git checkout $(MKSPIFFS_BRANCH) && git submodule init && git submodule update) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -288,11 +311,11 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	echo STAGE: $@
 	for p in $(PATCHDIR)/gcc-*.patch $(PATCHDIR)/gcc$(GCC)/gcc-*.patch; do \
 	    test -r "$$p" || continue ; \
-	    (cd $(REPODIR)/gcc; echo "---- $$p:"; patch -s -p1 < $$p) ; \
+	    (cd $(REPODIR)/$(GCC_DIR); echo "---- $$p:"; patch -s -p1 < $$p) ; \
 	done > $(call log,$@) 2>&1
 	for p in $(PATCHDIR)/bin-*.patch; do \
 	    test -r "$$p" || continue ; \
-	    (cd $(REPODIR)/binutils-gdb; echo "---- $$p:"; patch -s -p1 < $$p) ; \
+	    (cd $(REPODIR)/$(BINUTILS_DIR); echo "---- $$p:"; patch -s -p1 < $$p) ; \
 	done >> $(call log,$@) 2>&1
 	for p in $(PATCHDIR)/lib-*.patch; do \
 	    test -r "$$p" || continue ; \
@@ -303,7 +326,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 	    (cd $(REPODIR)/mkspiffs; echo "---- $$p: "; patch -s -p1 < $$p) ; \
 	done >> $(call log,$@) 2>&1
 	# Dirty-force HAL definition to binutils and gcc
-	for ow in $(REPODIR)/gcc/include/xtensa-config.h $(REPODIR)/binutils-gdb/include/xtensa-config.h; do \
+	for ow in $(REPODIR)/$(GCC_DIR)/include/xtensa-config.h $(REPODIR)/$(BINUTILS_DIR)/include/xtensa-config.h; do \
 	    ( cat $(REPODIR)/lx106-hal/include/xtensa/config/core-isa.h; \
 	      cat $(REPODIR)/lx106-hal/include/xtensa/config/system.h ; \
 	      echo '#define XCHAL_HAVE_FP_DIV   0' ; \
@@ -321,29 +344,29 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 # Build binutils
 .stage.%.binutils-config: .stage.%.start
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/binutils-gdb > $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/binutils-gdb >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(REPODIR)/binutils-gdb/configure $(call configure,$@)) >> $(call log,$@) 2>&1
+	rm -rf $(call arena,$@)/$(BINUTILS_DIR) > $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/$(BINUTILS_DIR) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(REPODIR)/$(BINUTILS_DIR)/configure $(call configure,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.binutils-make: .stage.%.binutils-config
 	echo STAGE: $@
 	# Need LDFLAGS override to guarantee gdb is made static
-	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) $(call bflgs,$@)) > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/binutils-gdb; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) $(call bflgs,$@)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	(cd $(call install,$@)/bin; ln -sf xtensa-lx106-elf-gcc$(call exe,$@) xtensa-lx106-elf-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.gcc1-config: .stage.%.binutils-make
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/gcc > $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/gcc >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/gcc; $(call setenv,$@); $(REPODIR)/gcc/configure $(call configure,$@)) >> $(call log,$@) 2>&1
+	rm -rf $(call arena,$@)/$(GCC_DIR) > $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/$(GCC_DIR) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(REPODIR)/$(GCC_DIR)/configure $(call configure,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.gcc1-make: .stage.%.gcc1-config
 	echo STAGE: $@
-	(cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) all-gcc; $(MAKE) install-gcc) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) all-gcc; $(MAKE) install-gcc) > $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.newlib-config: .stage.%.gcc1-make
@@ -362,18 +385,18 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 .stage.%.libstdcpp: .stage.%.newlib-make
 	echo STAGE: $@
 	# stage 2 (build libstdc++)
-	(cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/gcc; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.libsdtcpp-nox: .stage.%.libstdcpp
 	echo STAGE: $@
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
-	rm -rf $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox > $(call log,$@) 2>&1
-	cp -a $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3 $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/mlongcalls/mlongcalls -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
+	rm -rf $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3-nox > $(call log,$@) 2>&1
+	cp -a $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3-nox >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/mlongcalls/mlongcalls -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
 	cp xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++-exc.a >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/gcc/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++.a >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.hal-config: .stage.%.libsdtcpp-nox
