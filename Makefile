@@ -495,7 +495,7 @@ install: .stage.LINUX.install
 	echo STAGE: $@
 	rm -rf $(ARDUINO)
 	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
-	(cd $(ARDUINO); git checkout $(INSTALLBRANCH))
+	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
 	echo "-------- Building installable newlib"
 	rm -rf arena/newlib-install; mkdir -p arena/newlib-install
 	cd arena/newlib-install; $(call setenv,$@); $(REPODIR)/newlib/configure $(CONFIGURENEWLIBINSTALL); $(MAKE); $(MAKE) install
@@ -516,6 +516,12 @@ install: .stage.LINUX.install
 	./patch_json.py --pkgfile "$${pkgfile}" --tool esptool --ver "$${ver}" --glob '*esptool*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool mklittlefs --ver "$${ver}" --glob '*mklittlefs*json'
+	echo "-------- Installing toolchain"
+	(cd $(ARDUINO)/tools && tar xf ../../x86_64-linux-gnu.xtensa-lx106-elf-*.tar.gz )
+	echo "-------- Building and installing BearSSL"
+	(cd $(ARDUINO)/tools/sdk/ssl && make clean && make all && make install)
+	echo "-------- Building and installing LWIP2"
+	(cd $(ARDUINO)/tools/sdk/lwip2 && make clean && make install)
 	echo "Install done"
 
 # Upload a draft toolchain release
