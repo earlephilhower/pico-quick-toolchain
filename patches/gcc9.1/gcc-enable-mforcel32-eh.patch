@@ -1,0 +1,22 @@
+diff --git a/libgcc/Makefile.in b/libgcc/Makefile.in
+index ea390a5bbea..9268851c44a 100644
+--- a/libgcc/Makefile.in
++++ b/libgcc/Makefile.in
+@@ -851,7 +851,7 @@ endif
+ # libgcc_eh.a, only LIB2ADDEH matters.  If we do, only LIB2ADDEHSTATIC and
+ # LIB2ADDEHSHARED matter.  (Usually all three are identical.)
+ 
+-c_flags := -fexceptions
++c_flags := -fexceptions -mforce-l32
+ 
+ ifeq ($(enable_shared),yes)
+ 
+@@ -874,7 +874,7 @@ endif
+ # Build LIBUNWIND. Use -fno-exceptions so that the unwind library does
+ # not generate calls to __gcc_personality_v0.
+ 
+-c_flags := -fno-exceptions
++c_flags := -fno-exceptions -mforce-l32
+ 
+ libunwind-objects += $(addsuffix $(objext),$(basename $(notdir $(LIBUNWIND))))
+ 
