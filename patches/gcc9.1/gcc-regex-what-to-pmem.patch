@@ -6,7 +6,7 @@ index ca71e57e4e0..c8fc07ff269 100644
  // All dummy nodes will be eliminated at the end of compilation.
  */
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -122,7 +122,7 @@ index e5e184b5678..c0f7304452d 100644
  #define _GLIBCXX_REGEX_STATE_LIMIT 100000
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
 +
  namespace std _GLIBCXX_VISIBILITY(default)
@@ -155,7 +155,7 @@ index 45a24a6b740..045f399d57f 100644
   *  Do not attempt to use it directly. @headername{regex}
   */
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -211,7 +211,7 @@ index cb40602b40f..8118bb88b87 100644
  //
  // awk: http://pubs.opengroup.org/onlinepubs/000095399/utilities/awk.html
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {

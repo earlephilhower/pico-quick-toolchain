@@ -6,7 +6,7 @@ index b6693c440c0..f82b8487875 100644
  #endif
  
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -89,7 +89,7 @@ index 41b7fa196b0..f02acf6b688 100644
  
  #pragma GCC system_header
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  #include <bits/cxxabi_forced.h>
  
@@ -278,7 +278,7 @@ index 38a6e82aaef..38d408ade1a 100644
  #ifndef _DEQUE_TCC
  #define _DEQUE_TCC 1
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -318,7 +318,7 @@ index 0420dbfbba7..d74dc79bb39 100644
  #include <ext/aligned_buffer.h>
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -338,7 +338,7 @@ index 30339536f57..a809a68ecf6 100644
  #include <tuple>
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -376,7 +376,7 @@ index fb882126cf9..8a1800c351e 100644
  
  #include <debug/assertions.h>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -396,7 +396,7 @@ index 598b840297a..61c8d98fa2f 100644
  
  #include "new"
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  std::bad_alloc::~bad_alloc() _GLIBCXX_USE_NOEXCEPT { }
  
@@ -414,7 +414,7 @@ index 25384bfaeff..f9598ed6bd0 100644
  
  #include <typeinfo>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std {
  
@@ -436,7 +436,7 @@ index 6c2d900c148..551035d11b4 100644
  
  #include <typeinfo>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std {
  
@@ -458,7 +458,7 @@ index 11f3e133b08..e970f2c3ae0 100644
  
  abi::__foreign_exception::~__foreign_exception() throw() { }
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  const char* 
  std::exception::what() const _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_USE_NOEXCEPT
@@ -486,7 +486,7 @@ index 8ac87b9fb20..d779c5fe1d0 100644
  #include <functional>
  #include <bits/functexcept.h>
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -508,7 +508,7 @@ index a952a9ee392..9e4e1e05907 100644
    }
  }
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -533,7 +533,7 @@ index d67e3a4f975..3b855b7d9ff 100644
 +#include <cstdlib>
  #undef __sso_string
 
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace
  {
@@ -586,7 +586,7 @@ index 497d9f72247..c833aa306f8 100644
  #ifndef _VECTOR_TCC
  #define _VECTOR_TCC 1
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -680,7 +680,7 @@ index b38e8e0ecef..9853370a29a 100644
  #include <limits>		// for std::numeric_limits
  #include <bits/stl_algobase.h>	// for std::min.
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
@@ -718,7 +718,7 @@ index 294f1e42897..32134d71d47 100644
  #include <bits/functional_hash.h>
  #endif
  
-+#define __EXCSTR(s) (__extension__({static const char __c[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__c[0];}))
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
 +
  namespace std _GLIBCXX_VISIBILITY(default)
  {
