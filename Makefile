@@ -499,6 +499,8 @@ install: .stage.LINUX.install
 	echo "-------- Building installable newlib"
 	rm -rf arena/newlib-install; mkdir -p arena/newlib-install
 	cd arena/newlib-install; $(call setenv,$@); $(REPODIR)/newlib/configure $(CONFIGURENEWLIBINSTALL); $(MAKE); $(MAKE) install
+	echo "-------- Removing routines present in ROM"
+	ar dv $(ARDUINO)/tools/sdk/libc/xtensa-lx106-elf/lib/libc.a lib_a-strcmp.o lib_a-strlen.o lib_a-strncmp.o lib_a-strstr.o lib_a-memcmp.o lib_a-memcpy.o lib_a-memmove.o lib_a-memset.o lib_a-bzero.o
 	echo "-------- Building installable hal"
 	rm -rf arena/hal-install; mkdir -p arena/hal-install
 	cd arena/hal-install; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --prefix=$(ARDUINO)/tools/sdk/libc --libdir=$(ARDUINO)/tools/sdk/lib --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//' | sed 's/--prefix=[a-zA-Z0-9_-\\]*//')
