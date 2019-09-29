@@ -1,0 +1,56 @@
+diff --git a/libgcc/unwind-dw2-fde.c b/libgcc/unwind-dw2-fde.c
+index 24b4ecee68c..56328c47e1e 100644
+--- a/libgcc/unwind-dw2-fde.c
++++ b/libgcc/unwind-dw2-fde.c
+@@ -285,6 +285,15 @@ base_from_object (unsigned char encoding, struct object *ob)
+     }
+ }
+ 
++
++// Write own version so it's compiled with mforce-l32 and won't crash
++static size_t strlen_safe(const char *s) {
++  size_t len = 0;
++  while(*s++) len++;
++  return len;
++}
++
++
+ /* Return the FDE pointer encoding from the CIE.  */
+ /* ??? This is a subset of extract_cie_info from unwind-dw2.c.  */
+ 
+@@ -297,7 +306,7 @@ get_cie_encoding (const struct dwarf_cie *cie)
+   _sleb128_t stmp;
+ 
+   aug = cie->augmentation;
+-  p = aug + strlen ((const char *)aug) + 1; /* Skip the augmentation string.  */
++  p = aug + strlen_safe ((const char *)aug) + 1; /* Skip the augmentation string.  */
+   if (__builtin_expect (cie->version >= 4, 0))
+     {
+       if (p[0] != sizeof (void *) || p[1] != 0)
+diff --git a/libgcc/unwind-dw2.c b/libgcc/unwind-dw2.c
+index e6130af2fb5..f2bd0ba454e 100644
+--- a/libgcc/unwind-dw2.c
++++ b/libgcc/unwind-dw2.c
+@@ -410,6 +410,13 @@ _Unwind_GetTextRelBase (struct _Unwind_Context *context)
+ 
+ #include "md-unwind-support.h"
+ 
++// Write own version so it's compiled with mforce-l32 and won't crash
++static size_t strlen_safe(const char *s) {
++  size_t len = 0;
++  while(*s++) len++;
++  return len;
++}
++
+ /* Extract any interesting information from the CIE for the translation
+    unit F belongs to.  Return a pointer to the byte after the augmentation,
+    or NULL if we encountered an undecipherable augmentation.  */
+@@ -419,7 +426,7 @@ extract_cie_info (const struct dwarf_cie *cie, struct _Unwind_Context *context,
+ 		  _Unwind_FrameState *fs)
+ {
+   const unsigned char *aug = cie->augmentation;
+-  const unsigned char *p = aug + strlen ((const char *)aug) + 1;
++  const unsigned char *p = aug + strlen_safe ((const char *)aug) + 1;
+   const unsigned char *ret = NULL;
+   _uleb128_t utmp;
+   _sleb128_t stmp;

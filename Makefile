@@ -32,6 +32,7 @@ ifeq ($(GCC),4.8)
     GCC_BRANCH    := call0-4.8.2
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
+    BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
     BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),4.9)
@@ -39,6 +40,7 @@ else ifeq ($(GCC),4.9)
     GCC_BRANCH    := call0-4.9.2
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
+    BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
     BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),5.2)
@@ -46,6 +48,7 @@ else ifeq ($(GCC),5.2)
     GCC_BRANCH    := xtensa-ctng-esp-5.2.0
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
+    BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
     BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),7.2)
@@ -53,6 +56,7 @@ else ifeq ($(GCC),7.2)
     GCC_BRANCH    := xtensa-ctng-7.2.0
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
+    BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
     BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC), 9.1)
@@ -60,6 +64,15 @@ else ifeq ($(GCC), 9.1)
     GCC_BRANCH    := gcc-9_1_0-release
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 9.2)
+    ISL           := 0.18
+    GCC_BRANCH    := gcc-9_2_0-release
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else
@@ -303,6 +316,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.checkout: .stage.prepgit
 	echo STAGE: $@
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
+	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/mkspiffs && git reset --hard && git submodule deinit --all && git clean -f -d && git checkout $(MKSPIFFS_BRANCH) && git submodule init && git submodule update) >> $(call log,$@) 2>&1
 	touch $@
 

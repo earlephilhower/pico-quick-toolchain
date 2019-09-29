@@ -1,0 +1,124 @@
+diff --git a/libstdc++-v3/libsupc++/tinfo.cc b/libstdc++-v3/libsupc++/tinfo.cc
+index f10e270b6ae..3fcac0469a4 100644
+--- a/libstdc++-v3/libsupc++/tinfo.cc
++++ b/libstdc++-v3/libsupc++/tinfo.cc
+@@ -26,6 +26,22 @@
+ #include <cstddef>
+ #include "tinfo.h"
+ 
++    // Write own version so it's compiled with mforce-l32 and won't crash
++static int strcmp_safe(const char *p1, const char *p2) {
++      const unsigned char *s1 = (const unsigned char *) p1;
++      const unsigned char *s2 = (const unsigned char *) p2;
++      unsigned char c1, c2;
++      do
++        {
++          c1 = (unsigned char) *s1++;
++          c2 = (unsigned char) *s2++;
++          if (c1 == '\0')
++            return c1 - c2;
++        }
++      while (c1 == c2);
++       return c1 - c2;
++    }
++
+ std::type_info::
+ ~type_info ()
+ { }
+@@ -43,7 +59,7 @@ operator== (const std::type_info& arg) const _GLIBCXX_NOEXCEPT
+      take care to look at __name rather than name() when looking for
+      the "pointer" prefix.  */
+   return (&arg == this)
+-    || (__name[0] != '*' && (__builtin_strcmp (name (), arg.name ()) == 0));
++    || (__name[0] != '*' && (strcmp_safe (name (), arg.name ()) == 0));
+ #endif
+ }
+ 
+diff --git a/libstdc++-v3/libsupc++/tinfo2.cc b/libstdc++-v3/libsupc++/tinfo2.cc
+index 533824ca032..545df820fb6 100644
+--- a/libstdc++-v3/libsupc++/tinfo2.cc
++++ b/libstdc++-v3/libsupc++/tinfo2.cc
+@@ -29,6 +29,21 @@
+ using std::type_info;
+ 
+ #if !__GXX_TYPEINFO_EQUALITY_INLINE
++    // Write own version so it's compiled with mforce-l32 and won't crash
++static int strcmp_safe(const char *p1, const char *p2) {
++      const unsigned char *s1 = (const unsigned char *) p1;
++      const unsigned char *s2 = (const unsigned char *) p2;
++      unsigned char c1, c2;
++      do
++        {
++          c1 = (unsigned char) *s1++;
++          c2 = (unsigned char) *s2++;
++          if (c1 == '\0')
++            return c1 - c2;
++        }
++      while (c1 == c2);
++       return c1 - c2;
++    }
+ 
+ bool
+ type_info::before (const type_info &arg) const _GLIBCXX_NOEXCEPT
+@@ -37,7 +52,7 @@ type_info::before (const type_info &arg) const _GLIBCXX_NOEXCEPT
+   return name () < arg.name ();
+ #else
+   return (name ()[0] == '*') ? name () < arg.name ()
+-    :  __builtin_strcmp (name (), arg.name ()) < 0;
++    :  strcmp_safe (name (), arg.name ()) < 0;
+ #endif
+ }
+ 
+diff --git a/libstdc++-v3/libsupc++/typeinfo b/libstdc++-v3/libsupc++/typeinfo
+index 0ed47fcdfb6..345c95b3270 100644
+--- a/libstdc++-v3/libsupc++/typeinfo
++++ b/libstdc++-v3/libsupc++/typeinfo
+@@ -50,7 +50,7 @@ namespace __cxxabiv1
+ // must be compared), and whether comparison is to be implemented inline or
+ // not.  We used to do inline pointer comparison by default if weak symbols
+ // are available, but even with weak symbols sometimes names are not merged
+-// when objects are loaded with RTLD_LOCAL, so now we always use strcmp by
++// when objects are loaded with RTLD_LOCAL, so now we always use p2 by
+ // default.  For ABI compatibility, we do the strcmp inline if weak symbols
+ // are available, and out-of-line if not.  Out-of-line pointer comparison
+ // is used where the object files are to be portable to multiple systems,
+@@ -115,13 +115,13 @@ namespace std
+     bool before(const type_info& __arg) const _GLIBCXX_NOEXCEPT
+     { return (__name[0] == '*' && __arg.__name[0] == '*')
+ 	? __name < __arg.__name
+-	: __builtin_strcmp (__name, __arg.__name) < 0; }
++	: strcmp_safe (__name, __arg.__name) < 0; }
+ 
+     bool operator==(const type_info& __arg) const _GLIBCXX_NOEXCEPT
+     {
+       return ((__name == __arg.__name)
+ 	      || (__name[0] != '*' &&
+-		  __builtin_strcmp (__name, __arg.__name) == 0));
++		  strcmp_safe (__name, __arg.__name) == 0));
+     }
+   #else
+     // On some targets we can rely on type_info's NTBS being unique,
+@@ -176,6 +176,23 @@ namespace std
+     /// Assigning type_info is not supported.
+     type_info& operator=(const type_info&);
+     type_info(const type_info&);
++
++    // Write own version so it's compiled with mforce-l32 and won't crash
++    static int strcmp_safe(const char *p1, const char *p2) {
++      const unsigned char *s1 = (const unsigned char *) p1;
++      const unsigned char *s2 = (const unsigned char *) p2;
++      unsigned char c1, c2;
++      do
++        {
++          c1 = (unsigned char) *s1++;
++          c2 = (unsigned char) *s2++;
++          if (c1 == '\0')
++            return c1 - c2;
++        }
++      while (c1 == c2);
++       return c1 - c2;
++    }
++
+   };
+ 
+   /**
