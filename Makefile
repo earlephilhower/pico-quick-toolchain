@@ -16,13 +16,13 @@ REPODIR  := $(PWD)/repo
 PATCHDIR := $(PWD)/patches
 STAMP    := $(shell date +%s)
 
-# For uploading, the GH user and password
+# For uploading, the GH user and PAT
 GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
-GHPASS := $(if $(GHPASS),$(GHPASS),$(shell cat .ghpass))
+GHTOKEN := $(if $(GHTOKEN),$(GHTOKEN),$(shell cat .ghtoken))
 ifeq ($(GHUSER),)
     $(error Need to specify GH username on the command line "GHUSER=xxxx" or in .ghuser)
-else ifeq ($(GHPASS),)
-    $(error Need to specify GH password on the command line "GHPASS=xxxx" or in .gphass)
+else ifeq ($(GHTOKEN),)
+    $(error Need to specify GH PAT on the command line "GHTOKEN=xxxx" or in .ghtoken)
 endif
 
 # Depending on the GCC version get proper branch and support libs
@@ -543,11 +543,11 @@ upload: .stage.LINUX.upload
 .stage.LINUX.upload:
 	echo STAGE: $@
 	cp -f blobs/* .
-	rm -rf ./venv; mkdir ./venv
-	virtualenv --no-site-packages venv
+	rm -rf ./venv
+	python3 -m venv ./venv
 	cd ./venv; . bin/activate; \
-	    pip install -q pygithub ; \
-	    python ../upload_release.py --user "$(GHUSER)" --pw "$(GHPASS)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/esp8266/Arduino for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
+	    pip3 install -q pygithub ; \
+	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/esp8266/Arduino for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
 	rm -rf ./venv
 
 dumpvars:
