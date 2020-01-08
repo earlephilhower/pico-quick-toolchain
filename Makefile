@@ -32,7 +32,7 @@ ifeq ($(GCC),4.8)
     GCC_BRANCH    := call0-4.8.2
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
-    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_BRANCH := master
     BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
     BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),4.9)
@@ -40,7 +40,7 @@ else ifeq ($(GCC),4.9)
     GCC_BRANCH    := call0-4.9.2
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
-    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_BRANCH := master
     BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
     BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),5.2)
@@ -48,7 +48,7 @@ else ifeq ($(GCC),5.2)
     GCC_BRANCH    := xtensa-ctng-esp-5.2.0
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
-    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_BRANCH := master
     BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
     BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC),7.2)
@@ -56,7 +56,7 @@ else ifeq ($(GCC),7.2)
     GCC_BRANCH    := xtensa-ctng-7.2.0
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
-    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_BRANCH := master
     BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
     BINUTILS_DIR  := binutils-gdb
 else ifeq ($(GCC), 9.1)
