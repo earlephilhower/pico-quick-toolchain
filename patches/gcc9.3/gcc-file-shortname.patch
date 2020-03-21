@@ -1,0 +1,22 @@
+diff --git a/libcpp/macro.c b/libcpp/macro.c
+index 6d46027e4ea..0390b4c0414 100644
+--- a/libcpp/macro.c
++++ b/libcpp/macro.c
+@@ -275,9 +275,16 @@ _cpp_builtin_macro_text (cpp_reader *pfile, cpp_hashnode *node)
+ 	const char *name;
+ 	uchar *buf;
+ 	
+-	if (node->value.builtin == BT_FILE)
++	if (node->value.builtin == BT_FILE) {
+ 	  name = linemap_get_expansion_filename (pfile->line_table,
+ 						 pfile->line_table->highest_line);
++	  const char *shortname = NULL;
++#if defined (_WIN32)
++	  shortname = strrchr(name, '\\');
++#endif
++	  if (!shortname) shortname = strrchr(name, '/');
++	  if (shortname) name = shortname + 1;
++	}
+ 	else
+ 	  {
+ 	    name = _cpp_get_file_name (pfile->main_file);

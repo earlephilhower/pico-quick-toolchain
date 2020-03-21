@@ -75,6 +75,14 @@ else ifeq ($(GCC), 9.2)
     BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 9.3)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-9.3.0
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
 else
     $(error Need to specify a supported GCC version "GCC={4.8, 4.9, 5.2, 7.2, 9.1}")
 endif

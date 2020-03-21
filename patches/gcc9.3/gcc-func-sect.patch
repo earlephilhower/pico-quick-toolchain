@@ -1,0 +1,17 @@
+Fix __func__, __FUNCTION__ and __PRETTY_FUNCTION__ section allocations so they can be moved into irom0.text.
+Restores changed behaviour from GCC commit c3a961ad27fc21a3af847693820fa9c04dd00940.
+
+diff --git a/gcc/cp/decl.c b/gcc/cp/decl.c
+index b57ded813b6..8566fb4cd0f 100644
+--- a/gcc/cp/decl.c
++++ b/gcc/cp/decl.c
+@@ -4495,8 +4495,7 @@ cp_make_fname_decl (location_t loc, tree id, int type_dep)
+ 
+   if (init)
+     {
+-      SET_DECL_VALUE_EXPR (decl, init);
+-      DECL_HAS_VALUE_EXPR_P (decl) = 1;
++      DECL_INITIAL (decl) = init;
+       /* For decl_constant_var_p.  */
+       DECL_INITIALIZED_BY_CONSTANT_EXPRESSION_P (decl) = 1;
+     }
