@@ -1,0 +1,35 @@
+diff --git a/libgcc/Makefile.in b/libgcc/Makefile.in
+index ea390a5bbea..9268851c44a 100644
+--- a/libgcc/Makefile.in
++++ b/libgcc/Makefile.in
+@@ -851,7 +851,7 @@ endif
+ # libgcc_eh.a, only LIB2ADDEH matters.  If we do, only LIB2ADDEHSTATIC and
+ # LIB2ADDEHSHARED matter.  (Usually all three are identical.)
+ 
+-c_flags := -fexceptions
++c_flags := -fexceptions -mforce-l32
+ 
+ ifeq ($(enable_shared),yes)
+ 
+@@ -874,7 +874,7 @@ endif
+ # Build LIBUNWIND. Use -fno-exceptions so that the unwind library does
+ # not generate calls to __gcc_personality_v0.
+ 
+-c_flags := -fno-exceptions
++c_flags := -fno-exceptions -mforce-l32
+ 
+ libunwind-objects += $(addsuffix $(objext),$(basename $(notdir $(LIBUNWIND))))
+ 
+diff --git a/libstdc++-v3/libsupc++/Makefile.in b/libstdc++-v3/libsupc++/Makefile.in
+index 5d8ac5ca0ba..02a7295ed13 100644
+--- a/libstdc++-v3/libsupc++/Makefile.in
++++ b/libstdc++-v3/libsupc++/Makefile.in
+@@ -466,7 +466,7 @@ toolexeclibdir = $(glibcxx_toolexeclibdir)
+ # These bits are all figured out from configure.  Look in acinclude.m4
+ # or configure.ac to see how they are set.  See GLIBCXX_EXPORT_FLAGS.
+ CONFIG_CXXFLAGS = \
+-	$(SECTION_FLAGS) $(HWCAP_CFLAGS) -frandom-seed=$@
++	$(SECTION_FLAGS) $(HWCAP_CFLAGS) -frandom-seed=$@ -mforce-l32
+ 
+ WARN_CXXFLAGS = \
+ 	$(WARN_FLAGS) $(WERROR_FLAG) -fdiagnostics-show-location=once 

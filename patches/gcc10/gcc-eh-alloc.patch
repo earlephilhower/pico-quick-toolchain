@@ -1,0 +1,18 @@
+diff --git a/libstdc++-v3/libsupc++/eh_alloc.cc b/libstdc++-v3/libsupc++/eh_alloc.cc
+index 005c28dbb11..36e3d8c3bb2 100644
+--- a/libstdc++-v3/libsupc++/eh_alloc.cc
++++ b/libstdc++-v3/libsupc++/eh_alloc.cc
+@@ -73,6 +73,13 @@ using namespace __cxxabiv1;
+ # define EMERGENCY_OBJ_COUNT	4
+ #endif
+ 
++// ESP8266 has tiny RAM
++#undef EMERGENCY_OBJ_COUNT
++#undef EMERGENCY_OBJ_SIZE
++#define EMERGENCY_OBJ_SIZE     48
++#define EMERGENCY_OBJ_COUNT    4
++
++
+ namespace __gnu_cxx
+ {
+   void __freeres();
