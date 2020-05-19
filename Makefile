@@ -324,7 +324,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	        gz)  (cd $(REPODIR)/$(GCC_DIR); tar xfz ../$${archive});; \
 	        bz2) (cd $(REPODIR)/$(GCC_DIR); tar xfj ../$${archive});; \
 	    esac ; \
-	    (cd $(REPODIR)/$(GCC_DIR); rm -f $${base}; ln -s $${name} $${base}) \
+	    (cd $(REPODIR)/$(GCC_DIR); rm -rf $${base}; ln -s $${name} $${base}) \
 	done >> $(call log,$@) 2>&1
 	touch $@
 

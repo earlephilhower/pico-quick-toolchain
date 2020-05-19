@@ -148,9 +148,9 @@ index 362e5ff3c1f..e59201f226c 100644
    ""
    "@
     extui\t%0, %1, 0, 16
--   l16ui\t%0, %1"
+-   %v1l16ui\t%0, %1"
 -  [(set_attr "type"	"arith,load")
-+   l16ui\t%0, %1
++   %v1l16ui\t%0, %1
 +   ssa8l\t%B1 ; srli\t%0, %B1, 2 ; slli\t%0, %0, 2 ; l32i\t%0, %0, 0 ; srl\t%0, %0 ; extui\t%0, %0, 0, 16"
 +  [(set_attr "type"	"arith,load,load")
     (set_attr "mode"	"SI")
@@ -165,7 +165,7 @@ index 362e5ff3c1f..e59201f226c 100644
    ""
    "@
     extui\t%0, %1, 0, 8
--   l8ui\t%0, %1"
+-   %v1l8ui\t%0, %1"
 -  [(set_attr "type"	"arith,load")
 +   l8ui\t%0, %1
 +   ssa8l\t%B1 ; srli\t%0, %B1, 2 ; slli\t%0, %0, 2 ; l32i\t%0, %0, 0 ; srl\t%0, %0 ; extui\t%0, %0, 0, 8"
@@ -188,7 +188,7 @@ index 362e5ff3c1f..e59201f226c 100644
    "@
     sext\t%0, %1, 15
 +   slli\t%0, %1, 16 ; srai\t%0, %0, 16
-    l16si\t%0, %1"
+    %v1l16si\t%0, %1"
 -  [(set_attr "type"	"arith,load")
 +  [(set_attr "type"	"arith,arith,load")
     (set_attr "mode"	"SI")
