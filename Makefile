@@ -14,7 +14,7 @@ GCC     := $(if $(GCC),$(GCC),4.8)
 PWD      := $(shell pwd)
 REPODIR  := $(PWD)/repo
 PATCHDIR := $(PWD)/patches
-STAMP    := $(shell date +%s)
+STAMP    := $(shell date +%y%m%d)
 
 # For uploading, the GH user and PAT
 GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
@@ -30,6 +30,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 ifeq ($(GCC),4.8)
     ISL           := 0.12.2
     GCC_BRANCH    := call0-4.8.2
+    GCC_PKGREL    := 00482
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
     BINUTILS_BRANCH := master
@@ -38,6 +39,7 @@ ifeq ($(GCC),4.8)
 else ifeq ($(GCC),4.9)
     ISL           := 0.12.2
     GCC_BRANCH    := call0-4.9.2
+    GCC_PKGREL    := 00492
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
     BINUTILS_BRANCH := master
@@ -46,6 +48,7 @@ else ifeq ($(GCC),4.9)
 else ifeq ($(GCC),5.2)
     ISL           := 0.12.2
     GCC_BRANCH    := xtensa-ctng-esp-5.2.0
+    GCC_PKGREL    := 00520
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
     BINUTILS_BRANCH := master
@@ -54,6 +57,7 @@ else ifeq ($(GCC),5.2)
 else ifeq ($(GCC),7.2)
     ISL           := 0.16.1
     GCC_BRANCH    := xtensa-ctng-7.2.0
+    GCC_PKGREL    := 00720
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
     BINUTILS_BRANCH := master
@@ -62,6 +66,7 @@ else ifeq ($(GCC),7.2)
 else ifeq ($(GCC), 9.1)
     ISL           := 0.18
     GCC_BRANCH    := gcc-9_1_0-release
+    GCC_PKGREL    := 00910
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -70,6 +75,7 @@ else ifeq ($(GCC), 9.1)
 else ifeq ($(GCC), 9.2)
     ISL           := 0.18
     GCC_BRANCH    := gcc-9_2_0-release
+    GCC_PKGREL    := 00920
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -78,6 +84,7 @@ else ifeq ($(GCC), 9.2)
 else ifeq ($(GCC), 9.3)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-9.3.0
+    GCC_PKGREL    := 00930
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -86,6 +93,7 @@ else ifeq ($(GCC), 9.3)
 else ifeq ($(GCC), 10.1)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-10.1.0
+    GCC_PKGREL    := 01010
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -111,6 +119,7 @@ LINUX_BFLGS  := LDFLAGS=-static
 LINUX_TARCMD := tar
 LINUX_TAROPT := zcf
 LINUX_TAREXT := tar.gz
+LINUX_ASYS   := linux_x86_64
 
 LINUX32_HOST   := i686-linux-gnu
 LINUX32_AHOST  := i686-pc-linux-gnu
@@ -121,6 +130,7 @@ LINUX32_BFLGS  := LDFLAGS=-static
 LINUX32_TARCMD := tar
 LINUX32_TAROPT := zcf
 LINUX32_TAREXT := tar.gz
+LINUX32_ASYS   := linux_i686
 
 WIN32_HOST   := i686-w64-mingw32
 WIN32_AHOST  := i686-mingw32
@@ -131,6 +141,7 @@ WIN32_BFLGS  := LDFLAGS=-static
 WIN32_TARCMD := zip
 WIN32_TAROPT := -rq
 WIN32_TAREXT := zip
+WIN32_ASYS   := windows_x86
 
 WIN64_HOST   := x86_64-w64-mingw32
 WIN64_AHOST  := x86_64-mingw32
@@ -141,6 +152,7 @@ WIN64_BFLGS  := LDFLAGS=-static
 WIN64_TARCMD := zip
 WIN64_TAROPT := -rq
 WIN64_TAREXT := zip
+WIN64_ASYS   := windows_amd64
 
 OSX_HOST   := x86_64-apple-darwin14
 OSX_AHOST  := x86_64-apple-darwin
@@ -151,6 +163,7 @@ OSX_BFLGS  :=
 OSX_TARCMD := tar
 OSX_TAROPT := zcf
 OSX_TAREXT := tar.gz
+OSX_ASYS   := darwin_x86_64
 
 ARM64_HOST   := aarch64-linux-gnu
 ARM64_AHOST  := aarch64-linux-gnu
@@ -161,6 +174,7 @@ ARM64_BFLGS  := LDFLAGS=-static
 ARM64_TARCMD := tar
 ARM64_TAROPT := zcf
 ARM64_TAREXT := tar.gz
+ARM64_ASYS   := linux_aarch64
 
 RPI_HOST   := arm-linux-gnueabihf
 RPI_AHOST  := arm-linux-gnueabihf
@@ -171,6 +185,7 @@ RPI_BFLGS  := LDFLAGS=-static
 RPI_TARCMD := tar
 RPI_TAROPT := zcf
 RPI_TAREXT := tar.gz
+RPI_ASYS   := linux_armv6l
 
 # Call with $@ to get the appropriate variable for this architecture
 host   = $($(call arch,$(1))_HOST)
@@ -183,6 +198,9 @@ tarcmd = $($(call arch,$(1))_TARCMD)
 taropt = $($(call arch,$(1))_TAROPT)
 tarext = $($(call arch,$(1))_TAREXT)
 log    = log$(1)
+
+# For package.json
+asys   = $($(call arch,$(1))_ASYS)
 
 # The build directory per architecture
 arena = $(PWD)/arena$(call ext,$(1))
@@ -249,6 +267,15 @@ setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
          export LDFLAGS="-L$(call install,$(1))/lib"; \
          export PATH="$(call install,.stage.LINUX.stage)/bin:$${PATH}"; \
          export LD_LIBRARY_PATH="$(call install,.stage.LINUX.stage)/lib:$${LD_LIBRARY_PATH}"
+
+# Creates a package.json file for PIO confumption
+makepackagejson = ( echo '{' && \
+                    echo '   "description": "'$${pkgdesc}'",' && \
+                    echo '   "name": "'$${pkgname}'",' && \
+                    echo '   "system": [ "'$(call asys,$(1))'" ],' && \
+                    echo '   "url": "https://github.com/'$(GHUSER)'/esp-quick-toolchain",' && \
+                    echo '   "version": "5.'$(GCC_PKGREL)'.'$(STAMP)'"' && \
+                    echo '}' ) > package.json
 
 # Generates a JSON fragment for an uploaded release artifact
 makejson = tarballsize=$$(stat -c%s $${tarball}); \
@@ -459,6 +486,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.$(call arch,$@) > $(call log,$@) 2>&1
 	mkdir -p pkg.$(call arch,$@) >> $(call log,$@) 2>&1
 	cp -a $(call install,$@) pkg.$(call arch,$@)/xtensa-lx106-elf >> $(call log,$@) 2>&1
+	(cd pkg.$(call arch,$@)/xtensa-lx106-elf; $(call setenv,$@); pkgdesc="xtensa-gcc"; pkgname="toolchain-xtensa"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).xtensa-lx106-elf-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
@@ -475,6 +503,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
             make -j1 clean mkspiffs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266" CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1") >> $(call log,$@) 2>&1
 	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.mkspiffs.$(call arch,$@)/mkspiffs >> $(call log,$@) 2>&1
+	(cd pkg.mkspiffs.$(call arch,$@)/mkspiffs; $(call setenv,$@); pkgdesc="mkspiffs-utility"; pkgname="mkspiffs"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/mkspiffs/mkspiffs$(call exe,$@) pkg.mkspiffs.$(call arch,$@)/mkspiffs/. >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).mkspiffs-$$(cd $(REPODIR)/mkspiffs && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
@@ -492,6 +521,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
             make -j1 clean mklittlefs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266") >> $(call log,$@) 2>&1
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.mklittlefs.$(call arch,$@)/mklittlefs >> $(call log,$@) 2>&1
+	(cd pkg.mklittlefs.$(call arch,$@)/mklittlefs; $(call setenv,$@); pkgdesc="littlefs-utility"; pkgname="mklittlefs"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/mklittlefs/mklittlefs$(call exe,$@) pkg.mklittlefs.$(call arch,$@)/mklittlefs/. >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).mklittlefs-$$(cd $(REPODIR)/mklittlefs && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.mklittlefs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mklittlefs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
