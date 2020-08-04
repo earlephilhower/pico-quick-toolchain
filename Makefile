@@ -30,7 +30,7 @@ GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 ifeq ($(GCC),4.8)
     ISL           := 0.12.2
     GCC_BRANCH    := call0-4.8.2
-    GCC_PKGREL    := 00482
+    GCC_PKGREL    := 40802
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
     BINUTILS_BRANCH := master
@@ -39,7 +39,7 @@ ifeq ($(GCC),4.8)
 else ifeq ($(GCC),4.9)
     ISL           := 0.12.2
     GCC_BRANCH    := call0-4.9.2
-    GCC_PKGREL    := 00492
+    GCC_PKGREL    := 40902
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
     BINUTILS_BRANCH := master
@@ -48,7 +48,7 @@ else ifeq ($(GCC),4.9)
 else ifeq ($(GCC),5.2)
     ISL           := 0.12.2
     GCC_BRANCH    := xtensa-ctng-esp-5.2.0
-    GCC_PKGREL    := 00520
+    GCC_PKGREL    := 50200
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
     BINUTILS_BRANCH := master
@@ -57,7 +57,7 @@ else ifeq ($(GCC),5.2)
 else ifeq ($(GCC),7.2)
     ISL           := 0.16.1
     GCC_BRANCH    := xtensa-ctng-7.2.0
-    GCC_PKGREL    := 00720
+    GCC_PKGREL    := 70200
     GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
     GCC_DIR       := gcc
     BINUTILS_BRANCH := master
@@ -66,7 +66,7 @@ else ifeq ($(GCC),7.2)
 else ifeq ($(GCC), 9.1)
     ISL           := 0.18
     GCC_BRANCH    := gcc-9_1_0-release
-    GCC_PKGREL    := 00910
+    GCC_PKGREL    := 90100
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -75,7 +75,7 @@ else ifeq ($(GCC), 9.1)
 else ifeq ($(GCC), 9.2)
     ISL           := 0.18
     GCC_BRANCH    := gcc-9_2_0-release
-    GCC_PKGREL    := 00920
+    GCC_PKGREL    := 90200
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -84,7 +84,7 @@ else ifeq ($(GCC), 9.2)
 else ifeq ($(GCC), 9.3)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-9.3.0
-    GCC_PKGREL    := 00930
+    GCC_PKGREL    := 90300
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -93,7 +93,7 @@ else ifeq ($(GCC), 9.3)
 else ifeq ($(GCC), 10.1)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-10.1.0
-    GCC_PKGREL    := 01010
+    GCC_PKGREL    := 100100
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -268,7 +268,10 @@ setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
          export PATH="$(call install,.stage.LINUX.stage)/bin:$${PATH}"; \
          export LD_LIBRARY_PATH="$(call install,.stage.LINUX.stage)/lib:$${LD_LIBRARY_PATH}"
 
-# Creates a package.json file for PIO confumption
+# Creates a package.json file for PlatformIO
+# Package version **must** conform with Semantic Versioning specicfication:
+# - https://github.com/platformio/platformio-core/issues/3612
+# - https://semver.org/
 makepackagejson = ( echo '{' && \
                     echo '   "description": "'$${pkgdesc}'",' && \
                     echo '   "name": "'$${pkgname}'",' && \
