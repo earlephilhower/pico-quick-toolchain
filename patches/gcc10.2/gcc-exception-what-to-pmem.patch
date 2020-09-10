@@ -1,0 +1,746 @@
+diff --git a/libstdc++-v3/include/bits/basic_string.h b/libstdc++-v3/include/bits/basic_string.h
+index b6693c440c0..f82b8487875 100644
+--- a/libstdc++-v3/include/bits/basic_string.h
++++ b/libstdc++-v3/include/bits/basic_string.h
+@@ -49,6 +49,8 @@
+ #endif
+ 
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -4153,7 +4155,7 @@ _GLIBCXX_END_NAMESPACE_CXX11
+       basic_string&
+       assign(const basic_string& __str, size_type __pos, size_type __n)
+       { return this->assign(__str._M_data()
+-			    + __str._M_check(__pos, "basic_string::assign"),
++			    + __str._M_check(__pos, __EXCSTR("basic_string::assign")),
+ 			    __str._M_limit(__pos, __n)); }
+ 
+       /**
+@@ -4337,7 +4339,7 @@ _GLIBCXX_END_NAMESPACE_CXX11
+       insert(size_type __pos1, const basic_string& __str,
+ 	     size_type __pos2, size_type __n)
+       { return this->insert(__pos1, __str._M_data()
+-			    + __str._M_check(__pos2, "basic_string::insert"),
++			    + __str._M_check(__pos2, __EXCSTR("basic_string::insert")),
+ 			    __str._M_limit(__pos2, __n)); }
+ 
+       /**
+@@ -4399,7 +4401,7 @@ _GLIBCXX_END_NAMESPACE_CXX11
+       */
+       basic_string&
+       insert(size_type __pos, size_type __n, _CharT __c)
+-      { return _M_replace_aux(_M_check(__pos, "basic_string::insert"),
++      { return _M_replace_aux(_M_check(__pos, __EXCSTR("basic_string::insert")),
+ 			      size_type(0), __n, __c); }
+ 
+       /**
+@@ -4475,7 +4477,7 @@ _GLIBCXX_END_NAMESPACE_CXX11
+       basic_string&
+       erase(size_type __pos = 0, size_type __n = npos)
+       { 
+-	_M_mutate(_M_check(__pos, "basic_string::erase"),
++	_M_mutate(_M_check(__pos, __EXCSTR("basic_string::erase")),
+ 		  _M_limit(__pos, __n), size_type(0));
+ 	return *this;
+       }
+@@ -4568,7 +4570,7 @@ _GLIBCXX_END_NAMESPACE_CXX11
+       replace(size_type __pos1, size_type __n1, const basic_string& __str,
+ 	      size_type __pos2, size_type __n2)
+       { return this->replace(__pos1, __n1, __str._M_data()
+-			     + __str._M_check(__pos2, "basic_string::replace"),
++			     + __str._M_check(__pos2, __EXCSTR("basic_string::replace")),
+ 			     __str._M_limit(__pos2, __n2)); }
+ 
+       /**
+@@ -4635,7 +4637,7 @@ _GLIBCXX_END_NAMESPACE_CXX11
+       */
+       basic_string&
+       replace(size_type __pos, size_type __n1, size_type __n2, _CharT __c)
+-      { return _M_replace_aux(_M_check(__pos, "basic_string::replace"),
++      { return _M_replace_aux(_M_check(__pos, __EXCSTR("basic_string::replace")),
+ 			      _M_limit(__pos, __n1), __n2, __c); }
+ 
+       /**
+@@ -5463,7 +5465,7 @@ _GLIBCXX_END_NAMESPACE_CXX11
+       basic_string
+       substr(size_type __pos = 0, size_type __n = npos) const
+       { return basic_string(*this,
+-			    _M_check(__pos, "basic_string::substr"), __n); }
++			    _M_check(__pos, __EXCSTR("basic_string::substr")), __n); }
+ 
+       /**
+        *  @brief  Compare to a string.
+@@ -6501,4 +6503,6 @@ _GLIBCXX_END_NAMESPACE_VERSION
+ 
+ #endif // C++11
+ 
++#undef __EXCSTR
++
+ #endif /* _BASIC_STRING_H */
+diff --git a/libstdc++-v3/include/bits/basic_string.tcc b/libstdc++-v3/include/bits/basic_string.tcc
+index 41b7fa196b0..f02acf6b688 100644
+--- a/libstdc++-v3/include/bits/basic_string.tcc
++++ b/libstdc++-v3/include/bits/basic_string.tcc
+@@ -41,6 +41,8 @@
+ 
+ #pragma GCC system_header
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ #include <bits/cxxabi_forced.h>
+ 
+ namespace std _GLIBCXX_VISIBILITY(default)
+@@ -570,7 +572,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ #endif
+ 	// NB: Not required, but considered best practice.
+ 	if (__gnu_cxx::__is_null_pointer(__beg) && __beg != __end)
+-	  __throw_logic_error(__N("basic_string::_S_construct null not valid"));
++	  __throw_logic_error(__EXCSTR(__N("basic_string::_S_construct null not valid")));
+ 
+ 	const size_type __dnew = static_cast<size_type>(std::distance(__beg,
+ 								      __end));
+@@ -634,7 +636,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     basic_string(const basic_string& __str, size_type __pos, size_type __n)
+     : _M_dataplus(_S_construct(__str._M_data()
+ 			       + __str._M_check(__pos,
+-						"basic_string::basic_string"),
++						__EXCSTR("basic_string::basic_string")),
+ 			       __str._M_data() + __str._M_limit(__pos, __n)
+ 			       + __pos, _Alloc()), _Alloc())
+     { }
+@@ -645,7 +647,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ 		 size_type __n, const _Alloc& __a)
+     : _M_dataplus(_S_construct(__str._M_data()
+ 			       + __str._M_check(__pos,
+-						"basic_string::basic_string"),
++						__EXCSTR("basic_string::basic_string")),
+ 			       __str._M_data() + __str._M_limit(__pos, __n)
+ 			       + __pos, __a), __a)
+     { }
+@@ -709,7 +711,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     assign(const _CharT* __s, size_type __n)
+     {
+       __glibcxx_requires_string_len(__s, __n);
+-      _M_check_length(this->size(), __n, "basic_string::assign");
++      _M_check_length(this->size(), __n, __EXCSTR("basic_string::assign"));
+       if (_M_disjunct(__s) || _M_rep()->_M_is_shared())
+ 	return _M_replace_safe(size_type(0), this->size(), __s, __n);
+       else
+@@ -732,7 +734,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     {
+       if (__n)
+ 	{
+-	  _M_check_length(size_type(0), __n, "basic_string::append");	  
++	  _M_check_length(size_type(0), __n, __EXCSTR("basic_string::append"));	  
+ 	  const size_type __len = __n + this->size();
+ 	  if (__len > this->capacity() || _M_rep()->_M_is_shared())
+ 	    this->reserve(__len);
+@@ -750,7 +752,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+       __glibcxx_requires_string_len(__s, __n);
+       if (__n)
+ 	{
+-	  _M_check_length(size_type(0), __n, "basic_string::append");
++	  _M_check_length(size_type(0), __n, __EXCSTR("basic_string::append"));
+ 	  const size_type __len = __n + this->size();
+ 	  if (__len > this->capacity() || _M_rep()->_M_is_shared())
+ 	    {
+@@ -791,7 +793,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     basic_string<_CharT, _Traits, _Alloc>::
+     append(const basic_string& __str, size_type __pos, size_type __n)
+     {
+-      __str._M_check(__pos, "basic_string::append");
++      __str._M_check(__pos, __EXCSTR("basic_string::append"));
+       __n = __str._M_limit(__pos, __n);
+       if (__n)
+ 	{
+@@ -810,8 +812,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+      insert(size_type __pos, const _CharT* __s, size_type __n)
+      {
+        __glibcxx_requires_string_len(__s, __n);
+-       _M_check(__pos, "basic_string::insert");
+-       _M_check_length(size_type(0), __n, "basic_string::insert");
++       _M_check(__pos, __EXCSTR("basic_string::insert"));
++       _M_check_length(size_type(0), __n, __EXCSTR("basic_string::insert"));
+        if (_M_disjunct(__s) || _M_rep()->_M_is_shared())
+          return _M_replace_safe(__pos, size_type(0), __s, __n);
+        else
+@@ -865,9 +867,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ 	     size_type __n2)
+      {
+        __glibcxx_requires_string_len(__s, __n2);
+-       _M_check(__pos, "basic_string::replace");
++       _M_check(__pos, __EXCSTR("basic_string::replace"));
+        __n1 = _M_limit(__pos, __n1);
+-       _M_check_length(__n1, __n2, "basic_string::replace");
++       _M_check_length(__n1, __n2, __EXCSTR("basic_string::replace"));
+        bool __left;
+        if (_M_disjunct(__s) || _M_rep()->_M_is_shared())
+          return _M_replace_safe(__pos, __n1, __s, __n2);
+@@ -999,7 +1001,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+       // _GLIBCXX_RESOLVE_LIB_DEFECTS
+       // 83.  String::npos vs. string::max_size()
+       if (__capacity > _S_max_size)
+-	__throw_length_error(__N("basic_string::_S_create"));
++	__throw_length_error(__EXCSTR(__N("basic_string::_S_create")));
+ 
+       // The standard places no restriction on allocating more memory
+       // than is strictly needed within this layer at the moment or as
+@@ -1090,7 +1092,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     resize(size_type __n, _CharT __c)
+     {
+       const size_type __size = this->size();
+-      _M_check_length(__size, __n, "basic_string::resize");
++      _M_check_length(__size, __n, __EXCSTR("basic_string::resize"));
+       if (__size < __n)
+ 	this->append(__n - __size, __c);
+       else if (__n < __size)
+@@ -1107,7 +1109,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+       {
+ 	const basic_string __s(__k1, __k2);
+ 	const size_type __n1 = __i2 - __i1;
+-	_M_check_length(__n1, __s.size(), "basic_string::_M_replace_dispatch");
++	_M_check_length(__n1, __s.size(), __EXCSTR("basic_string::_M_replace_dispatch"));
+ 	return _M_replace_safe(__i1 - _M_ibegin(), __n1, __s._M_data(),
+ 			       __s.size());
+       }
+@@ -1118,7 +1120,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     _M_replace_aux(size_type __pos1, size_type __n1, size_type __n2,
+ 		   _CharT __c)
+     {
+-      _M_check_length(__n1, __n2, "basic_string::_M_replace_aux");
++      _M_check_length(__n1, __n2, __EXCSTR("basic_string::_M_replace_aux"));
+       _M_mutate(__pos1, __n1, __n2);
+       if (__n2)
+ 	_M_assign(_M_data() + __pos1, __n2, __c);
+@@ -1142,7 +1144,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     basic_string<_CharT, _Traits, _Alloc>::
+     copy(_CharT* __s, size_type __n, size_type __pos) const
+     {
+-      _M_check(__pos, "basic_string::copy");
++      _M_check(__pos, __EXCSTR("basic_string::copy"));
+       __n = _M_limit(__pos, __n);
+       __glibcxx_requires_string_len(__s, __n);
+       if (__n)
+@@ -1384,7 +1386,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     basic_string<_CharT, _Traits, _Alloc>::
+     compare(size_type __pos, size_type __n, const basic_string& __str) const
+     {
+-      _M_check(__pos, "basic_string::compare");
++      _M_check(__pos, __EXCSTR("basic_string::compare"));
+       __n = _M_limit(__pos, __n);
+       const size_type __osize = __str.size();
+       const size_type __len = std::min(__n, __osize);
+@@ -1400,8 +1402,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     compare(size_type __pos1, size_type __n1, const basic_string& __str,
+ 	    size_type __pos2, size_type __n2) const
+     {
+-      _M_check(__pos1, "basic_string::compare");
+-      __str._M_check(__pos2, "basic_string::compare");
++      _M_check(__pos1, __EXCSTR("basic_string::compare"));
++      __str._M_check(__pos2, __EXCSTR("basic_string::compare"));
+       __n1 = _M_limit(__pos1, __n1);
+       __n2 = __str._M_limit(__pos2, __n2);
+       const size_type __len = std::min(__n1, __n2);
+@@ -1433,7 +1435,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+     compare(size_type __pos, size_type __n1, const _CharT* __s) const
+     {
+       __glibcxx_requires_string(__s);
+-      _M_check(__pos, "basic_string::compare");
++      _M_check(__pos, __EXCSTR("basic_string::compare"));
+       __n1 = _M_limit(__pos, __n1);
+       const size_type __osize = traits_type::length(__s);
+       const size_type __len = std::min(__n1, __osize);
+@@ -1450,7 +1452,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ 	    size_type __n2) const
+     {
+       __glibcxx_requires_string_len(__s, __n2);
+-      _M_check(__pos, "basic_string::compare");
++      _M_check(__pos, __EXCSTR("basic_string::compare"));
+       __n1 = _M_limit(__pos, __n1);
+       const size_type __len = std::min(__n1, __n2);
+       int __r = traits_type::compare(_M_data() + __pos, __s, __len);
+@@ -1632,4 +1634,6 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ _GLIBCXX_END_NAMESPACE_VERSION
+ } // namespace std
+ 
++#undef __EXCSTR
++
+ #endif
+diff --git a/libstdc++-v3/include/bits/deque.tcc b/libstdc++-v3/include/bits/deque.tcc
+index 38a6e82aaef..38d408ade1a 100644
+--- a/libstdc++-v3/include/bits/deque.tcc
++++ b/libstdc++-v3/include/bits/deque.tcc
+@@ -56,6 +56,8 @@
+ #ifndef _DEQUE_TCC
+ #define _DEQUE_TCC 1
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+@@ -868,7 +870,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+     _M_new_elements_at_front(size_type __new_elems)
+     {
+       if (this->max_size() - this->size() < __new_elems)
+-	__throw_length_error(__N("deque::_M_new_elements_at_front"));
++	__throw_length_error(__EXCSTR(__N("deque::_M_new_elements_at_front")));
+ 
+       const size_type __new_nodes = ((__new_elems + _S_buffer_size() - 1)
+ 				     / _S_buffer_size());
+@@ -893,7 +895,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+     _M_new_elements_at_back(size_type __new_elems)
+     {
+       if (this->max_size() - this->size() < __new_elems)
+-	__throw_length_error(__N("deque::_M_new_elements_at_back"));
++	__throw_length_error(__EXCSTR(__N("deque::_M_new_elements_at_back")));
+ 
+       const size_type __new_nodes = ((__new_elems + _S_buffer_size() - 1)
+ 				     / _S_buffer_size());
+@@ -1106,6 +1108,8 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+     }
+ #endif
+ 
++#undef __EXCSTR
++
+ _GLIBCXX_END_NAMESPACE_CONTAINER
+ } // namespace std
+ 
+diff --git a/libstdc++-v3/include/bits/stl_list.h b/libstdc++-v3/include/bits/stl_list.h
+index 0420dbfbba7..d74dc79bb39 100644
+--- a/libstdc++-v3/include/bits/stl_list.h
++++ b/libstdc++-v3/include/bits/stl_list.h
+@@ -64,6 +64,8 @@
+ #include <ext/aligned_buffer.h>
+ #endif
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+   namespace __detail
+@@ -1992,4 +1994,6 @@ _GLIBCXX_END_NAMESPACE_VERSION
+ #endif
+ } // namespace std
+ 
++#undef __EXCSTR
++
+ #endif /* _STL_LIST_H */
+diff --git a/libstdc++-v3/include/bits/stl_map.h b/libstdc++-v3/include/bits/stl_map.h
+index 30339536f57..a809a68ecf6 100644
+--- a/libstdc++-v3/include/bits/stl_map.h
++++ b/libstdc++-v3/include/bits/stl_map.h
+@@ -63,6 +63,8 @@
+ #include <tuple>
+ #endif
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+@@ -530,7 +532,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+       {
+ 	iterator __i = lower_bound(__k);
+ 	if (__i == end() || key_comp()(__k, (*__i).first))
+-	  __throw_out_of_range(__N("map::at"));
++	  __throw_out_of_range(__EXCSTR(__N("map::at")));
+ 	return (*__i).second;
+       }
+ 
+@@ -539,7 +541,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+       {
+ 	const_iterator __i = lower_bound(__k);
+ 	if (__i == end() || key_comp()(__k, (*__i).first))
+-	  __throw_out_of_range(__N("map::at"));
++	  __throw_out_of_range(__EXCSTR(__N("map::at")));
+ 	return (*__i).second;
+       }
+ 
+@@ -1461,4 +1463,6 @@ _GLIBCXX_END_NAMESPACE_VERSION
+ 
+ } // namespace std
+ 
++#undef __EXCSTR
++
+ #endif /* _STL_MAP_H */
+diff --git a/libstdc++-v3/include/bits/stl_vector.h b/libstdc++-v3/include/bits/stl_vector.h
+index fb882126cf9..8a1800c351e 100644
+--- a/libstdc++-v3/include/bits/stl_vector.h
++++ b/libstdc++-v3/include/bits/stl_vector.h
+@@ -65,6 +65,8 @@
+ 
+ #include <debug/assertions.h>
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+@@ -1648,4 +1650,6 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+ _GLIBCXX_END_NAMESPACE_CONTAINER
+ } // namespace std
+ 
++#undef __EXCSTR
++
+ #endif /* _STL_VECTOR_H */
+diff --git a/libstdc++-v3/libsupc++/bad_alloc.cc b/libstdc++-v3/libsupc++/bad_alloc.cc
+index 598b840297a..61c8d98fa2f 100644
+--- a/libstdc++-v3/libsupc++/bad_alloc.cc
++++ b/libstdc++-v3/libsupc++/bad_alloc.cc
+@@ -25,10 +25,12 @@
+ 
+ #include "new"
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ std::bad_alloc::~bad_alloc() _GLIBCXX_USE_NOEXCEPT { }
+ 
+ const char* 
+ std::bad_alloc::what() const _GLIBCXX_USE_NOEXCEPT
+ {
+-  return "std::bad_alloc";
++  return __EXCSTR("std::bad_alloc");
+ }
+diff --git a/libstdc++-v3/libsupc++/bad_cast.cc b/libstdc++-v3/libsupc++/bad_cast.cc
+index 25384bfaeff..f9598ed6bd0 100644
+--- a/libstdc++-v3/libsupc++/bad_cast.cc
++++ b/libstdc++-v3/libsupc++/bad_cast.cc
+@@ -23,6 +23,8 @@
+ 
+ #include <typeinfo>
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std {
+ 
+ bad_cast::~bad_cast() _GLIBCXX_USE_NOEXCEPT { }
+@@ -30,7 +32,7 @@ bad_cast::~bad_cast() _GLIBCXX_USE_NOEXCEPT { }
+ const char* 
+ bad_cast::what() const _GLIBCXX_USE_NOEXCEPT
+ {
+-  return "std::bad_cast";
++  return __EXCSTR("std::bad_cast");
+ }
+ 
+ } // namespace std
+diff --git a/libstdc++-v3/libsupc++/bad_typeid.cc b/libstdc++-v3/libsupc++/bad_typeid.cc
+index 6c2d900c148..551035d11b4 100644
+--- a/libstdc++-v3/libsupc++/bad_typeid.cc
++++ b/libstdc++-v3/libsupc++/bad_typeid.cc
+@@ -23,6 +23,8 @@
+ 
+ #include <typeinfo>
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std {
+ 
+ bad_typeid::~bad_typeid() _GLIBCXX_USE_NOEXCEPT { }
+@@ -30,7 +32,7 @@ bad_typeid::~bad_typeid() _GLIBCXX_USE_NOEXCEPT { }
+ const char* 
+ bad_typeid::what() const _GLIBCXX_USE_NOEXCEPT
+ {
+-  return "std::bad_typeid";
++  return __EXCSTR("std::bad_typeid");
+ }
+ 
+ } // namespace std
+diff --git a/libstdc++-v3/libsupc++/eh_exception.cc b/libstdc++-v3/libsupc++/eh_exception.cc
+index 11f3e133b08..e970f2c3ae0 100644
+--- a/libstdc++-v3/libsupc++/eh_exception.cc
++++ b/libstdc++-v3/libsupc++/eh_exception.cc
+@@ -36,19 +36,21 @@ abi::__forced_unwind::~__forced_unwind() throw() { }
+ 
+ abi::__foreign_exception::~__foreign_exception() throw() { }
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ const char* 
+ std::exception::what() const _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_USE_NOEXCEPT
+ {
+   // NB: Another elegant option would be returning typeid(*this).name()
+   // and not overriding what() in bad_exception, bad_alloc, etc.  In
+   // that case, however, mangled names would be returned, PR 14493.
+-  return "std::exception";
++  return __EXCSTR("std::exception");
+ }
+ 
+ const char* 
+ std::bad_exception::what() const _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_USE_NOEXCEPT
+ {
+-  return "std::bad_exception";
++  return __EXCSTR("std::bad_exception");
+ }
+ 
+ // Transactional clones for the destructors and what().
+diff --git a/libstdc++-v3/src/c++11/functional.cc b/libstdc++-v3/src/c++11/functional.cc
+index 8ac87b9fb20..d779c5fe1d0 100644
+--- a/libstdc++-v3/src/c++11/functional.cc
++++ b/libstdc++-v3/src/c++11/functional.cc
+@@ -25,6 +25,8 @@
+ #include <functional>
+ #include <bits/functexcept.h>
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -37,7 +39,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ 
+   const char*
+   bad_function_call::what() const noexcept
+-  { return "bad_function_call"; }
++  { return __EXCSTR("bad_function_call"); }
+ 
+ _GLIBCXX_END_NAMESPACE_VERSION
+ } // namespace
+diff --git a/libstdc++-v3/src/c++11/shared_ptr.cc b/libstdc++-v3/src/c++11/shared_ptr.cc
+index a952a9ee392..9e4e1e05907 100644
+--- a/libstdc++-v3/src/c++11/shared_ptr.cc
++++ b/libstdc++-v3/src/c++11/shared_ptr.cc
+@@ -39,6 +39,8 @@ namespace __gnu_internal _GLIBCXX_VISIBILITY(hidden)
+   }
+ }
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -47,7 +49,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ 
+   char const*
+   bad_weak_ptr::what() const noexcept
+-  { return "bad_weak_ptr"; }
++  { return __EXCSTR("bad_weak_ptr"); }
+ 
+ #ifdef __GTHREADS
+   namespace
+diff --git a/libstdc++-v3/src/c++11/system_error.cc b/libstdc++-v3/src/c++11/system_error.cc
+index d67e3a4f975..3b855b7d9ff 100644
+--- a/libstdc++-v3/src/c++11/system_error.cc
++++ b/libstdc++-v3/src/c++11/system_error.cc
+@@ -30,8 +30,11 @@
+ #include <bits/functexcept.h>
+ #include <limits>
+ #include <errno.h>
++#include <cstdlib>
+ #undef __sso_string
+
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace
+ {
+   using std::string;
+@@ -40,7 +43,7 @@ namespace
+   {
+     virtual const char*
+     name() const noexcept
+-    { return "generic"; }
++    { return __EXCSTR("generic"); }
+
+     _GLIBCXX_DEFAULT_ABI_TAG
+     virtual string
+@@ -48,7 +51,9 @@ namespace
+     {
+       // XXX locale issues: how does one get or set loc.
+       // _GLIBCXX_HAVE_STRERROR_L, strerror_l(i, cloc)
+-      return string(strerror(i));
++      //return string(strerror(i));
++      char buff[16];
++      return string(itoa(i, buff, 10));
+     }
+   };
+
+@@ -56,7 +61,7 @@ namespace
+   {
+     virtual const char*
+     name() const noexcept
+-    { return "system"; }
++    { return __EXCSTR("system"); }
+
+     _GLIBCXX_DEFAULT_ABI_TAG
+     virtual string
+@@ -64,7 +69,9 @@ namespace
+     {
+       // XXX locale issues: how does one get or set loc.
+       // _GLIBCXX_HAVE_STRERROR_L, strerror_l(i, cloc)
+-      return string(strerror(i));
++      //return string(strerror(i));
++      char buff[16];
++      return string(itoa(i, buff, 10));
+     }
+
+     virtual std::error_condition
+diff --git a/libstdc++-v3/include/bits/vector.tcc b/libstdc++-v3/include/bits/vector.tcc
+index 497d9f72247..c833aa306f8 100644
+--- a/libstdc++-v3/include/bits/vector.tcc
++++ b/libstdc++-v3/include/bits/vector.tcc
+@@ -56,6 +56,8 @@
+ #ifndef _VECTOR_TCC
+ #define _VECTOR_TCC 1
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -67,7 +69,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+     reserve(size_type __n)
+     {
+       if (__n > this->max_size())
+-	__throw_length_error(__N("vector::reserve"));
++	__throw_length_error(__EXCSTR(__N("vector::reserve")));
+       if (this->capacity() < __n)
+ 	{
+ 	  const size_type __old_size = size();
+@@ -433,7 +435,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+ #endif
+     {
+       const size_type __len =
+-	_M_check_len(size_type(1), "vector::_M_realloc_insert");
++	_M_check_len(size_type(1), __EXCSTR("vector::_M_realloc_insert"));
+       pointer __old_start = this->_M_impl._M_start;
+       pointer __old_finish = this->_M_impl._M_finish;
+       const size_type __elems_before = __position - begin();
+@@ -556,7 +558,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+ 	  else
+ 	    {
+ 	      const size_type __len =
+-		_M_check_len(__n, "vector::_M_fill_insert");
++		_M_check_len(__n, __EXCSTR("vector::_M_fill_insert"));
+ 	      const size_type __elems_before = __position - begin();
+ 	      pointer __new_start(this->_M_allocate(__len));
+ 	      pointer __new_finish(__new_start);
+@@ -631,7 +633,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+ 	  else
+ 	    {
+ 	      const size_type __len =
+-		_M_check_len(__n, "vector::_M_default_append");
++		_M_check_len(__n, __EXCSTR("vector::_M_default_append"));
+ 	      pointer __new_start(this->_M_allocate(__len));
+ 	      if _GLIBCXX17_CONSTEXPR (_S_use_relocate())
+ 		{
+@@ -765,7 +767,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+ 	    else
+ 	      {
+ 		const size_type __len =
+-		  _M_check_len(__n, "vector::_M_range_insert");
++		  _M_check_len(__n, __EXCSTR("vector::_M_range_insert"));
+ 		pointer __new_start(this->_M_allocate(__len));
+ 		pointer __new_finish(__new_start);
+ 		__try
+@@ -836,7 +838,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+       else
+ 	{
+ 	  const size_type __len = 
+-	    _M_check_len(__n, "vector<bool>::_M_fill_insert");
++	    _M_check_len(__n, __EXCSTR("vector<bool>::_M_fill_insert"));
+ 	  _Bit_pointer __q = this->_M_allocate(__len);
+ 	  iterator __start(std::__addressof(*__q), 0);
+ 	  iterator __i = _M_copy_aligned(begin(), __position, __start);
+@@ -871,7 +873,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+ 	    else
+ 	      {
+ 		const size_type __len =
+-		  _M_check_len(__n, "vector<bool>::_M_insert_range");
++		  _M_check_len(__n, __EXCSTR("vector<bool>::_M_insert_range"));
+ 		_Bit_pointer __q = this->_M_allocate(__len);
+ 		iterator __start(std::__addressof(*__q), 0);
+ 		iterator __i = _M_copy_aligned(begin(), __position, __start);
+@@ -900,7 +902,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+       else
+ 	{
+ 	  const size_type __len =
+-	    _M_check_len(size_type(1), "vector<bool>::_M_insert_aux");
++	    _M_check_len(size_type(1), __EXCSTR("vector<bool>::_M_insert_aux"));
+ 	  _Bit_pointer __q = this->_M_allocate(__len);
+ 	  iterator __start(std::__addressof(*__q), 0);
+ 	  iterator __i = _M_copy_aligned(begin(), __position, __start);
+@@ -998,6 +1000,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+ _GLIBCXX_END_NAMESPACE_VERSION
+ } // namespace std
+ 
++#undef __EXCSTR
++
+ #endif // C++11
+ 
+ #undef _GLIBCXX_ASAN_ANNOTATE_REINIT
+diff --git a/libstdc++-v3/include/bits/hashtable_policy.h b/libstdc++-v3/include/bits/hashtable_policy.h
+index b38e8e0ecef..9853370a29a 100644
+--- a/libstdc++-v3/include/bits/hashtable_policy.h
++++ b/libstdc++-v3/include/bits/hashtable_policy.h
+@@ -35,6 +35,8 @@
+ #include <limits>		// for std::numeric_limits
+ #include <bits/stl_algobase.h>	// for std::min.
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -747,7 +749,7 @@ namespace __detail
+       __node_type* __p = __h->_M_find_node(__n, __k, __code);
+ 
+       if (!__p)
+-	__throw_out_of_range(__N("_Map_base::at"));
++	__throw_out_of_range(__EXCSTR(__N("_Map_base::at")));
+       return __p->_M_v().second;
+     }
+ 
+@@ -766,7 +768,7 @@ namespace __detail
+       __node_type* __p = __h->_M_find_node(__n, __k, __code);
+ 
+       if (!__p)
+-	__throw_out_of_range(__N("_Map_base::at"));
++	__throw_out_of_range(__EXCSTR(__N("_Map_base::at")));
+       return __p->_M_v().second;
+     }
+ 
+@@ -2142,4 +2144,6 @@ namespace __detail
+ _GLIBCXX_END_NAMESPACE_VERSION
+ } // namespace std
+ 
++#undef __EXCSTR
++
+ #endif // _HASHTABLE_POLICY_H
+diff --git a/libstdc++-v3/include/bits/stl_bvector.h b/libstdc++-v3/include/bits/stl_bvector.h
+index 294f1e42897..32134d71d47 100644
+--- a/libstdc++-v3/include/bits/stl_bvector.h
++++ b/libstdc++-v3/include/bits/stl_bvector.h
+@@ -61,6 +61,8 @@
+ #include <bits/functional_hash.h>
+ #endif
+ 
++#define __EXCSTR(s) (__extension__({static const char __exception_what__[] __attribute__((section(".irom.exceptiontext,\"MS\",@progbits,1#"))) = (s); &__exception_what__[0];}))
++
+ namespace std _GLIBCXX_VISIBILITY(default)
+ {
+ _GLIBCXX_BEGIN_NAMESPACE_VERSION
+@@ -901,9 +903,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+       _M_range_check(size_type __n) const
+       {
+ 	if (__n >= this->size())
+-	  __throw_out_of_range_fmt(__N("vector<bool>::_M_range_check: __n "
++	  __throw_out_of_range_fmt(__EXCSTR(__N("vector<bool>::_M_range_check: __n "
+ 				       "(which is %zu) >= this->size() "
+-				       "(which is %zu)"),
++				       "(which is %zu)")),
+ 				   __n, this->size());
+       }
+ 
+@@ -920,7 +922,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+       reserve(size_type __n)
+       {
+ 	if (__n > max_size())
+-	  __throw_length_error(__N("vector::reserve"));
++	  __throw_length_error(__EXCSTR(__N("vector::reserve")));
+ 	if (capacity() < __n)
+ 	  _M_reallocate(__n);
+       }
