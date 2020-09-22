@@ -594,6 +594,8 @@ install: .stage.LINUX.install
 	(cd $(ARDUINO)/tools/sdk/ssl && make clean && make all && make install)
 	echo "-------- Building and installing LWIP2"
 	(cd $(ARDUINO)/tools/sdk/lwip2 && make clean && make install)
+	echo "-------- Building eboot.elf"
+	(cd $(ARDUINO)/bootloaders/eboot && make clean && make)
 	echo "Install done"
 
 # Upload a draft toolchain release
