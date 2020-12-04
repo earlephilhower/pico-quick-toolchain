@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import collections
@@ -23,16 +23,16 @@ for i in range(0, len(data["packages"][0]["platforms"][0]["toolsDependencies"]))
 
 for i in range(0, len(data["packages"][0]["tools"])):
     if data["packages"][0]["tools"][i]["name"] == args.tool:
-        print "Patching tool: " + args.tool + " to ver: " + args.ver
+        print("Patching tool: " + args.tool + " to ver: " + args.ver)
         data["packages"][0]["tools"][i]["version"] = args.ver
         data["packages"][0]["tools"][i]["systems"] = []
         bins = glob.glob(args.glob)
         for j in sorted(glob.glob(args.glob)):
             with open(j) as s:
-                print "Adding: " + j
+                print("Adding: " + j)
                 part = json.load(s, object_pairs_hook=collections.OrderedDict)
                 data["packages"][0]["tools"][i]["systems"].append(part)
 
-print "Writing new file " + args.pkgfile
+print("Writing new file " + args.pkgfile)
 with open(args.pkgfile, "w") as f:
     f.write(json.dumps(data, indent=3, separators=(',',': ')))
