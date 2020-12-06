@@ -70,7 +70,7 @@ else ifeq ($(GCC), 9.1)
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 9.2)
     ISL           := 0.18
@@ -79,7 +79,7 @@ else ifeq ($(GCC), 9.2)
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 9.3)
     ISL           := 0.18
@@ -88,7 +88,7 @@ else ifeq ($(GCC), 9.3)
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 10.1)
     ISL           := 0.18
@@ -97,7 +97,7 @@ else ifeq ($(GCC), 10.1)
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 10.2)
     ISL           := 0.18
@@ -106,7 +106,7 @@ else ifeq ($(GCC), 10.2)
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := git://sourceware.org/git/binutils-gdb.git
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else
     $(error Need to specify a supported GCC version "GCC={4.8, 4.9, 5.2, 7.2, 9.3, 10.1, 10.2}")
