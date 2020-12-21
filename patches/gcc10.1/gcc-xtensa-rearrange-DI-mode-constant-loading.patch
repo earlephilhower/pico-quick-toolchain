@@ -1,0 +1,72 @@
+From 64a54505ec8249178b9767d1420354f8eb55de50 Mon Sep 17 00:00:00 2001
+From: Takayuki 'January June' Suwa <jjsuwa_sys3175@yahoo.co.jp>
+Date: Wed, 16 Dec 2020 12:53:56 -0800
+Subject: [PATCH] gcc: xtensa: rearrange DI mode constant loading
+
+2020-12-16  Takayuki 'January June' Suwa  <jjsuwa_sys3175@yahoo.co.jp>
+gcc/
+	* config/xtensa/xtensa.c (xtensa_emit_move_sequence): Try to
+	replace 'l32r' with 'movi' + 'slli' when optimizing for size.
+	* config/xtensa/xtensa.md (movdi): Split loading DI mode constant
+	into register pair into two loads of SI mode constants.
+---
+ gcc/config/xtensa/xtensa.c  | 15 +++++++++++++++
+ gcc/config/xtensa/xtensa.md | 19 +++++++++++++++++--
+ 2 files changed, 32 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/config/xtensa/xtensa.c b/gcc/config/xtensa/xtensa.c
+index be1eb21a0b60..1cdc39acfffa 100644
+--- a/gcc/config/xtensa/xtensa.c
++++ b/gcc/config/xtensa/xtensa.c
+@@ -1082,6 +1082,21 @@ xtensa_emit_move_sequence (rtx *operands, machine_mode mode)
+ 
+       if (! TARGET_AUTO_LITPOOLS && ! TARGET_CONST16)
+ 	{
++	  /* Try to emit MOVI + SLLI sequence, that is smaller
++	     than L32R + literal.  */
++	  if (optimize_size && mode == SImode && register_operand (dst, mode))
++	    {
++	      HOST_WIDE_INT srcval = INTVAL (src);
++	      int shift = ctz_hwi (srcval);
++
++	      if (xtensa_simm12b (srcval >> shift))
++		{
++		  emit_move_insn (dst, GEN_INT (srcval >> shift));
++		  emit_insn (gen_ashlsi3_internal (dst, dst, GEN_INT (shift)));
++		  return 1;
++		}
++	    }
++
+ 	  src = force_const_mem (SImode, src);
+ 	  operands[1] = src;
+ 	}
+diff --git a/gcc/config/xtensa/xtensa.md b/gcc/config/xtensa/xtensa.md
+index 671c4bea144f..5fbe4ad4af9f 100644
+--- a/gcc/config/xtensa/xtensa.md
++++ b/gcc/config/xtensa/xtensa.md
+@@ -727,8 +727,23 @@
+ 	(match_operand:DI 1 "general_operand" ""))]
+   ""
+ {
+-  if (CONSTANT_P (operands[1]) && !TARGET_CONST16)
+-    operands[1] = force_const_mem (DImode, operands[1]);
++  if (CONSTANT_P (operands[1]))
++    {
++      /* Split in halves if 64-bit Const-to-Reg moves
++	 because of offering further optimization opportunities.  */
++      if (register_operand (operands[0], DImode))
++	{
++	  rtx first, second;
++
++	  split_double (operands[1], &first, &second);
++	  emit_insn (gen_movsi (gen_lowpart (SImode, operands[0]), first));
++	  emit_insn (gen_movsi (gen_highpart (SImode, operands[0]), second));
++	  DONE;
++	}
++
++      if (!TARGET_CONST16)
++	operands[1] = force_const_mem (DImode, operands[1]);
++    }
+ 
+   if (!register_operand (operands[0], DImode)
+       && !register_operand (operands[1], DImode))
