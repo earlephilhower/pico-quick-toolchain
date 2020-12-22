@@ -1,0 +1,137 @@
+From 06ff8708f0b834cf1b35afa46113c6c973905cad Mon Sep 17 00:00:00 2001
+From: Max Filippov <jcmvbkbc@gmail.com>
+Date: Sat, 12 Dec 2020 12:14:40 -0800
+Subject: [PATCH] gcc: xtensa: fix PR target/98285
+
+2020-12-14  Max Filippov  <jcmvbkbc@gmail.com>
+gcc/
+	* config/xtensa/predicates.md (addsubx_operand): Change accepted
+	values from 2/4/8 to 1..3.
+	* config/xtensa/xtensa.md (*addx, *subx): Change RTL pattern
+	to use 'ashift' instead of 'mult'. Update operands[3] value.
+
+gcc/testsuite/
+	* gcc.target/xtensa/pr98285.c: New test.
+---
+ gcc/config/xtensa/predicates.md           |  5 +--
+ gcc/config/xtensa/xtensa.md               | 18 +++++---
+ gcc/testsuite/gcc.target/xtensa/pr98285.c | 54 +++++++++++++++++++++++
+ 3 files changed, 68 insertions(+), 9 deletions(-)
+ create mode 100644 gcc/testsuite/gcc.target/xtensa/pr98285.c
+
+diff --git a/gcc/config/xtensa/predicates.md b/gcc/config/xtensa/predicates.md
+index 1721640dc79e..eb52b05aafad 100644
+--- a/gcc/config/xtensa/predicates.md
++++ b/gcc/config/xtensa/predicates.md
+@@ -25,9 +25,8 @@
+ 
+ (define_predicate "addsubx_operand"
+   (and (match_code "const_int")
+-       (match_test "INTVAL (op) == 2
+-		    || INTVAL (op) == 4
+-		    || INTVAL (op) == 8")))
++       (match_test "INTVAL (op) >= 1
++		    && INTVAL (op) <= 3")))
+ 
+ (define_predicate "arith_operand"
+   (ior (and (match_code "const_int")
+diff --git a/gcc/config/xtensa/xtensa.md b/gcc/config/xtensa/xtensa.md
+index 749fe477d562..671c4bea144f 100644
+--- a/gcc/config/xtensa/xtensa.md
++++ b/gcc/config/xtensa/xtensa.md
+@@ -162,11 +162,14 @@
+ 
+ (define_insn "*addx"
+   [(set (match_operand:SI 0 "register_operand" "=a")
+-	(plus:SI (mult:SI (match_operand:SI 1 "register_operand" "r")
+-			  (match_operand:SI 3 "addsubx_operand" "i"))
++	(plus:SI (ashift:SI (match_operand:SI 1 "register_operand" "r")
++			    (match_operand:SI 3 "addsubx_operand" "i"))
+ 		 (match_operand:SI 2 "register_operand" "r")))]
+   "TARGET_ADDX"
+-  "addx%3\t%0, %1, %2"
++{
++  operands[3] = GEN_INT (1 << INTVAL (operands[3]));
++  return "addx%3\t%0, %1, %2";
++}
+   [(set_attr "type"	"arith")
+    (set_attr "mode"	"SI")
+    (set_attr "length"	"3")])
+@@ -196,11 +199,14 @@
+ 
+ (define_insn "*subx"
+   [(set (match_operand:SI 0 "register_operand" "=a")
+-	(minus:SI (mult:SI (match_operand:SI 1 "register_operand" "r")
+-			   (match_operand:SI 3 "addsubx_operand" "i"))
++	(minus:SI (ashift:SI (match_operand:SI 1 "register_operand" "r")
++			     (match_operand:SI 3 "addsubx_operand" "i"))
+ 		  (match_operand:SI 2 "register_operand" "r")))]
+   "TARGET_ADDX"
+-  "subx%3\t%0, %1, %2"
++{
++  operands[3] = GEN_INT (1 << INTVAL (operands[3]));
++  return "subx%3\t%0, %1, %2";
++}
+   [(set_attr "type"	"arith")
+    (set_attr "mode"	"SI")
+    (set_attr "length"	"3")])
+diff --git a/gcc/testsuite/gcc.target/xtensa/pr98285.c b/gcc/testsuite/gcc.target/xtensa/pr98285.c
+new file mode 100644
+index 000000000000..2c037d546565
+--- /dev/null
++++ b/gcc/testsuite/gcc.target/xtensa/pr98285.c
+@@ -0,0 +1,54 @@
++/* { dg-do compile } */
++/* { dg-options "-O2" } */
++
++int mul3(int v)
++{
++  return v * 3;
++}
++
++int mul5(int v)
++{
++  return v * 5;
++}
++
++int mul7(int v)
++{
++  return v * 7;
++}
++
++int mul9(int v)
++{
++  return v * 9;
++}
++
++int mul2sub(int a, int b)
++{
++  return a * 2 - b;
++}
++
++int mul4sub(int a, int b)
++{
++  return a * 4 - b;
++}
++
++short index2(short *p, int i)
++{
++  return p[i];
++}
++
++int index4(int *p, int i)
++{
++  return p[i];
++}
++
++long long index8(long long *p, int i)
++{
++  return p[i];
++}
++
++/* { dg-final { scan-assembler-times "addx2" 2 } } */
++/* { dg-final { scan-assembler-times "addx4" 2 } } */
++/* { dg-final { scan-assembler-times "addx8" 2 } } */
++/* { dg-final { scan-assembler-times "subx2" 1 } } */
++/* { dg-final { scan-assembler-times "subx4" 1 } } */
++/* { dg-final { scan-assembler-times "subx8" 1 } } */
