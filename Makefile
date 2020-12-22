@@ -263,9 +263,9 @@ INSTALLBRANCH ?= master
 
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
 ifeq ($(LTO),true)
-    CFFT := "-mlongcalls -flto -Wl,-flto -Os -g"
+    CFFT := "-mlongcalls -flto -Wl,-flto -Os -g -free -fipa-pta"
 else ifeq ($(LTO),false)
-    CFFT := "-mlongcalls -Os -g"
+    CFFT := "-mlongcalls -Os -g -free -fipa-pta"
 else
     $(error Need to specify LTO={true,false} on the command line)
 endif
