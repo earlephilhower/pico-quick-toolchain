@@ -5,16 +5,17 @@
 # via $(VARNAME), while lowercase variables are dynamic and need to be
 # used via $(call varname,$@) (note no space between comma and $@)
 
-REL     := $(if $(REL),$(REL),2.5.0)
+REL     := $(if $(REL),$(REL),1.0.0)
 SUBREL  := $(if $(SUBREL),$(SUBREL),testing)
 ARDUINO := $(if $(ARDUINO),$(ARDUINO),$(shell pwd)/arduino)
-GCC     := $(if $(GCC),$(GCC),4.8)
+GCC     := $(if $(GCC),$(GCC),10.2)
 
 # General constants
 PWD      := $(shell pwd)
 REPODIR  := $(PWD)/repo
 PATCHDIR := $(PWD)/patches
 STAMP    := $(shell date +%y%m%d)
+ARCH     := arm-none-eabi
 
 # For uploading, the GH user and PAT
 GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
@@ -25,75 +26,15 @@ else ifeq ($(GHTOKEN),)
     $(error Need to specify GH PAT on the command line "GHTOKEN=xxxx" or in .ghtoken)
 endif
 
+NEWLIB_REPO   := git://sourceware.org/git/newlib-cygwin.git
+NEWLIB_BRANCH := newlib-4.0.0
+
 # Depending on the GCC version get proper branch and support libs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
-ifeq ($(GCC),4.8)
-    ISL           := 0.12.2
-    GCC_BRANCH    := call0-4.8.2
-    GCC_PKGREL    := 40802
-    GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
-    GCC_DIR       := gcc
-    BINUTILS_BRANCH := master
-    BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
-    BINUTILS_DIR  := binutils-gdb
-else ifeq ($(GCC),4.9)
-    ISL           := 0.12.2
-    GCC_BRANCH    := call0-4.9.2
-    GCC_PKGREL    := 40902
-    GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
-    GCC_DIR       := gcc
-    BINUTILS_BRANCH := master
-    BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
-    BINUTILS_DIR  := binutils-gdb
-else ifeq ($(GCC),5.2)
-    ISL           := 0.12.2
-    GCC_BRANCH    := xtensa-ctng-esp-5.2.0
-    GCC_PKGREL    := 50200
-    GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
-    GCC_DIR       := gcc
-    BINUTILS_BRANCH := master
-    BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
-    BINUTILS_DIR  := binutils-gdb
-else ifeq ($(GCC),7.2)
-    ISL           := 0.16.1
-    GCC_BRANCH    := xtensa-ctng-7.2.0
-    GCC_PKGREL    := 70200
-    GCC_REPO      := https://github.com/$(GHUSER)/gcc-xtensa.git
-    GCC_DIR       := gcc
-    BINUTILS_BRANCH := master
-    BINUTILS_REPO := https://github.com/$(GHUSER)/binutils-gdb-xtensa.git
-    BINUTILS_DIR  := binutils-gdb
-else ifeq ($(GCC), 9.1)
-    ISL           := 0.18
-    GCC_BRANCH    := gcc-9_1_0-release
-    GCC_PKGREL    := 90100
-    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
-    GCC_DIR       := gcc-gnu
-    BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
-    BINUTILS_DIR  := binutils-gdb-gnu
-else ifeq ($(GCC), 9.2)
-    ISL           := 0.18
-    GCC_BRANCH    := gcc-9_2_0-release
-    GCC_PKGREL    := 90200
-    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
-    GCC_DIR       := gcc-gnu
-    BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
-    BINUTILS_DIR  := binutils-gdb-gnu
-else ifeq ($(GCC), 9.3)
+ifeq ($(GCC), 9.3)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-9.3.0
     GCC_PKGREL    := 90300
-    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
-    GCC_DIR       := gcc-gnu
-    BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
-    BINUTILS_DIR  := binutils-gdb-gnu
-else ifeq ($(GCC), 10.1)
-    ISL           := 0.18
-    GCC_BRANCH    := releases/gcc-10.1.0
-    GCC_PKGREL    := 100100
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
@@ -109,11 +50,8 @@ else ifeq ($(GCC), 10.2)
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else
-    $(error Need to specify a supported GCC version "GCC={4.8, 4.9, 5.2, 7.2, 9.3, 10.1, 10.2}")
+    $(error Need to specify a supported GCC version "GCC={9.3, 10.2}")
 endif
-
-# MKSPIFFS must stay at 0.2.0 until Arduino boards.txt.py fixes non-page-aligned sizes
-MKSPIFFS_BRANCH := 0.2.0
 
 # LTO doesn't work on 4.8, may not be useful later
 LTO := $(if $(lto),$(lto),false)
@@ -216,13 +154,13 @@ arena = $(PWD)/arena$(call ext,$(1))
 # The architecture for this recipe
 arch = $(subst .,,$(suffix $(basename $(1))))
 # This installation directory for this architecture
-install = $(PWD)/xtensa-lx106-elf$($(call arch,$(1))_EXT)
+install = $(PWD)/$(ARCH)$($(call arch,$(1))_EXT)
 
 # GCC et. al configure options
 configure  = --prefix=$(call install,$(1))
 configure += --build=$(shell gcc -dumpmachine)
 configure += --host=$(call host,$(1))
-configure += --target=xtensa-lx106-elf
+configure += --target=$(ARCH)
 configure += --disable-shared
 configure += --with-newlib
 configure += --enable-threads=no
@@ -246,7 +184,7 @@ CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
 CONFIGURENEWLIBCOM += --enable-newlib-reent-small
 CONFIGURENEWLIBCOM += --enable-target-optspace
 CONFIGURENEWLIBCOM += --disable-option-checking
-CONFIGURENEWLIBCOM += --target=xtensa-lx106-elf
+CONFIGURENEWLIBCOM += --target=$(ARCH)
 CONFIGURENEWLIBCOM += --disable-shared
 
 # Configuration for newlib normal build
@@ -255,7 +193,7 @@ configurenewlib += $(CONFIGURENEWLIBCOM)
 
 # Configuration for newlib install-to-arduino target
 CONFIGURENEWLIBINSTALL  = --prefix=$(ARDUINO)/tools/sdk/libc
-CONFIGURENEWLIBINSTALL += --with-target-subdir=xtensa-lx106-elf
+CONFIGURENEWLIBINSTALL += --with-target-subdir=$(ARCH)
 CONFIGURENEWLIBINSTALL += $(CONFIGURENEWLIBCOM)
 
 # The branch in which to store the new toolchain
@@ -263,9 +201,9 @@ INSTALLBRANCH ?= master
 
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
 ifeq ($(LTO),true)
-    CFFT := "-mlongcalls -flto -Wl,-flto -Os -g -free -fipa-pta"
+    CFFT := "-flto -Wl,-flto -Os -g -free -fipa-pta"
 else ifeq ($(LTO),false)
-    CFFT := "-mlongcalls -Os -g -free -fipa-pta"
+    CFFT := "-Os -g -free -fipa-pta"
 else
     $(error Need to specify LTO={true,false} on the command line)
 endif
@@ -336,11 +274,8 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	mkdir -p $(REPODIR) > $(call log,$@) 2>&1
 	(test -d $(REPODIR)/$(BINUTILS_DIR) || git clone $(BINUTILS_REPO)                               $(REPODIR)/$(BINUTILS_DIR) ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/$(GCC_DIR)      || git clone $(GCC_REPO)                                    $(REPODIR)/$(GCC_DIR) ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/newlib          || git clone https://github.com/$(GHUSER)/newlib-xtensa.git $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/lx106-hal       || git clone https://github.com/$(GHUSER)/lx106-hal.git     $(REPODIR)/lx106-hal   ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/mkspiffs        || git clone https://github.com/$(GHUSER)/mkspiffs.git      $(REPODIR)/mkspiffs    ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/newlib          || git clone $(NEWLIB_REPO)                                 $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/mklittlefs      || git clone https://github.com/$(GHUSER)/mklittlefs.git    $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/esptool         || git clone https://github.com/$(GHUSER)/esptool-ck.git    $(REPODIR)/esptool     ) >> $(call log,$@) 2>&1
 	touch $@
 
 # Completely clean out a git directory, removing any untracked files
@@ -348,12 +283,12 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
 
-.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git .clean.mklittlefs.git
+.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git
 
 # Prep the git repos with no patches and any required libraries for gcc
 .stage.prepgit: .stage.download .clean.gits
 	echo STAGE: $@
-	for i in binutils-gdb gcc newlib lx106-hal mkspiffs mklittlefs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
+	for i in binutils-gdb gcc newlib mklittlefs; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/esp-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
@@ -372,7 +307,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) > $(call log,$@) 2>&1
-	(cd $(REPODIR)/mkspiffs && git reset --hard && git submodule deinit --all && git clean -f -d && git checkout $(MKSPIFFS_BRANCH) && git submodule init && git submodule update) >> $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
@@ -390,20 +324,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	    test -r "$$p" || continue ; \
 	    (cd $(REPODIR)/newlib; echo "---- $$p: "; patch -s -p1 < $$p) ; \
 	done >> $(call log,$@) 2>&1
-	for p in $(PATCHDIR)/mkspiffs/$(MKSPIFFS_BRANCH)*.patch; do \
-	    test -r "$$p" || continue ; \
-	    (cd $(REPODIR)/mkspiffs; echo "---- $$p: "; patch -s -p1 < $$p) ; \
-	done >> $(call log,$@) 2>&1
-	# Dirty-force HAL definition to binutils and gcc
-	for ow in $(REPODIR)/$(GCC_DIR)/include/xtensa-config.h $(REPODIR)/$(BINUTILS_DIR)/include/xtensa-config.h; do \
-	    ( cat $(REPODIR)/lx106-hal/include/xtensa/config/core-isa.h; \
-	      cat $(REPODIR)/lx106-hal/include/xtensa/config/system.h ; \
-	      echo '#define XCHAL_HAVE_FP_DIV   0' ; \
-              echo '#define XCHAL_HAVE_FP_RECIP 0' ; \
-              echo '#define XCHAL_HAVE_FP_SQRT  0' ; \
-              echo '#define XCHAL_HAVE_FP_RSQRT 0' ) > $${ow} ; \
-        done >> $(call log,$@) 2>&1
-	cd $(REPODIR)/lx106-hal && autoreconf -i >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.start: .stage.patch
@@ -423,7 +343,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	# Need LDFLAGS override to guarantee gdb is made static
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) $(call bflgs,$@)) > $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
-	(cd $(call install,$@)/bin; ln -sf xtensa-lx106-elf-gcc$(call exe,$@) xtensa-lx106-elf-cc$(call exe,$@)) >> $(call log,$@) 2>&1
+	(cd $(call install,$@)/bin; ln -sf $(ARCH)-gcc$(call exe,$@) $(ARCH)-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.gcc1-config: .stage.%.binutils-make
@@ -461,29 +381,16 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.%.libsdtcpp-nox: .stage.%.libstdcpp
 	echo STAGE: $@
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
-	rm -rf $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3-nox > $(call log,$@) 2>&1
-	cp -a $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3-nox >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/mlongcalls/mlongcalls -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
-	cp xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++-exc.a >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/$(GCC_DIR)/xtensa-lx106-elf/libstdc++-v3-nox/src/.libs/libstdc++.a xtensa-lx106-elf$(call ext,$@)/xtensa-lx106-elf/lib/libstdc++.a >> $(call log,$@) 2>&1
+	rm -rf $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox > $(call log,$@) 2>&1
+	cp -a $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
+	cp $(ARCH)$(call ext,$@)/$(ARCH)/lib/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/libstdc++-exc.a >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.hal-config: .stage.%.libsdtcpp-nox
+.stage.%.strip: .stage.%.libsdtcpp-nox
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/hal > $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/hal >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/hal; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//')) >> $(call log,$@) 2>&1
-	touch $@
-
-.stage.%.hal-make: .stage.%.hal-config
-	echo STAGE: $@
-	(cd $(call arena,$@)/hal; $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/hal; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
-	touch $@
-
-.stage.%.strip: .stage.%.hal-make
-	echo STAGE: $@
-	($(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/c*$(call exe,$@) $(call install,$@)/libexec/gcc/xtensa-lx106-elf/*/lto1$(call exe,$@) || true ) > $(call log,$@) 2>&1
+	($(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/c*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/lto1$(call exe,$@) || true ) > $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.post: .stage.%.strip
@@ -497,29 +404,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf pkg.$(call arch,$@) > $(call log,$@) 2>&1
 	mkdir -p pkg.$(call arch,$@) >> $(call log,$@) 2>&1
-	cp -a $(call install,$@) pkg.$(call arch,$@)/xtensa-lx106-elf >> $(call log,$@) 2>&1
-	(cd pkg.$(call arch,$@)/xtensa-lx106-elf; $(call setenv,$@); pkgdesc="xtensa-gcc"; pkgname="toolchain-xtensa"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
-	(tarball=$(call host,$@).xtensa-lx106-elf-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	cp -a $(call install,$@) pkg.$(call arch,$@)/$(ARCH) >> $(call log,$@) 2>&1
+	(cd pkg.$(call arch,$@)/$(ARCH); $(call setenv,$@); pkgdesc="$(ARCH)-gcc"; pkgname="toolchain-pico"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).$(ARCH)-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} $(ARCH)/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
-	touch $@
-
-.stage.%.mkspiffs: .stage.%.start
-	echo STAGE: $@
-	rm -rf $(call arena,$@)/mkspiffs > $(call log,$@) 2>&1
-	cp -a $(REPODIR)/mkspiffs $(call arena,$@)/mkspiffs >> $(call log,$@) 2>&1
-	# Dependencies borked in mkspiffs makefile, so don't use parallel make
-	(cd $(call arena,$@)/mkspiffs;\
-	    $(call setenv,$@); \
-	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
-            make -j1 clean mkspiffs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266" CPPFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1") >> $(call log,$@) 2>&1
-	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
-	mkdir -p pkg.mkspiffs.$(call arch,$@)/mkspiffs >> $(call log,$@) 2>&1
-	(cd pkg.mkspiffs.$(call arch,$@)/mkspiffs; $(call setenv,$@); pkgdesc="mkspiffs-utility"; pkgname="mkspiffs"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/mkspiffs/mkspiffs$(call exe,$@) pkg.mkspiffs.$(call arch,$@)/mkspiffs/. >> $(call log,$@) 2>&1
-	(tarball=$(call host,$@).mkspiffs-$$(cd $(REPODIR)/mkspiffs && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
-	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.mklittlefs: .stage.%.start
@@ -540,24 +429,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.esptool: .stage.%.start
-	echo STAGE: $@
-	rm -rf $(call arena,$@)/esptool > $(call log,$@) 2>&1
-	cp -a $(REPODIR)/esptool $(call arena,$@)/esptool >> $(call log,$@) 2>&1
-	# Dependencies borked in esptool makefile, so don't use parallel make
-	(cd $(call arena,$@)/esptool;\
-	    $(call setenv,$@); \
-	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
-            make -j1 clean esptool$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266") >> $(call log,$@) 2>&1
-	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
-	mkdir -p pkg.esptool.$(call arch,$@)/esptool >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/esptool/esptool$(call exe,$@) pkg.esptool.$(call arch,$@)/esptool/. >> $(call log,$@) 2>&1
-	(tarball=$(call host,$@).esptool-$$(cd $(REPODIR)/esptool && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.esptool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} esptool; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
-	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
-	touch $@
-
-.stage.%.done: .stage.%.package .stage.%.mkspiffs .stage.%.esptool .stage.%.mklittlefs
+.stage.%.done: .stage.%.package .stage.%.mklittlefs
 	echo STAGE: $@
 	echo Done building $(call arch,$@)
 
@@ -568,34 +440,18 @@ install: .stage.LINUX.install
 	rm -rf $(ARDUINO)
 	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
 	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
-	#echo "-------- Building installable newlib"
-	#rm -rf arena/newlib-install; mkdir -p arena/newlib-install
-	#cd arena/newlib-install; $(call setenv,$@); $(REPODIR)/newlib/configure $(CONFIGURENEWLIBINSTALL); $(MAKE); $(MAKE) install
-	echo "-------- Building installable hal"
-	rm -rf arena/hal-install; mkdir -p arena/hal-install
-	cd arena/hal-install; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --prefix=$(ARDUINO)/tools/sdk/libc --libdir=$(ARDUINO)/tools/sdk/lib --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//' | sed 's/--prefix=[a-zA-Z0-9_-\\]*//')
-	cd arena/hal-install; $(call setenv,$@); $(MAKE) ; $(MAKE) install
 	echo "-------- Copying GCC libs"
-	#cp $(call install,$@)/lib/gcc/xtensa-lx106-elf/*/libgcc.a  $(ARDUINO)/tools/sdk/lib/.
-	cp $(call install,$@)/xtensa-lx106-elf/lib/libstdc++-exc.a $(ARDUINO)/tools/sdk/lib/.
-	cp $(call install,$@)/xtensa-lx106-elf/lib/libstdc++.a     $(ARDUINO)/tools/sdk/lib/.
+	cp $(call install,$@)/$(ARCH)/lib/libstdc++-exc.a $(ARDUINO)/tools/sdk/lib/.
+	cp $(call install,$@)/$(ARCH)/lib/libstdc++.a     $(ARDUINO)/tools/sdk/lib/.
 	echo "-------- Copying toolchain directory"
-	rm -rf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
-	cp -a $(call install,$@)/xtensa-lx106-elf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
+	rm -rf $(ARDUINO)/tools/sdk/$(ARCH)
+	cp -a $(call install,$@)/$(ARCH) $(ARDUINO)/tools/sdk/$(ARCH)
 	echo "-------- Updating package.json"
-	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_esp8266com_index.template.json; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool xtensa-lx106-elf-gcc --ver "$${ver}" --glob '*xtensa-lx106-elf*.json' ; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool esptool --ver "$${ver}" --glob '*esptool*json' ; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'; \
+	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_rpipico_index.template.json; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool $(ARCH)-gcc --ver "$${ver}" --glob '*$(ARCH)*.json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool mklittlefs --ver "$${ver}" --glob '*mklittlefs*json'
 	echo "-------- Installing toolchain"
-	(cd $(ARDUINO)/tools && tar xf ../../x86_64-linux-gnu.xtensa-lx106-elf-*.tar.gz )
-	echo "-------- Building and installing BearSSL"
-	(cd $(ARDUINO)/tools/sdk/ssl && make clean && make all && make install)
-	echo "-------- Building and installing LWIP2"
-	(cd $(ARDUINO)/tools/sdk/lwip2 && make clean && make install)
-	echo "-------- Building eboot.elf"
-	(cd $(ARDUINO)/bootloaders/eboot && make clean && make)
+	(cd $(ARDUINO)/tools && tar xf ../../x86_64-linux-gnu.$(ARCH)-*.tar.gz )
 	echo "Install done"
 
 # Upload a draft toolchain release
