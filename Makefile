@@ -26,12 +26,23 @@ else ifeq ($(GHTOKEN),)
     $(error Need to specify GH PAT on the command line "GHTOKEN=xxxx" or in .ghtoken)
 endif
 
+NEWLIB_DIR    := newlib
 NEWLIB_REPO   := git://sourceware.org/git/newlib-cygwin.git
 NEWLIB_BRANCH := newlib-4.0.0
 
 # Depending on the GCC version get proper branch and support libs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
-ifeq ($(GCC), 9.3)
+ifeq ($(GCC), 6.3)
+    ISL           := 0.16.1
+    GCC_BRANCH    := releases/gcc-6.3.0
+    GCC_PKGREL    := 60300
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+    NEWLIB_BRANCH := newlib-2_4_0
+else ifeq ($(GCC), 9.3)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-9.3.0
     GCC_PKGREL    := 90300
@@ -307,6 +318,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) > $(call log,$@) 2>&1
+	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) > $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
