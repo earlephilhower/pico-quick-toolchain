@@ -179,12 +179,13 @@ configure += --disable-__cxa_atexit
 configure += --disable-libgomp
 configure += --disable-libmudflap
 configure += --disable-nls
-configure += --disable-multilib
 configure += --disable-bootstrap
 configure += --enable-languages=c,c++
 configure += --enable-lto
 configure += --enable-static=yes
 configure += --disable-libstdcxx-verbose
+configure += --disable-decimal-float
+configure += --enable-multilib
 
 # Newlib configuration common
 CONFIGURENEWLIBCOM  = --with-newlib
@@ -380,7 +381,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.%.newlib-make: .stage.%.newlib-config
 	echo STAGE: $@
 	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE) install -j1) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.libstdcpp: .stage.%.newlib-make
