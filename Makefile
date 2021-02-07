@@ -235,7 +235,7 @@ makepackagejson = ( echo '{' && \
                     echo '   "description": "'$${pkgdesc}'",' && \
                     echo '   "name": "'$${pkgname}'",' && \
                     echo '   "system": [ "'$(call asys,$(1))'" ],' && \
-                    echo '   "url": "https://github.com/'$(GHUSER)'/esp-quick-toolchain",' && \
+                    echo '   "url": "https://github.com/'$(GHUSER)'/pico-quick-toolchain",' && \
                     echo '   "version": "5.'$(GCC_PKGREL)'.'$(STAMP)'"' && \
                     echo '}' ) > package.json
 
@@ -244,7 +244,7 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
 	   tarballsha256=$$(sha256sum $${tarball} | cut -f1 -d" "); \
 	   ( echo '{' && \
 	     echo ' "host": "'$(call ahost,$(1))'",' && \
-	     echo ' "url": "https://github.com/$(GHUSER)/esp-quick-toolchain/releases/download/'$(REL)-$(SUBREL)'/'$${tarball}'",' && \
+	     echo ' "url": "https://github.com/$(GHUSER)/pico-quick-toolchain/releases/download/'$(REL)-$(SUBREL)'/'$${tarball}'",' && \
 	     echo ' "archiveFileName": "'$${tarball}'",' && \
 	     echo ' "checksum": "SHA-256:'$${tarballsha256}'",' && \
 	     echo ' "size": "'$${tarballsize}'"' && \
@@ -302,7 +302,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	for i in binutils-gdb gcc newlib mklittlefs; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
-	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/esp-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
+	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
 	    echo "-------- getting $${name}" ; \
 	    cd $(REPODIR) && ( test -r $${archive} || wget $${url} ) ; \
@@ -432,7 +432,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call arena,$@)/mklittlefs;\
 	    $(call setenv,$@); \
 	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
-            make -j1 clean mklittlefs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-esp8266") >> $(call log,$@) 2>&1
+            make -j1 clean mklittlefs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-rpipico") >> $(call log,$@) 2>&1
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.mklittlefs.$(call arch,$@)/mklittlefs >> $(call log,$@) 2>&1
 	(cd pkg.mklittlefs.$(call arch,$@)/mklittlefs; $(call setenv,$@); pkgdesc="littlefs-utility"; pkgname="mklittlefs"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
@@ -476,7 +476,7 @@ upload: .stage.LINUX.upload
 	python3 -m venv ./venv
 	cd ./venv; . bin/activate; \
 	    pip3 install -q pygithub ; \
-	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/esp8266/Arduino for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
+	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/earlephilhower/ArduinoPico for more info'  --name "ESP8266 Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
 	rm -rf ./venv
 
 dumpvars:
