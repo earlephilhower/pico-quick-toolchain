@@ -285,9 +285,10 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	mkdir -p $(REPODIR) > $(call log,$@) 2>&1
 	(test -d $(REPODIR)/$(BINUTILS_DIR) || git clone $(BINUTILS_REPO)                               $(REPODIR)/$(BINUTILS_DIR) ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/$(GCC_DIR)      || git clone $(GCC_REPO)                                    $(REPODIR)/$(GCC_DIR) ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/$(GCC_DIR)      || git clone $(GCC_REPO)                                    $(REPODIR)/$(GCC_DIR)  ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/newlib          || git clone $(NEWLIB_REPO)                                 $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/mklittlefs      || git clone https://github.com/$(GHUSER)/mklittlefs.git    $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/pico-sdk        || git clone https://github.com/raspberrypi/pico-sdk.git    $(REPODIR)/pico-sdk    ) >> $(call log,$@) 2>&1
 	touch $@
 
 # Completely clean out a git directory, removing any untracked files
@@ -295,12 +296,12 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
 
-.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git
+.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git .clean.pico-sdk.git
 
 # Prep the git repos with no patches and any required libraries for gcc
 .stage.prepgit: .stage.download .clean.gits
 	echo STAGE: $@
-	for i in binutils-gdb gcc newlib mklittlefs; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
+	for i in binutils-gdb gcc newlib mklittlefs pico-sdk; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
@@ -442,7 +443,35 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.done: .stage.%.package .stage.%.mklittlefs
+.stage.%.elf2uf2: .stage.%.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/elf2uf2 > $(call log,$@) 2>&1
+	mkdir $(call arena,$@)/elf2uf2 >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk/tools/elf2uf2; g++ -o $(call arena,$@)/elf2uf2/elf2uf2 -I../../src/common/boot_uf2/include main.cpp) >> $(call log,$@) 2>&1
+	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
+	mkdir -p pkg.elf2uf2.$(call arch,$@)/elf2uf2 >> $(call log,$@) 2>&1
+	(cd pkg.elf2uf2.$(call arch,$@)/elf2uf2; $(call setenv,$@); pkgdesc="elf2uf2-utility"; pkgname="elf2uf2"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) pkg.elf2uf2.$(call arch,$@)/elf2uf2/. >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).elf2uf2-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd pkg.elf2uf2.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} elf2uf2; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
+	touch $@
+
+.stage.%.pioasm: .stage.%.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/pioasm > $(call log,$@) 2>&1
+	mkdir $(call arena,$@)/pioasm >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk/tools/pioasm; g++ -o $(call arena,$@)/pioasm/pioasm main.cpp pio_assembler.cpp pio_disassembler.cpp gen/lexer.cpp gen/parser.cpp -Igen/ -I.) >> $(call log,$@) 2>&1
+	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
+	mkdir -p pkg.pioasm.$(call arch,$@)/pioasm >> $(call log,$@) 2>&1
+	(cd pkg.pioasm.$(call arch,$@)/pioasm; $(call setenv,$@); pkgdesc="pioasm-utility"; pkgname="pioasm"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/pioasm/pioasm$(call exe,$@) pkg.pioasm.$(call arch,$@)/pioasm/. >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).pioasm-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd pkg.pioasm.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} pioasm; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
+	touch $@
+
+.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .state.%.pioasm
 	echo STAGE: $@
 	echo Done building $(call arch,$@)
 
