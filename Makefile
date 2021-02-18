@@ -471,7 +471,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .state.%.pioasm
+.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .stage.%.pioasm
 	echo STAGE: $@
 	echo Done building $(call arch,$@)
 
