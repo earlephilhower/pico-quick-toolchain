@@ -480,7 +480,7 @@ install: .stage.LINUX.install
 .stage.LINUX.install:
 	echo STAGE: $@
 	rm -rf $(ARDUINO)
-	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
+	git clone https://github.com/$(GHUSER)/arduino-pico $(ARDUINO)
 	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
 	echo "-------- Copying GCC libs"
 	cp $(call install,$@)/$(ARCH)/lib/libstdc++-exc.a $(ARDUINO)/tools/sdk/lib/.
