@@ -259,7 +259,7 @@ linux default: .stage.LINUX.done
 .PHONY: .stage.download
 
 # Build all toolchain versions
-all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
+all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done # .stage.RPI.done
 	echo STAGE: $@
 	echo All complete
 
@@ -447,7 +447,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/elf2uf2 > $(call log,$@) 2>&1
 	mkdir $(call arena,$@)/elf2uf2 >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk/tools/elf2uf2; g++ -o $(call arena,$@)/elf2uf2/elf2uf2 -I../../src/common/boot_uf2/include main.cpp) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk/tools/elf2uf2; $(call host,$@)-g++ -std=gnu++11 -o $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) -I../../src/common/boot_uf2/include main.cpp  -Wl,-static -static-libgcc -static-libstdc++) >> $(call log,$@) 2>&1
 	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.elf2uf2.$(call arch,$@)/elf2uf2 >> $(call log,$@) 2>&1
 	(cd pkg.elf2uf2.$(call arch,$@)/elf2uf2; $(call setenv,$@); pkgdesc="elf2uf2-utility"; pkgname="elf2uf2"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
@@ -461,7 +461,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/pioasm > $(call log,$@) 2>&1
 	mkdir $(call arena,$@)/pioasm >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk/tools/pioasm; g++ -o $(call arena,$@)/pioasm/pioasm main.cpp pio_assembler.cpp pio_disassembler.cpp gen/lexer.cpp gen/parser.cpp -Igen/ -I.) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk/tools/pioasm; $(call host,$@)-g++ -std=gnu++11 -o $(call arena,$@)/pioasm/pioasm$(call exe,$@) main.cpp pio_assembler.cpp pio_disassembler.cpp gen/lexer.cpp gen/parser.cpp c_sdk_output.cpp python_output.cpp hex_output.cpp -Igen/ -I. -Wl,-static -static-libgcc -static-libstdc++) >> $(call log,$@) 2>&1
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.pioasm.$(call arch,$@)/pioasm >> $(call log,$@) 2>&1
 	(cd pkg.pioasm.$(call arch,$@)/pioasm; $(call setenv,$@); pkgdesc="pioasm-utility"; pkgname="pioasm"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
@@ -483,17 +483,14 @@ install: .stage.LINUX.install
 	git clone https://github.com/$(GHUSER)/arduino-pico $(ARDUINO)
 	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
 	echo "-------- Copying GCC libs"
-	cp $(call install,$@)/$(ARCH)/lib/libstdc++-exc.a $(ARDUINO)/tools/sdk/lib/.
-	cp $(call install,$@)/$(ARCH)/lib/libstdc++.a     $(ARDUINO)/tools/sdk/lib/.
-	echo "-------- Copying toolchain directory"
-	rm -rf $(ARDUINO)/tools/sdk/$(ARCH)
-	cp -a $(call install,$@)/$(ARCH) $(ARDUINO)/tools/sdk/$(ARCH)
+	cp $(call install,$@)/$(ARCH)/lib/libstdc++-exc.a $(ARDUINO)/lib/.
+	cp $(call install,$@)/$(ARCH)/lib/libstdc++.a     $(ARDUINO)/lib/.
 	echo "-------- Updating package.json"
-	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_rpipico_index.template.json; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool $(ARCH)-gcc --ver "$${ver}" --glob '*$(ARCH)*.json' ; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool mklittlefs --ver "$${ver}" --glob '*mklittlefs*json'
-	echo "-------- Installing toolchain"
-	(cd $(ARDUINO)/tools && tar xf ../../x86_64-linux-gnu.$(ARCH)-*.tar.gz )
+	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_pico_index.template.json; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc --ver "$${ver}" --glob '*$(ARCH)*.json' ; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-elf2uf2 --ver "$${ver}" --glob '*elf2uf2*json' ; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-pioasm --ver "$${ver}" --glob '*pioasm*json' ; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-mklittlefs --ver "$${ver}" --glob '*mklittlefs*json' ; \
 	echo "Install done"
 
 # Upload a draft toolchain release
