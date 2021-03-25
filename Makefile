@@ -289,6 +289,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(test -d $(REPODIR)/newlib          || git clone $(NEWLIB_REPO)                                 $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/mklittlefs      || git clone https://github.com/$(GHUSER)/mklittlefs.git    $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/pico-sdk        || git clone https://github.com/raspberrypi/pico-sdk.git    $(REPODIR)/pico-sdk    ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/openocd         || git clone https://github.com/$(GHUSER)/openocd.git       $(REPODIR)/openocd     ) >> $(call log,$@) 2>&1
 	touch $@
 
 # Completely clean out a git directory, removing any untracked files
@@ -296,12 +297,12 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
 
-.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git .clean.pico-sdk.git
+.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git .clean.pico-sdk.git .clean.openocd.git
 
 # Prep the git repos with no patches and any required libraries for gcc
 .stage.prepgit: .stage.download .clean.gits
 	echo STAGE: $@
-	for i in binutils-gdb gcc newlib mklittlefs pico-sdk; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
+	for i in binutils-gdb gcc newlib mklittlefs pico-sdk openocd; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
@@ -321,6 +322,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) > $(call log,$@) 2>&1
+	(cd $(REPODIR)/openocd && git reset --hard && git checkout picoprobe && git submodule update --init --recursive) > $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
@@ -447,7 +449,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/elf2uf2 > $(call log,$@) 2>&1
 	mkdir $(call arena,$@)/elf2uf2 >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk/tools/elf2uf2; $(call host,$@)-g++ -std=gnu++11 -o $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) -I../../src/common/boot_uf2/include main.cpp  -Wl,-static -static-libgcc -static-libstdc++) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk/tools/elf2uf2; $(call host,$@)-g++ -std=gnu++11 -o $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) -I../../src/common/boot_uf2/include main.cpp -static-libgcc -static-libstdc++) >> $(call log,$@) 2>&1
 	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.elf2uf2.$(call arch,$@)/elf2uf2 >> $(call log,$@) 2>&1
 	(cd pkg.elf2uf2.$(call arch,$@)/elf2uf2; $(call setenv,$@); pkgdesc="elf2uf2-utility"; pkgname="elf2uf2"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
@@ -461,7 +463,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/pioasm > $(call log,$@) 2>&1
 	mkdir $(call arena,$@)/pioasm >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk/tools/pioasm; $(call host,$@)-g++ -std=gnu++11 -o $(call arena,$@)/pioasm/pioasm$(call exe,$@) main.cpp pio_assembler.cpp pio_disassembler.cpp gen/lexer.cpp gen/parser.cpp c_sdk_output.cpp python_output.cpp hex_output.cpp -Igen/ -I. -Wl,-static -static-libgcc -static-libstdc++) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk/tools/pioasm; $(call host,$@)-g++ -std=gnu++11 -o $(call arena,$@)/pioasm/pioasm$(call exe,$@) main.cpp pio_assembler.cpp pio_disassembler.cpp gen/lexer.cpp gen/parser.cpp c_sdk_output.cpp python_output.cpp hex_output.cpp -Igen/ -I. -static-libgcc -static-libstdc++) >> $(call log,$@) 2>&1
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.pioasm.$(call arch,$@)/pioasm >> $(call log,$@) 2>&1
 	(cd pkg.pioasm.$(call arch,$@)/pioasm; $(call setenv,$@); pkgdesc="pioasm-utility"; pkgname="pioasm"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
@@ -471,7 +473,21 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .stage.%.pioasm
+.stage.%.openocd: .stage.%.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
+	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --target=$(ARCH)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && make -j) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && make install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="openocd"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).openocd-$$(cd $(REPODIR)/openocd && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; echo $(call makejson,$@) ; echo cp *json ../) >> $(call log,$@) 2>&1
+	rm -rf pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
+	touch $@
+
+
+.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .stage.%.pioasm .stage.%.openocd
 	echo STAGE: $@
 	echo Done building $(call arch,$@)
 
@@ -491,6 +507,7 @@ install: .stage.LINUX.install
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-elf2uf2 --ver "$${ver}" --glob '*elf2uf2*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-pioasm --ver "$${ver}" --glob '*pioasm*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-mklittlefs --ver "$${ver}" --glob '*mklittlefs*json' ; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-openocd --ver "$${ver}" --glob '*openocd*json' ; \
 	echo "Install done"
 
 # Upload a draft toolchain release
