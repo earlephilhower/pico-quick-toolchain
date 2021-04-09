@@ -259,7 +259,7 @@ linux default: .stage.LINUX.done
 .PHONY: .stage.download
 
 # Build all toolchain versions
-all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done # .stage.RPI.done
+all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
 	echo STAGE: $@
 	echo All complete
 
