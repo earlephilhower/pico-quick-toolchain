@@ -267,6 +267,12 @@ all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .
 
 download: .stage.download
 
+pioasm: .stage.LINUX32.pioasm .stage.WIN32.pioasm .stage.WIN64.pioasm .stage.OSX.pioasm .stage.ARM64.pioasm .stage.RPI.pioasm .stage.LINUX.pioasm
+
+mklittlefs: .stage.LINUX32.mklittlefs .stage.WIN32.mklittlefs .stage.WIN64.mklittlefs .stage.OSX.mklittlefs .stage.ARM64.mklittlefs .stage.RPI.mklittlefs .stage.LINUX.mklittlefs
+
+elf2uf2: .stage.LINUX32.elf2uf2 .stage.WIN32.elf2uf2 .stage.WIN64.elf2uf2 .stage.OSX.elf2uf2 .stage.ARM64.elf2uf2 .stage.RPI.elf2uf2 .stage.LINUX.elf2uf2
+
 # Other cross-compile cannot start until Linux is built
 .stage.LINUX32.gcc1-make .stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.OSX.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
 
@@ -297,7 +303,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 # Completely clean out a git directory, removing any untracked files
 .clean.%.git:
 	echo STAGE: $@
-	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
+	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d > $(call log,$@) 2>&1
 
 .clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git .clean.pico-sdk.git .clean.openocd.git
 
@@ -322,10 +328,10 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.checkout: .stage.prepgit
 	echo STAGE: $@
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
-	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) > $(call log,$@) 2>&1
-	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) > $(call log,$@) 2>&1
-	(cd $(REPODIR)/openocd && git reset --hard && git checkout picoprobe && git submodule update --init --recursive) > $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSCK_BRANCH)) > $(call log,$@) 2>&1
+	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/openocd && git reset --hard && git checkout picoprobe && git submodule update --init --recursive) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSCK_BRANCH)) >> $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
@@ -456,6 +462,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.elf2uf2.$(call arch,$@)/elf2uf2 >> $(call log,$@) 2>&1
 	(cd pkg.elf2uf2.$(call arch,$@)/elf2uf2; $(call setenv,$@); pkgdesc="elf2uf2-utility"; pkgname="elf2uf2"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	$(call host,$@)-strip $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) pkg.elf2uf2.$(call arch,$@)/elf2uf2/. >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).elf2uf2-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.elf2uf2.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} elf2uf2; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
@@ -489,7 +496,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; echo $(call makejson,$@) ; echo cp *json ../) >> $(call log,$@) 2>&1
 	rm -rf pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
-
 
 .stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .stage.%.pioasm .stage.%.openocd
 	echo STAGE: $@
