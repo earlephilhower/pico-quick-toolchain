@@ -314,7 +314,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 # Completely clean out a git directory, removing any untracked files
 .clean.%.git:
 	echo STAGE: $@
-	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d > $(call log,$@) 2>&1
+	(cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d) > $(call log,$@) 2>&1
 
 .clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git .clean.pico-sdk.git .clean.openocd.git
 
@@ -524,6 +524,22 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/openocd; ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd) >> $(call log,$@) 2>&1
+
+.stage.WIN32.openocd-prep: .stage.WIN32.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
+	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
+	cp blobs/mingw-w64-i686-libusb-1.0.23-1-any.pkg.tar.xz $(call arena,$@) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@); tar xvf mingw-w64-i686-libusb-1.0.23-1-any.pkg.tar.xz) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; LDFLAGS="-L$(call arena,$@)/mingw32/lib" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
+
+.stage.WIN64.openocd-prep: .stage.WIN64.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
+	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
+	cp blobs/mingw-w64-x86_64-libusb-1.0.23-1-any.pkg.tar.xz $(call arena,$@) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@); tar xvf mingw-w64-x86_64-libusb-1.0.23-1-any.pkg.tar.xz) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; LDFLAGS="-L$(call arena,$@)/mingw64/lib" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
 .stage.%.openocd: .stage.%.openocd-prep
 	echo STAGE: $@
