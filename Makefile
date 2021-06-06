@@ -60,8 +60,17 @@ else ifeq ($(GCC), 10.2)
     BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 10.3)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-10.3.0
+    GCC_PKGREL    := 100300
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
 else
-    $(error Need to specify a supported GCC version "GCC={9.3, 10.2}")
+    $(error Need to specify a supported GCC version "GCC={9.3, 10.2, 10.3}")
 endif
 
 PICOSDK_BRANCH := 1.1.0
@@ -272,6 +281,8 @@ pioasm: .stage.LINUX32.pioasm .stage.WIN32.pioasm .stage.WIN64.pioasm .stage.OSX
 mklittlefs: .stage.LINUX32.mklittlefs .stage.WIN32.mklittlefs .stage.WIN64.mklittlefs .stage.OSX.mklittlefs .stage.ARM64.mklittlefs .stage.RPI.mklittlefs .stage.LINUX.mklittlefs
 
 elf2uf2: .stage.LINUX32.elf2uf2 .stage.WIN32.elf2uf2 .stage.WIN64.elf2uf2 .stage.OSX.elf2uf2 .stage.ARM64.elf2uf2 .stage.RPI.elf2uf2 .stage.LINUX.elf2uf2
+
+openocd: .stage.LINUX32.openocd .stage.WIN32.openocd .stage.WIN64.openocd .stage.OSX.openocd .stage.ARM64.openocd .stage.RPI.openocd .stage.LINUX.openocd
 
 # Other cross-compile cannot start until Linux is built
 .stage.LINUX32.gcc1-make .stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.OSX.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
@@ -488,7 +499,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd && ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --target=$(ARCH) --host=$(call ahost,$@)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --target=$(ARCH) --host=$(call host,$@)) > $(call log,$@) 2>&1
 	(cd $(call arena,$@)/openocd && make -j) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/openocd && make install) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="openocd"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
