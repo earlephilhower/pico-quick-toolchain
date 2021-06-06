@@ -511,6 +511,14 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call arena,$@); for i in *.deb; do ar x $$i; tar xvf data.tar.xz; rm $$i; done) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/openocd; LIBUSB1_CFLAGS=-I$(call arena,$@)/usr/include/libusb-1.0 LIBUSB1_LIBS="-L$(call arena,$@)/usr/lib/$(call host,$@) -lusb-1.0" LDFLAGS="-L$(call arena,$@)/lib/$(call host,$@) -lpthread -ludev" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
+.stage.LINUX32.openocd-prep: .stage.RPI.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
+	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
+	cp blobs/libudev1_237-3ubuntu10_i386.deb blobs/libudev-dev_237-3ubuntu10_i386.deb blobs/libusb-1.0-0-dev_1.0.21-2_i386.deb $(call arena,$@)/. >> $(call log,$@) 2>&1
+	(cd $(call arena,$@); for i in *.deb; do ar x $$i; tar xvf data.tar.xz; rm $$i; done) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; LIBUSB1_CFLAGS=-I$(call arena,$@)/usr/include/libusb-1.0 LIBUSB1_LIBS="-L$(call arena,$@)/usr/lib/i386-linux-gnu -lusb-1.0" LDFLAGS="-L$(call arena,$@)/lib/i386-linux-gnu -lpthread -ludev" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
+
 .stage.%.openocd: .stage.%.openocd-prep
 	echo STAGE: $@
 	(cd $(call arena,$@)/openocd && make -j && make install) >> $(call log,$@) 2>&1
