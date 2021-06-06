@@ -531,6 +531,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
 	cp blobs/mingw-w64-i686-libusb-1.0.23-1-any.pkg.tar.xz $(call arena,$@) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@); tar xvf mingw-w64-i686-libusb-1.0.23-1-any.pkg.tar.xz) >> $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin; cp $(call arena,$@)/mingw32/bin/libusb-1.0.dll $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/openocd; LDFLAGS="-L$(call arena,$@)/mingw32/lib" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
 .stage.WIN64.openocd-prep: .stage.WIN64.start
@@ -539,6 +540,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
 	cp blobs/mingw-w64-x86_64-libusb-1.0.23-1-any.pkg.tar.xz $(call arena,$@) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@); tar xvf mingw-w64-x86_64-libusb-1.0.23-1-any.pkg.tar.xz) >> $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin; cp $(call arena,$@)/mingw64/bin/libusb-1.0.dll $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/openocd; LDFLAGS="-L$(call arena,$@)/mingw64/lib" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
 .stage.%.openocd: .stage.%.openocd-prep
