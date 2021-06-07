@@ -547,11 +547,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp blobs/openocd-osx.tar.gz $(call arena,$@) >> $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@); tar xf $(call arena,$@)/openocd-osx.tar.gz) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="openocd"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	mkdir -p pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
+	(cd pkg.openocd.$(call arch,$@);  tar xf ../blobs/openocd-osx.tar.gz) >> $(call log,$@) 2>&1
+	(cd pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="openocd"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).openocd-$$(cd $(REPODIR)/openocd && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; echo $(call makejson,$@) ; echo cp *json ../) >> $(call log,$@) 2>&1
+	    cd pkg.openocd.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} openocd; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
