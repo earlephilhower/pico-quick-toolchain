@@ -1,0 +1,66 @@
+diff --git a/newlib/libc/time/tzset_r.c b/newlib/libc/time/tzset_r.c
+index 9e0cf834b..5b8b692ee 100644
+--- a/newlib/libc/time/tzset_r.c
++++ b/newlib/libc/time/tzset_r.c
+@@ -45,8 +45,19 @@ _tzset_unlocked_r (struct _reent *reent_ptr)
+   if (*tzenv == ':')
+     ++tzenv;  
+ 
+-  if (sscanf (tzenv, "%10[^0-9,+-]%n", __tzname_std, &n) <= 0)
+-    return;
++  if (tzenv[0] == '<')
++    {
++      /* This is of the form "<[+-]nn>" so needs a different parsing */
++      if (sscanf (tzenv, "%9[^>]>%n", __tzname_std, &n) <= 0)
++        return;
++      /* Include the final > */
++      strcat (__tzname_std, ">");
++    }
++  else
++    {
++      if (sscanf (tzenv, "%10[^0-9,+-]%n", __tzname_std, &n) <= 0)
++        return;
++    }
+  
+   tzenv += n;
+ 
+@@ -69,15 +80,32 @@ _tzset_unlocked_r (struct _reent *reent_ptr)
+   _tzname[0] = __tzname_std;
+   tzenv += n;
+   
+-  if (sscanf (tzenv, "%10[^0-9,+-]%n", __tzname_dst, &n) <= 0)
+-    { /* No dst */
+-      _tzname[1] = _tzname[0];
+-      _timezone = tz->__tzrule[0].offset;
+-      _daylight = 0;
+-      return;
++  if (tzenv[0] == '<')
++    {
++      /* This is of the form "<[+-]nn>" so needs a different parsing */
++      if (sscanf (tzenv, "%9[^>]>%n", __tzname_dst, &n) <= 0)
++        { /* No dst */
++          _tzname[1] = _tzname[0];
++          _timezone = tz->__tzrule[0].offset;
++          _daylight = 0;
++          return;
++        }
++      /* Include the final > */
++      strcat (__tzname_dst, ">");
++      _tzname[1] = __tzname_dst;
+     }
+   else
+-    _tzname[1] = __tzname_dst;
++    {
++      if (sscanf (tzenv, "%10[^0-9,+-]%n", __tzname_dst, &n) <= 0)
++        { /* No dst */
++          _tzname[1] = _tzname[0];
++          _timezone = tz->__tzrule[0].offset;
++          _daylight = 0;
++          return;
++        }
++      else
++        _tzname[1] = __tzname_dst;
++    }
+ 
+   tzenv += n;
+ 
