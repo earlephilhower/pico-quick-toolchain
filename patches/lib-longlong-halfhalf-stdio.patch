@@ -1,0 +1,214 @@
+diff --git a/newlib/libc/stdio/nano-vfprintf.c b/newlib/libc/stdio/nano-vfprintf.c
+index bc7ed0743..1d9492e84 100644
+--- a/newlib/libc/stdio/nano-vfprintf.c
++++ b/newlib/libc/stdio/nano-vfprintf.c
+@@ -612,6 +612,33 @@ _VFPRINTF_R (struct _reent *data,
+ 	  fmt++;
+ 	}
+ 
++      /* Handle ll case */
++      if ((prt_data.flags & LONGINT) && (*fmt == 'l'))
++        {
++          prt_data.flags |= LONGLONG;
++          prt_data.flags &= ~LONGINT;
++          fmt++;
++        }
++      /* Handle hh case */
++      if ((prt_data.flags & SHORTINT) && (*fmt == 'h'))
++        {
++          prt_data.flags |= CHARINT;
++          prt_data.flags &= ~SHORTINT;
++          fmt++;
++        }
++
++      /* Convert %z and %t into a no-op as size_t == int on ESP8266 */
++      if ((*fmt == 'z') || (*fmt == 't'))
++        {
++          fmt++;
++        }
++      /* Convert %j to a ll */
++      if (*fmt == 'j')
++        {
++          prt_data.flags |= LONGLONG;
++          fmt++;
++        }
++
+       /* The conversion specifiers.  */
+       prt_data.code = *fmt++;
+       cp = memchr ("efgEFG", prt_data.code, 6);
+diff --git a/newlib/libc/stdio/nano-vfprintf_i.c b/newlib/libc/stdio/nano-vfprintf_i.c
+index f7da95251..13f9a23b2 100644
+--- a/newlib/libc/stdio/nano-vfprintf_i.c
++++ b/newlib/libc/stdio/nano-vfprintf_i.c
+@@ -111,7 +111,7 @@ _printf_i (struct _reent *data, struct _prt_data_t *pdata, FILE *fp,
+ {
+   /* Field size expanded by dprec.  */
+   int realsz;
+-  u_quad_t _uquad;
++  u_oct_t _uoct;
+   int base;
+   int n;
+   char *cp = pdata->buf + BUF;
+@@ -126,17 +126,17 @@ _printf_i (struct _reent *data, struct _prt_data_t *pdata, FILE *fp,
+       goto non_number_nosign;
+     case 'd':
+     case 'i':
+-      _uquad = SARG (pdata->flags);
+-      if ((long) _uquad < 0)
++      _uoct = SARG (pdata->flags);
++      if ((long long) _uoct < 0)
+ 	{
+-	  _uquad = -_uquad;
++	  _uoct = -_uoct;
+ 	  pdata->l_buf[0] = '-';
+ 	}
+       base = 10;
+       goto number;
+     case 'u':
+     case 'o':
+-      _uquad = UARG (pdata->flags);
++      _uoct = UARG (pdata->flags);
+       base = (pdata->code == 'o') ? 8 : 10;
+       goto nosign;
+     case 'X':
+@@ -158,13 +158,13 @@ _printf_i (struct _reent *data, struct _prt_data_t *pdata, FILE *fp,
+       pdata->l_buf[2] = 'x';
+       xdigs = "0123456789abcdef";
+ hex:
+-      _uquad = UARG (pdata->flags);
++      _uoct = UARG (pdata->flags);
+       base = 16;
+       if (pdata->flags & ALT)
+ 	pdata->flags |= HEXPREFIX;
+ 
+       /* Leading 0x/X only if non-zero.  */
+-      if (_uquad == 0)
++      if (_uoct == 0)
+ 	pdata->flags &= ~HEXPREFIX;
+ 
+       /* Unsigned conversions.  */
+@@ -184,14 +184,14 @@ number:
+        * explicit precision of zero is no characters.''
+        *	-- ANSI X3J11
+        */
+-      if (_uquad != 0 || pdata->prec != 0)
++      if (_uoct != 0 || pdata->prec != 0)
+ 	{
+ 	  do
+ 	    {
+-	      *--cp = xdigs[_uquad % base];
+-	      _uquad /= base;
++	      *--cp = xdigs[_uoct % base];
++	      _uoct /= base;
+ 	    }
+-	  while (_uquad);
++	  while (_uoct);
+ 	}
+       /* For 'o' conversion, '#' increases the precision to force the first
+ 	 digit of the result to be zero.  */
+@@ -205,11 +205,14 @@ number:
+ 	*GET_ARG (N, *ap, long_ptr_t) = pdata->ret;
+       else if (pdata->flags & SHORTINT)
+ 	*GET_ARG (N, *ap, short_ptr_t) = pdata->ret;
++      else if (pdata->flags & CHARINT)
++	*GET_ARG (N, *ap, char_ptr_t) = pdata->ret;
+       else
+ 	*GET_ARG (N, *ap, int_ptr_t) = pdata->ret;
+     case '\0':
+       pdata->size = 0;
+       break;
++    case 'S': // TODO: Verify cap-S under Arduino is "PROGMEM char*", not wchar_t
+     case 's':
+       cp = GET_ARG (N, *ap, char_ptr_t);
+       /* Precision gives the maximum number of chars to be written from a
+diff --git a/newlib/libc/stdio/nano-vfprintf_local.h b/newlib/libc/stdio/nano-vfprintf_local.h
+index 15ddce08e..6122db493 100644
+--- a/newlib/libc/stdio/nano-vfprintf_local.h
++++ b/newlib/libc/stdio/nano-vfprintf_local.h
+@@ -113,6 +113,10 @@ extern char *_dtoa_r (struct _reent *, double, int,
+ #define quad_t long
+ #define u_quad_t unsigned long
+ 
++#define oct_t long long
++#define u_oct_t unsigned long long
++
++typedef oct_t *  oct_ptr_t;
+ typedef quad_t * quad_ptr_t;
+ typedef void *void_ptr_t;
+ typedef char *   char_ptr_t;
+@@ -140,8 +144,10 @@ typedef short *  short_ptr_t;
+    sizeof (long long) = sizeof long > sizeof int.  */
+ #define QUADINT		LONGINT
+ #define FPT		0x400		/* Floating point number.  */
++#define LONGLONG        0x800           /* Long long */
++
+ /* Define as 0, to make SARG and UARG occupy fewer instructions.  */
+-# define CHARINT	0
++#define CHARINT	0x200
+ 
+ /* Macros to support positional arguments.  */
+ #define GET_ARG(n, ap, type) (va_arg ((ap), type))
+@@ -150,15 +156,17 @@ typedef short *  short_ptr_t;
+    argument extraction methods.  Also they should be used in nano-vfprintf_i.c
+    and nano-vfprintf_float.c only, since ap is a pointer to va_list.  */
+ #define	SARG(flags) \
+-	(flags&LONGINT ? GET_ARG (N, (*ap), long) : \
+-	    flags&SHORTINT ? (long)(short)GET_ARG (N, (*ap), int) : \
+-	    flags&CHARINT ? (long)(signed char)GET_ARG (N, (*ap), int) : \
+-	    (long)GET_ARG (N, (*ap), int))
++	(flags&LONGINT ? (long long) GET_ARG (N, (*ap), long) : \
++	    flags&SHORTINT ? (long long) (short)GET_ARG (N, (*ap), int) : \
++	    flags&CHARINT ? (long long) (signed char)GET_ARG (N, (*ap), int) : \
++	    flags&LONGLONG ? (long long) GET_ARG (N, (*ap), long long) : \
++	    (long long) GET_ARG (N, (*ap), int))
+ #define	UARG(flags) \
+-	(flags&LONGINT ? GET_ARG (N, (*ap), u_long) : \
+-	    flags&SHORTINT ? (u_long)(u_short)GET_ARG (N, (*ap), int) : \
+-	    flags&CHARINT ? (u_long)(unsigned char)GET_ARG (N, (*ap), int) : \
+-	    (u_long)GET_ARG (N, (*ap), u_int))
++	(flags&LONGINT ? (unsigned long long) GET_ARG (N, (*ap), u_long) : \
++	    flags&SHORTINT ? (unsigned long long) (u_short)GET_ARG (N, (*ap), int) : \
++	    flags&CHARINT ? (unsigned long long) (unsigned char)GET_ARG (N, (*ap), int) : \
++	    flags&LONGLONG ? (unsigned long long) GET_ARG (N, (*ap), unsigned long long) : \
++	    (unsigned long long) GET_ARG (N, (*ap), u_int))
+ 
+ /* BEWARE, these `goto error' on error. And they are used
+    in more than one functions.
+diff --git a/newlib/libc/stdio/nano-vfscanf.c b/newlib/libc/stdio/nano-vfscanf.c
+index 57d25b82a..5f3f316f3 100644
+--- a/newlib/libc/stdio/nano-vfscanf.c
++++ b/newlib/libc/stdio/nano-vfscanf.c
+@@ -320,6 +320,11 @@ __SVFSCANF_R (struct _reent *rptr,
+ 	scan_data.flags |= (SHORT << (cp - p));
+ 	fmt++;
+       }
++      if ((scan_data.flags & SHORT) && (*fmt == 'h')) {
++        scan_data.flags &= ~SHORT;
++        scan_data.flags |= CHAR;
++        fmt++;
++      }
+ 
+       /* Switch on the format.  continue if done; break once format
+ 	 type is derived.  */
+@@ -377,6 +382,8 @@ __SVFSCANF_R (struct _reent *rptr,
+ 	    *GET_ARG (N, ap_copy, short *) = scan_data.nread;
+ 	  else if (scan_data.flags & LONG)
+ 	    *GET_ARG (N, ap_copy, long *) = scan_data.nread;
++	  else if (scan_data.flags & CHAR)
++	    *GET_ARG (N, ap_copy, char *) = scan_data.nread;
+ 	  else
+ 	    *GET_ARG (N, ap_copy, int *) = scan_data.nread;
+ 
+diff --git a/newlib/libc/stdio/nano-vfscanf_i.c b/newlib/libc/stdio/nano-vfscanf_i.c
+index fc8011717..dbba2facd 100644
+--- a/newlib/libc/stdio/nano-vfscanf_i.c
++++ b/newlib/libc/stdio/nano-vfscanf_i.c
+@@ -217,6 +217,8 @@ match_end:
+       ul = (*ccfn) (rptr, pdata->buf, (char **) NULL, pdata->base);
+       if (pdata->flags & POINTER)
+ 	*GET_ARG (N, *ap, void **) = (void *) (uintptr_t) ul;
++      else if (pdata->flags & CHAR)
++	*GET_ARG (N, *ap, char *) = ul;
+       else if (pdata->flags & SHORT)
+ 	*GET_ARG (N, *ap, short *) = ul;
+       else if (pdata->flags & LONG)
