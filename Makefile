@@ -100,6 +100,7 @@ LINUX32_TARCMD := tar
 LINUX32_TAROPT := zcf
 LINUX32_TAREXT := tar.gz
 LINUX32_ASYS   := linux_i686
+LINUX32_DEB    := i386
 
 WIN32_HOST   := i686-w64-mingw32
 WIN32_AHOST  := i686-mingw32
@@ -144,6 +145,7 @@ ARM64_TARCMD := tar
 ARM64_TAROPT := zcf
 ARM64_TAREXT := tar.gz
 ARM64_ASYS   := linux_aarch64
+ARM64_DEB    := arm64
 
 RPI_HOST   := arm-linux-gnueabihf
 RPI_AHOST  := arm-linux-gnueabihf
@@ -155,6 +157,7 @@ RPI_TARCMD := tar
 RPI_TAROPT := zcf
 RPI_TAREXT := tar.gz
 RPI_ASYS   := linux_armv6l
+RPI_DEB    := armhf
 
 # Call with $@ to get the appropriate variable for this architecture
 host   = $($(call arch,$(1))_HOST)
@@ -166,6 +169,7 @@ bflgs  = $($(call arch,$(1))_BFLGS)
 tarcmd = $($(call arch,$(1))_TARCMD)
 taropt = $($(call arch,$(1))_TAROPT)
 tarext = $($(call arch,$(1))_TAREXT)
+deb    = $($(call arch,$(1))_DEB)
 log    = log$(1)
 
 # For package.json
@@ -177,6 +181,9 @@ arena = $(PWD)/arena$(call ext,$(1))
 arch = $(subst .,,$(suffix $(basename $(1))))
 # This installation directory for this architecture
 install = $(PWD)/$(ARCH)$($(call arch,$(1))_EXT)
+
+# Binary stuff we need to access
+BLOBS = $(PWD)/blobs
 
 # GCC et. al configure options
 configure  = --prefix=$(call install,$(1))
@@ -333,6 +340,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	    esac ; \
 	    (cd $(REPODIR)/$(GCC_DIR); rm -rf $${base}; ln -s $${name} $${base}) \
 	done >> $(call log,$@) 2>&1
+	(cd  $(REPODIR)/openocd && ./bootstrap) >> $(call log,$@) 2>&1
 	touch $@
 
 # Checkout any required branches
@@ -341,7 +349,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/openocd && git reset --hard && git checkout picoprobe && git submodule update --init --recursive) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/openocd && git reset --hard && git checkout rp2040 && git submodule update --init --recursive) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSCK_BRANCH)) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -499,56 +507,61 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
-	cp blobs/libudev1_237-3ubuntu10_arm64.deb blobs/libudev-dev_237-3ubuntu10_arm64.deb blobs/libusb-1.0-0-dev_1.0.21-2_arm64.deb $(call arena,$@)/. >> $(call log,$@) 2>&1
-	(cd $(call arena,$@); for i in *.deb; do ar x $$i; tar xvf data.tar.xz; rm $$i; done) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd; LIBUSB1_CFLAGS=-I$(call arena,$@)/usr/include/libusb-1.0 LIBUSB1_LIBS="-L$(call arena,$@)/usr/lib/$(call host,$@) -lusb-1.0" LDFLAGS="-L$(call arena,$@)/lib/$(call host,$@) -lpthread -ludev" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/../pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@); for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
+	(for i in $(call arena,$@)/usr/lib/$(call host,$@)/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/usr@' $$i; done) >> $(call log,$@) 2>&1
+	(echo cp $(call arena,$@)/lib/$(call host,$@)/* $(call arena,$@)/usr/lib/$(call host,$@)/.) >> $(call log,$@) 2>&1
+	(cp $(call arena,$@)/lib/$(call host,$@)/* $(call arena,$@)/usr/lib/$(call host,$@)/.) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; PKG_CONFIG_PATH=$(call arena,$@)/usr/lib/$(call host,$@)/pkgconfig LIBS="-ludev -lpthread" LDFLAGS=-L$(call arena,$@)/lib/$(call host,$@) ./configure --enable-picoprobe --enable-cmsis-dap --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
 .stage.RPI.openocd-prep: .stage.RPI.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
-	cp blobs/libudev-dev_237-3ubuntu10_armhf.deb  blobs/libudev1_237-3ubuntu10.48_armhf.deb  blobs/libusb-1.0-0-dev_1.0.21-1_armhf.deb $(call arena,$@)/. >> $(call log,$@) 2>&1
-	(cd $(call arena,$@); for i in *.deb; do ar x $$i; tar xvf data.tar.xz; rm $$i; done) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd; LIBUSB1_CFLAGS=-I$(call arena,$@)/usr/include/libusb-1.0 LIBUSB1_LIBS="-L$(call arena,$@)/usr/lib/$(call host,$@) -lusb-1.0" LDFLAGS="-L$(call arena,$@)/lib/$(call host,$@) -lpthread -ludev" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/../pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@); for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
+	(for i in $(call arena,$@)/usr/lib/$(call host,$@)/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/usr@' $$i; done) >> $(call log,$@) 2>&1
+	(echo cp $(call arena,$@)/lib/$(call host,$@)/* $(call arena,$@)/usr/lib/$(call host,$@)/.) >> $(call log,$@) 2>&1
+	(cp $(call arena,$@)/lib/$(call host,$@)/* $(call arena,$@)/usr/lib/$(call host,$@)/.) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; PKG_CONFIG_PATH=$(call arena,$@)/usr/lib/$(call host,$@)/pkgconfig LIBS="-ludev -lpthread" LDFLAGS=-L$(call arena,$@)/lib/$(call host,$@) ./configure --enable-picoprobe --enable-cmsis-dap --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
 .stage.LINUX32.openocd-prep: .stage.LINUX32.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
-	cp blobs/libudev1_237-3ubuntu10_i386.deb blobs/libudev-dev_237-3ubuntu10_i386.deb blobs/libusb-1.0-0-dev_1.0.21-2_i386.deb $(call arena,$@)/. >> $(call log,$@) 2>&1
-	(cd $(call arena,$@); for i in *.deb; do ar x $$i; tar xvf data.tar.xz; rm $$i; done) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd; LIBUSB1_CFLAGS=-I$(call arena,$@)/usr/include/libusb-1.0 LIBUSB1_LIBS="-L$(call arena,$@)/usr/lib/i386-linux-gnu -lusb-1.0" LDFLAGS="-L$(call arena,$@)/lib/i386-linux-gnu -lpthread -ludev" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/../pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@); for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
+	(for i in $(call arena,$@)/usr/lib/i386-linux-gnu/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/usr@' $$i; done) >> $(call log,$@) 2>&1
+	(cp $(call arena,$@)/lib/i386-linux-gnu/* $(call arena,$@)/usr/lib/i386-linux-gnu/.) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; PKG_CONFIG_PATH=$(call arena,$@)/usr/lib/i386-linux-gnu/pkgconfig LIBS="-ludev -lpthread" LDFLAGS=-L$(call arena,$@)/lib/i386-linux-gnu ./configure --enable-picoprobe --enable-cmsis-dap --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
 .stage.LINUX.openocd-prep: .stage.LINUX.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd; ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/../pkg.openocd.$(call arch,$@)/openocd) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; ./configure --enable-picoprobe --enable-cmsis-dap --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd) >> $(call log,$@) 2>&1
 
 .stage.WIN32.openocd-prep: .stage.WIN32.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
-	cp blobs/mingw-w64-i686-libusb-1.0.23-1-any.pkg.tar.xz $(call arena,$@) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@); tar xvf mingw-w64-i686-libusb-1.0.23-1-any.pkg.tar.xz) >> $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin; cp $(call arena,$@)/mingw32/bin/libusb-1.0.dll $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd; LDFLAGS="-L$(call arena,$@)/mingw32/lib" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/../pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@); for i in $(BLOBS)/mingw-w64-i686*.tar.*; do tar xvf $$i; done) >> $(call log,$@) 2>&1
+	(for i in $(call arena,$@)/mingw32/lib/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/mingw32@' $$i; done) >> $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin; cp $(call arena,$@)/mingw32/bin/*.dll $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; PKG_CONFIG_PATH=$(call arena,$@)/mingw32/lib/pkgconfig ./configure --enable-picoprobe --enable-cmsis-dap --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
 .stage.WIN64.openocd-prep: .stage.WIN64.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
-	cp blobs/mingw-w64-x86_64-libusb-1.0.23-1-any.pkg.tar.xz $(call arena,$@) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@); tar xvf mingw-w64-x86_64-libusb-1.0.23-1-any.pkg.tar.xz) >> $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin; cp $(call arena,$@)/mingw64/bin/libusb-1.0.dll $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd; LDFLAGS="-L$(call arena,$@)/mingw64/lib" ./configure --enable-picoprobe --disable-werror --prefix $(call arena,$@)/../pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@); for i in $(BLOBS)/mingw-w64-x86_64*.tar.*; do tar xvf $$i; done) >> $(call log,$@) 2>&1
+	(for i in $(call arena,$@)/mingw64/lib/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/mingw64@' $$i; done) >> $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin; cp $(call arena,$@)/mingw64/bin/*.dll $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd/bin >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd; PKG_CONFIG_PATH=$(call arena,$@)/mingw64/lib/pkgconfig ./configure --enable-picoprobe --enable-cmsis-dap --disable-werror --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
 
 .stage.OSX.openocd: .stage.OSX.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
-	cp blobs/openocd-osx.tar.gz $(call arena,$@) >> $(call log,$@) 2>&1
+	cp $(BLOBS)/openocd-osx.tar.gz $(call arena,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
-	(cd pkg.openocd.$(call arch,$@);  tar xf ../blobs/openocd-osx.tar.gz) >> $(call log,$@) 2>&1
+	(cd pkg.openocd.$(call arch,$@);  tar xf $(BLOBS)/openocd-osx.tar.gz) >> $(call log,$@) 2>&1
 	(cd pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="openocd"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).openocd-$$(cd $(REPODIR)/openocd && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.openocd.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} openocd; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
@@ -557,11 +570,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.openocd: .stage.%.openocd-prep
 	echo STAGE: $@
-	(cd $(call arena,$@)/openocd && make -j && make install) >> $(call log,$@) 2>&1
-	(cd pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="openocd"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && make -j4 && make install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="openocd"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).openocd-$$(cd $(REPODIR)/openocd && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.openocd.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} openocd; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
-	rm -rf pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
+	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf $(call arena,$@)/pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .stage.%.pioasm .stage.%.openocd
