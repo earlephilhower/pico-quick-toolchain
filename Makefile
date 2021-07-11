@@ -422,7 +422,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.libsdtcpp-nox: .stage.%.libstdcpp
+.stage.%.libstdcpp-nox: .stage.%.libstdcpp
 	echo STAGE: $@
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
 	rm -rf $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox > $(call log,$@) 2>&1
@@ -432,7 +432,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.strip: .stage.%.libsdtcpp-nox
+.stage.%.strip: .stage.%.libstdcpp-nox
 	echo STAGE: $@
 	($(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/c*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/lto1$(call exe,$@) || true ) > $(call log,$@) 2>&1
 	touch $@
