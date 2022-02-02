@@ -1,0 +1,13 @@
+diff --git a/newlib/libc/machine/arm/setjmp.S b/newlib/libc/machine/arm/setjmp.S
+index 21d6ff9e7..6e337842c 100644
+--- a/newlib/libc/machine/arm/setjmp.S
++++ b/newlib/libc/machine/arm/setjmp.S
+@@ -59,7 +59,7 @@
+ 
+        .syntax unified
+ 
+-#if __ARM_ARCH_ISA_THUMB == 1 && !__ARM_ARCH_ISA_ARM
++#if 1
+ /* ARMv6-M-like has to be implemented in Thumb mode.  */
+ 
+ .thumb
