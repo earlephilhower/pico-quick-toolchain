@@ -69,8 +69,17 @@ else ifeq ($(GCC), 10.3)
     BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 12.1)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-12.1.0
+    GCC_PKGREL    := 120100
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
 else
-    $(error Need to specify a supported GCC version "GCC={9.3, 10.2, 10.3}")
+    $(error Need to specify a supported GCC version "GCC={9.3, 10.2, 10.3, 12.1}")
 endif
 
 # Define the build and output naming, don't use directly (see below)
