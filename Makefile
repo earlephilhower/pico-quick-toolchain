@@ -73,11 +73,6 @@ else
     $(error Need to specify a supported GCC version "GCC={9.3, 10.2, 10.3}")
 endif
 
-PICOSDK_BRANCH := 1.1.0
-
-# LTO doesn't work on 4.8, may not be useful later
-LTO := $(if $(lto),$(lto),false)
-
 # Define the build and output naming, don't use directly (see below)
 LINUX_HOST   := x86_64-linux-gnu
 LINUX_AHOST  := x86_64-pc-linux-gnu
@@ -204,11 +199,11 @@ configure += --enable-lto
 configure += --enable-static=yes
 configure += --disable-libstdcxx-verbose
 configure += --disable-decimal-float
-configure += --enable-multilib
+configure += --with-cpu=cortex-m0plus
+configure += --with-no-thumb-interwork
 
 # Newlib configuration common
 CONFIGURENEWLIBCOM  = --with-newlib
-CONFIGURENEWLIBCOM += --enable-multilib
 CONFIGURENEWLIBCOM += --disable-newlib-io-c99-formats
 CONFIGURENEWLIBCOM += --disable-newlib-supplied-syscalls
 CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
@@ -217,6 +212,8 @@ CONFIGURENEWLIBCOM += --enable-target-optspace
 CONFIGURENEWLIBCOM += --disable-option-checking
 CONFIGURENEWLIBCOM += --target=$(ARCH)
 CONFIGURENEWLIBCOM += --disable-shared
+CONFIGURENEWLIBCOM += --with-cpu=cortex-m0plus
+CONFIGURENEWLIBCOM += --with-no-thumb-interwork
 
 # Configuration for newlib normal build
 configurenewlib  = --prefix=$(call install,$(1))
@@ -279,13 +276,8 @@ CONFIGOPENOCD += --disable-remote-bitbang
 INSTALLBRANCH ?= master
 
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
-ifeq ($(LTO),true)
-    CFFT := "-flto -Wl,-flto -Os -g -free -fipa-pta"
-else ifeq ($(LTO),false)
-    CFFT := "-Os -g -free -fipa-pta"
-else
-    $(error Need to specify LTO={true,false} on the command line)
-endif
+CFFT := "-Os -g -free -fipa-pta"
+
 # Sets the environment variables for a subshell while building
 setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
          export CXXFLAGS_FOR_TARGET=$(CFFT); \
@@ -488,7 +480,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox > $(call log,$@) 2>&1
 	cp -a $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
-	cp $(ARCH)$(call ext,$@)/$(ARCH)/lib/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/libstdc++-exc.a >> $(call log,$@) 2>&1
+	cp $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++-exc.a >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
