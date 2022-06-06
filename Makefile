@@ -637,9 +637,6 @@ install: .stage.LINUX.install
 	rm -rf $(ARDUINO)
 	git clone https://github.com/$(GHUSER)/arduino-pico $(ARDUINO)
 	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
-	echo "-------- Copying GCC libs"
-	cp $(call install,$@)/$(ARCH)/lib/libstdc++-exc.a $(ARDUINO)/lib/.
-	cp $(call install,$@)/$(ARCH)/lib/libstdc++.a     $(ARDUINO)/lib/.
 	echo "-------- Updating package.json"
 	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_pico_index.template.json; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc --ver "$${ver}" --glob '*$(ARCH)*.json' ; \
