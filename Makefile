@@ -204,7 +204,7 @@ configure += --disable-nls
 configure += --without-python
 configure += --disable-bootstrap
 configure += --enable-languages=c,c++
-configure += --enable-lto
+configure += --disable-lto
 configure += --enable-static=yes
 configure += --disable-libstdcxx-verbose
 configure += --disable-decimal-float
@@ -495,7 +495,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.strip: .stage.%.libstdcpp-nox
 	echo STAGE: $@
-	($(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/c*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/lto1$(call exe,$@) || true ) > $(call log,$@) 2>&1
+	($(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/c*$(call exe,$@) || true ) > $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.post: .stage.%.strip
