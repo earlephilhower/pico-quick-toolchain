@@ -8,7 +8,7 @@
 REL     := $(if $(REL),$(REL),1.0.0)
 SUBREL  := $(if $(SUBREL),$(SUBREL),testing)
 ARDUINO := $(if $(ARDUINO),$(ARDUINO),$(shell pwd)/arduino)
-GCC     := $(if $(GCC),$(GCC),10.2)
+GCC     := $(if $(GCC),$(GCC),10.3)
 
 # General constants
 PWD      := $(shell pwd)
@@ -486,11 +486,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.%.libstdcpp-nox: .stage.%.libstdcpp
 	echo STAGE: $@
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
+	cp $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++-exc.a >> $(call log,$@) 2>&1
 	rm -rf $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox > $(call log,$@) 2>&1
 	cp -a $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
-	cp $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++-exc.a >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/libstdc++.a >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.strip: .stage.%.libstdcpp-nox
