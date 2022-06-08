@@ -25,6 +25,7 @@ ifeq ($(GHUSER),)
 else ifeq ($(GHTOKEN),)
     $(error Need to specify GH PAT on the command line "GHTOKEN=xxxx" or in .ghtoken)
 endif
+PLATFORMIO := ~/.platformio/penv/bin/platformio
 
 NEWLIB_DIR    := newlib
 NEWLIB_REPO   := git://sourceware.org/git/newlib-cygwin.git
@@ -657,6 +658,13 @@ upload: .stage.LINUX.upload
 	    pip3 install -q pygithub ; \
 	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/earlephilhower/ArduinoPico for more info'  --name "Raspberry Pi Pico Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
 	rm -rf ./venv
+
+# Platform.IO publish the package
+publish: .stage.LINUX.publish
+.stage.LINUX.publish:
+	echo STAGE: $@
+	find ./ -maxdepth 1 -name "*.tar.gz" -exec $(PLATFORMIO) package publish --non-interactive \{\} \;
+	find ./ -maxdepth 1 -name "*.zip" -exec $(PLATFORMIO) package publish --non-interactive \{\} \;
 
 dumpvars:
 	echo SETENV:    '$(call setenv,.stage.LINUX.stage)'
