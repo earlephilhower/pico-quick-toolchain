@@ -224,6 +224,7 @@ CONFIGURENEWLIBCOM += --target=$(ARCH)
 CONFIGURENEWLIBCOM += --disable-shared
 CONFIGURENEWLIBCOM += --with-cpu=cortex-m0plus
 CONFIGURENEWLIBCOM += --with-no-thumb-interwork
+CONFIGURENEWLIBCOM += --enable-newlib-retargetable-locking
 
 # Configuration for newlib normal build
 configurenewlib  = --prefix=$(call install,$(1))
