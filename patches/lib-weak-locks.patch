@@ -1,8 +1,17 @@
 diff --git a/newlib/libc/misc/lock.c b/newlib/libc/misc/lock.c
-index 545511e78..984b51f72 100644
+index 545511e78..bae9ec187 100644
 --- a/newlib/libc/misc/lock.c
 +++ b/newlib/libc/misc/lock.c
-@@ -92,63 +92,73 @@ struct __lock {
+@@ -83,7 +83,7 @@ subroutines are required for linking multi-threaded applications.
+ */
+ 
+ /* dummy lock routines and static locks for single-threaded apps */
+-
++#if 0
+ #ifndef __SINGLE_THREAD__
+ 
+ #include <sys/lock.h>
+@@ -92,66 +92,77 @@ struct __lock {
    char unused;
  };
  
@@ -86,3 +95,7 @@ index 545511e78..984b51f72 100644
  void
  __retarget_lock_release_recursive (_LOCK_T lock)
  {
+ }
+ 
+ #endif /* !defined(__SINGLE_THREAD__) */
++#endif

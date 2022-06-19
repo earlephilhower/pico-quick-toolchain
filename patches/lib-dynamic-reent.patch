@@ -1,0 +1,15 @@
+diff --git a/newlib/libc/include/sys/config.h b/newlib/libc/include/sys/config.h
+index 4bc8d29bf..23d465407 100644
+--- a/newlib/libc/include/sys/config.h
++++ b/newlib/libc/include/sys/config.h
+@@ -4,6 +4,10 @@
+ #include <machine/ieeefp.h>  /* floating point macros */
+ #include <sys/features.h>	/* POSIX defs */
+ 
++#ifndef __DYNAMIC_REENT__
++#define __DYNAMIC_REENT__
++#endif
++
+ #ifdef __aarch64__
+ #define MALLOC_ALIGNMENT 16
+ #endif
