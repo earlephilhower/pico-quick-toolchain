@@ -138,7 +138,7 @@ OSX_BFLGS  :=
 OSX_TARCMD := tar
 OSX_TAROPT := zcf
 OSX_TAREXT := tar.gz
-OSX_ASYS   := darwin_x86_64
+OSX_ASYS   := darwin_x86_64\",\ \"darwin_arm64
 
 ARM64_HOST   := aarch64-linux-gnu
 ARM64_AHOST  := aarch64-linux-gnu
