@@ -657,7 +657,7 @@ upload: .stage.LINUX.upload
 	python3 -m venv ./venv
 	cd ./venv; . bin/activate; \
 	    pip3 install -q pygithub ; \
-	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/earlephilhower/ArduinoPico for more info'  --name "Raspberry Pi Pico Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
+	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/earlephilhower/arduino-pico for more info'  --name "Raspberry Pi Pico Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
 	rm -rf ./venv
 
 # Platform.IO publish the package
