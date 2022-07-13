@@ -31,6 +31,8 @@ NEWLIB_DIR    := newlib
 NEWLIB_REPO   := git://sourceware.org/git/newlib-cygwin.git
 NEWLIB_BRANCH := newlib-4.0.0
 
+PICOSDK_BRANCH := 1.4.0
+
 # Depending on the GCC version get proper branch and support libs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
 ifeq ($(GCC), 6.3)
@@ -406,7 +408,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/openocd && git reset --hard && git checkout rp2040 && git submodule update --init --recursive) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/libexpat && git reset --hard && git checkout R_2_4_4 && git submodule update --init --recursive) >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSCK_BRANCH)) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSDK_BRANCH)) >> $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
