@@ -161,7 +161,7 @@ RPI_BFLGS  := LDFLAGS=-static
 RPI_TARCMD := tar
 RPI_TAROPT := zcf
 RPI_TAREXT := tar.gz
-RPI_ASYS   := linux_armv6l
+RPI_ASYS   := linux_armv6l\",\ \"linux_armv7l
 RPI_DEB    := armhf
 
 # Call with $@ to get the appropriate variable for this architecture
