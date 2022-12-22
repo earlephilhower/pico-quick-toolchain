@@ -368,7 +368,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(test -d $(REPODIR)/newlib          || git clone $(NEWLIB_REPO)                                 $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/mklittlefs      || git clone https://github.com/$(GHUSER)/mklittlefs.git    $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/pico-sdk        || git clone https://github.com/raspberrypi/pico-sdk.git    $(REPODIR)/pico-sdk    ) >> $(call log,$@) 2>&1
-	(test -d $(REPODIR)/openocd         || git clone https://github.com/$(GHUSER)/openocd.git       $(REPODIR)/openocd     ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/openocd         || git clone https://github.com/raspberrypi/openocd.git     $(REPODIR)/openocd     ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/libexpat        || git clone https://github.com/libexpat/libexpat.git       $(REPODIR)/libexpat    ) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -424,6 +424,10 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	for p in $(PATCHDIR)/lib-*.patch; do \
 	    test -r "$$p" || continue ; \
 	    (cd $(REPODIR)/newlib; echo "---- $$p: "; patch -s -p1 < $$p) ; \
+	done >> $(call log,$@) 2>&1
+	for p in $(PATCHDIR)/openocd-*.patch; do \
+            test -r "$$p" || continue ; \
+	    (cd $(REPODIR)/openocd; echo "---- $$p: "; patch -s -p1 < $$p) ; \
 	done >> $(call log,$@) 2>&1
 	touch $@
 

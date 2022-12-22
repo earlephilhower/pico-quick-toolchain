@@ -1,0 +1,22 @@
+diff --git a/src/helper/configuration.c b/src/helper/configuration.c
+index 114ad2c6c..9f8b4c7f4 100644
+--- a/src/helper/configuration.c
++++ b/src/helper/configuration.c
+@@ -146,6 +146,9 @@ int parse_config_file(struct command_context *cmd_ctx)
+ 
+ char *get_home_dir(const char *append_path)
+ {
++#ifdef _WIN32
++	char homepath[MAX_PATH];
++#endif
+ 	char *home = getenv("HOME");
+ 
+ 	if (home == NULL) {
+@@ -155,7 +158,6 @@ char *get_home_dir(const char *append_path)
+ 
+ 		if (home == NULL) {
+ 
+-			char homepath[MAX_PATH];
+ 			char *drive = getenv("HOMEDRIVE");
+ 			char *path = getenv("HOMEPATH");
+ 			if (drive && path) {
