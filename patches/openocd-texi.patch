@@ -1,0 +1,31 @@
+diff --git a/doc/openocd.texi b/doc/openocd.texi
+index a5b94362f..2d4be46cf 100644
+--- a/doc/openocd.texi
++++ b/doc/openocd.texi
+@@ -10931,11 +10931,11 @@ Cyg_Thread::thread_list, Cyg_Scheduler_Base::current_thread.
+ @item ThreadX symbols
+ _tx_thread_current_ptr, _tx_thread_created_ptr, _tx_thread_created_count.
+ @item FreeRTOS symbols
+-@raggedright
++
+ pxCurrentTCB, pxReadyTasksLists, xDelayedTaskList1, xDelayedTaskList2,
+ pxDelayedTaskList, pxOverflowDelayedTaskList, xPendingReadyList,
+ uxCurrentNumberOfTasks, uxTopUsedPriority.
+-@end raggedright
++
+ @item linux symbols
+ init_task.
+ @item ChibiOS symbols
+@@ -10950,10 +10950,10 @@ OSRunning, OSTCBCurPtr, OSTaskDbgListPtr, OSTaskQty.
+ @item nuttx symbols
+ g_readytorun, g_tasklisttable.
+ @item RIOT symbols
+-@raggedright
++
+ sched_threads, sched_num_threads, sched_active_pid, max_threads,
+ _tcb_name_offset.
+-@end raggedright
++
+ @end table
+ 
+ For most RTOS supported the above symbols will be exported by default. However for
