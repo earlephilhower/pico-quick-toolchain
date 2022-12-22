@@ -1,6 +1,6 @@
 # Manually started actino to build OpenOCD for Windows and upload to an artifact
 
-name: Build MacOS
+name: OpenOCD Build MacOS
 on: [workflow_dispatch]
 jobs:
   build:

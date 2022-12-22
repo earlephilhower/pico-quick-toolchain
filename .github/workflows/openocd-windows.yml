@@ -1,6 +1,6 @@
 # Manually started actino to build OpenOCD for Windows and upload to an artifact
 
-name: Build All Windows
+name: OpenOCD Build All Windows
 on: [workflow_dispatch]
 jobs:
   build:
