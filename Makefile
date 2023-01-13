@@ -344,6 +344,8 @@ elf2uf2: .stage.LINUX32.elf2uf2 .stage.WIN32.elf2uf2 .stage.WIN64.elf2uf2 .stage
 
 openocd: .stage.LINUX32.openocd .stage.WIN32.openocd .stage.WIN64.openocd .stage.OSX.openocd .stage.ARM64.openocd .stage.RPI.openocd .stage.LINUX.openocd
 
+picotool: .stage.LINUX32.picotool .stage.WIN32.picotool .stage.WIN64.picotool .stage.OSX.picotool .stage.ARM64.picotool .stage.RPI.picotool .stage.LINUX.picotool
+
 # Other cross-compile cannot start until Linux is built
 .stage.LINUX32.gcc1-make .stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.OSX.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
 
@@ -369,6 +371,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(test -d $(REPODIR)/mklittlefs      || git clone https://github.com/$(GHUSER)/mklittlefs.git    $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/pico-sdk        || git clone https://github.com/raspberrypi/pico-sdk.git    $(REPODIR)/pico-sdk    ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/openocd         || git clone https://github.com/raspberrypi/openocd.git     $(REPODIR)/openocd     ) >> $(call log,$@) 2>&1
+	(test -d $(REPODIR)/picotool        || git clone https://github.com/raspberrypi/picotool.git    $(REPODIR)/picotool    ) >> $(call log,$@) 2>&1
 	(test -d $(REPODIR)/libexpat        || git clone https://github.com/libexpat/libexpat.git       $(REPODIR)/libexpat    ) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -569,6 +572,48 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(tarball=$(call host,$@).pioasm-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.pioasm.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} pioasm; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
+	touch $@
+
+.stage.LINUX.picotool-prep: .stage.LINUX.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/picotool > $(call log,$@) 2>&1
+	(mkdir $(call arena,$@)/picotool; cd $(call arena,$@)/picotool; PICO_SDK_PATH=$(REPODIR)/pico-sdk cmake $(REPODIR)/picotool) >> $(call log,$@) 2>&1
+
+.stage.ARM64.picotool-prep: .stage.ARM64.start
+.stage.RPI.picotool-prep: .stage.RPI.start
+.stage.LINUX32.picotool-prep: .stage.LINUX32.start
+.stage.ARM64.picotool-prep .stage.RPI.picotool-prep .stage.LINUX32.picotool-prep:
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/picotool > $(call log,$@) 2>&1
+	(mkdir $(call arena,$@)/picotool ; cd $(call arena,$@)/picotool; for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
+	(if [ -e $(call arena,$@)/picotool/lib/i386-linux-gnu ]; then mv $(call arena,$@)/picotool/lib/i386-linux-gnu $(call arena,$@)/picotool/lib/i686-linux-gnu; fi) 2>&1
+	(if [ -e $(call arena,$@)/picotool/usr/lib/i386-linux-gnu ]; then mv $(call arena,$@)/picotool/usr/lib/i386-linux-gnu $(call arena,$@)/picotool/usr/lib/i686-linux-gnu; fi) 2>&1
+	(for i in $(call arena,$@)/picotool/usr/lib/$(call host,$@)/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/usr@' $$i; done) >> $(call log,$@) 2>&1
+	echo "set(CMAKE_SYSTEM_NAME Linux)\nset(CMAKE_C_COMPILER $(call host,$@)-gcc)\nset(CMAKE_CXX_COMPILER $(call host,$@)-g++)\nset(CMAKE_FIND_ROOT_PATH /usr/$(call host,$@))\nset(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\nset(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)\nset(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)\n" > $(call arena,$@)/picotool.cross.cmake
+	(cd $(call arena,$@)/picotool; PICO_SDK_PATH=$(REPODIR)/pico-sdk cmake -DCMAKE_TOOLCHAIN_FILE=$(call arena,$@)/picotool.cross.cmake -DLIBUSB_LIBRARIES="-L$(call arena,$@)/picotool/usr/lib/$(call host,$@);-L$(call arena,$@)/picotool/lib/$(call host,$@);-lusb-1.0;-ludev;-pthread" -DLIBUSB_INCLUDE_DIR=$(call arena,$@)/usr/include/libusb-1.0/ $(REPODIR)/picotool) >> $(call log,$@) 2>&1
+
+.stage.%.picotool: .stage.%.picotool-prep
+	echo STAGE: $@
+	(cd $(call arena,$@)/picotool && make -j4 && mkdir -p $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool && cp picotool $(REPODIR)/picotool/LICENSE.TXT $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool/.) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool; $(call setenv,$@); pkgdesc="picotool-utility"; pkgname="tool-picotool-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).picotool-$$(cd $(REPODIR)/picotool && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd $(call arena,$@)/pkg.picotool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} picotool; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf $(call arena,$@)/pkg.picotool.$(call arch,$@) >> $(call log,$@) 2>&1
+	touch $@
+
+# These archs use manually build openocd executables
+.stage.WIN32.picotool: .stage.WIN32.start
+.stage.WIN64.picotool: .stage.WIN64.start
+.stage.OSX.picotool: .stage.OSX.start
+.stage.WIN32.picotool .stage.WIN64.picotool .stage.OSX.picotool:
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/picotool > $(call log,$@) 2>&1
+	mkdir -p pkg.picotool.$(call arch,$@) >> $(call log,$@) 2>&1
+	(cd pkg.picotool.$(call arch,$@); tar xf $(BLOBS)/picotool$(call ext,$@).tar.gz) >> $(call log,$@) 2>&1
+	(cd pkg.picotool.$(call arch,$@)/picotool; $(call setenv,$@); pkgdesc="picotool-utility"; pkgname="tool-picotool-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	(tarball=$(call host,$@).picotool-$$(cd $(REPODIR)/picotool && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd pkg.picotool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} picotool; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkg.picotool.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.ARM64.openocd-prep: .stage.ARM64.start

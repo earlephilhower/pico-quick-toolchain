@@ -1,4 +1,4 @@
-# Manually started actino to build OpenOCD for Windows and upload to an artifact
+# Manually started action to build OpenOCD for MacOS and upload to an artifact
 
 name: OpenOCD Build MacOS
 on: [workflow_dispatch]

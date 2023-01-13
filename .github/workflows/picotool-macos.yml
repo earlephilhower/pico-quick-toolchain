@@ -1,0 +1,35 @@
+# Manually started action to build Picotool for MacOS and upload to an artifact
+
+name: Picotool Build MacOS
+on: [workflow_dispatch]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '13.1.0'
+    - name: Build
+      run: |
+        brew update
+        brew install bash libtool automake libusb hidapi
+        git clone https://github.com/raspberrypi/pico-sdk.git
+        git clone https://github.com/raspberrypi/picotool.git
+        pushd picotool
+        mkdir build
+        cd build
+        PICO_SDK_PATH=../../pico-sdk cmake ..
+        make VERBOSE=1
+        mkdir /tmp/picotool
+        cp ../LICENSE.TXT picotool /tmp/picotool/.
+        popd
+        echo Copying needed DLLs and packaging as tarball
+        cp -a /usr/local/Cellar/hidapi/*/lib/*.dylib /tmp/picotool/.
+        cp -a /usr/local/Cellar/libusb/*/lib/*.dylib /tmp/picotool/.
+        cp -a /usr/local/Cellar/capstone/*/lib/*.dylib /tmp/picotool/.
+        tar cvf picotool.macos.tar -C /tmp picotool
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: picotool.macos.tar
+        path: picotool.macos.tar
