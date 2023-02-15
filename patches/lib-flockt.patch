@@ -1,0 +1,57 @@
+diff --git a/newlib/libc/include/sys/reent.h b/newlib/libc/include/sys/reent.h
+index 74b70e9c0..f5294812d 100644
+--- a/newlib/libc/include/sys/reent.h
++++ b/newlib/libc/include/sys/reent.h
+@@ -32,7 +32,7 @@ typedef unsigned __Long __ULong;
+ 
+ #ifndef __machine_flock_t_defined
+ #include <sys/lock.h>
+-typedef _LOCK_RECURSIVE_T _flock_t;
++typedef struct __lock _flock_t;
+ #endif
+ 
+ #ifndef __Long
+diff --git a/newlib/libc/include/sys/lock.h b/newlib/libc/include/sys/lock.h
+index 528904957..0653c77fd 100644
+--- a/newlib/libc/include/sys/lock.h
++++ b/newlib/libc/include/sys/lock.h
+@@ -30,7 +30,7 @@ typedef int _LOCK_RECURSIVE_T;
+ extern "C" {
+ #endif
+ 
+-struct __lock;
++struct __lock { long long x; };
+ typedef struct __lock * _LOCK_T;
+ #define _LOCK_RECURSIVE_T _LOCK_T
+ 
+@@ -45,7 +45,7 @@ extern void __retarget_lock_init_recursive(_LOCK_T *lock);
+ extern void __retarget_lock_close(_LOCK_T lock);
+ #define __lock_close(lock) __retarget_lock_close(lock)
+ extern void __retarget_lock_close_recursive(_LOCK_T lock);
+-#define __lock_close_recursive(lock) __retarget_lock_close_recursive(lock)
++#define __lock_close_recursive(lock) __retarget_lock_close_recursive(&lock)
+ extern void __retarget_lock_acquire(_LOCK_T lock);
+ #define __lock_acquire(lock) __retarget_lock_acquire(lock)
+ extern void __retarget_lock_acquire_recursive(_LOCK_T lock);
+diff --git a/newlib/libc/include/sys/stdio.h b/newlib/libc/include/sys/stdio.h
+index 91a274596..af3fd255a 100644
+--- a/newlib/libc/include/sys/stdio.h
++++ b/newlib/libc/include/sys/stdio.h
+@@ -10,7 +10,7 @@
+    set then do nothing as lock is not initialised. */
+ #if !defined(_flockfile)
+ #ifndef __SINGLE_THREAD__
+-#  define _flockfile(fp) (((fp)->_flags & __SSTR) ? 0 : __lock_acquire_recursive((fp)->_lock))
++#  define _flockfile(fp) (((fp)->_flags & __SSTR) ? 0 : __lock_acquire_recursive(&((fp)->_lock)))
+ #else
+ #  define _flockfile(fp)       ((void) 0)
+ #endif
+@@ -18,7 +18,7 @@
+ 
+ #if !defined(_funlockfile)
+ #ifndef __SINGLE_THREAD__
+-#  define _funlockfile(fp) (((fp)->_flags & __SSTR) ? 0 : __lock_release_recursive((fp)->_lock))
++#  define _funlockfile(fp) (((fp)->_flags & __SSTR) ? 0 : __lock_release_recursive(&((fp)->_lock)))
+ #else
+ #  define _funlockfile(fp)     ((void) 0)
+ #endif

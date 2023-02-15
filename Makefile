@@ -321,6 +321,9 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
 	     echo ' "size": "'$${tarballsize}'"' && \
 	     echo '}') > $${tarball}.json
 
+# Dummp all the git hashed/tags being built
+makegitlog = for i in binutils-gdb-gnu gcc-gnu mklittlefs newlib openocd pico-sdk picotool; do (cd $(REPODIR)/$$i && echo -n $$i: && git describe --tags --always); done
+
 # The recpies begin here.
 
 linux default: .stage.LINUX.done
@@ -522,7 +525,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	cp -a $(call install,$@) pkg.$(call arch,$@)/$(ARCH) >> $(call log,$@) 2>&1
 	(cd pkg.$(call arch,$@)/$(ARCH); $(call setenv,$@); pkgdesc="$(ARCH)-gcc"; pkgname="toolchain-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).$(ARCH)-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} $(ARCH)/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	    cd pkg.$(call arch,$@) && cp -a $(PATCHDIR) $(ARCH)/. && $(call makegitlog) > $(ARCH)/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} $(ARCH)/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -540,7 +543,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd pkg.mklittlefs.$(call arch,$@)/mklittlefs; $(call setenv,$@); pkgdesc="littlefs-utility"; pkgname="tool-mklittlefs-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/mklittlefs/mklittlefs$(call exe,$@) pkg.mklittlefs.$(call arch,$@)/mklittlefs/. >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).mklittlefs-$$(cd $(REPODIR)/mklittlefs && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.mklittlefs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mklittlefs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	    cd pkg.mklittlefs.$(call arch,$@) && $(call makegitlog) > mklittlefs/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mklittlefs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -555,7 +558,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	$(call host,$@)-strip $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) pkg.elf2uf2.$(call arch,$@)/elf2uf2/. >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).elf2uf2-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.elf2uf2.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} elf2uf2; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	    cd pkg.elf2uf2.$(call arch,$@) && $(call makegitlog) > elf2uf2/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} elf2uf2; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -570,7 +573,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	$(call host,$@)-strip $(call arena,$@)/pioasm/pioasm$(call exe,$@) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/pioasm/pioasm$(call exe,$@) pkg.pioasm.$(call arch,$@)/pioasm/. >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).pioasm-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.pioasm.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} pioasm; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	    cd pkg.pioasm.$(call arch,$@) && $(call makegitlog) > pioasm/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} pioasm; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -597,11 +600,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call arena,$@)/picotool && make -j4 && mkdir -p $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool && cp picotool $(REPODIR)/picotool/LICENSE.TXT $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool/.) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool; $(call setenv,$@); pkgdesc="picotool-utility"; pkgname="tool-picotool-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).picotool-$$(cd $(REPODIR)/picotool && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd $(call arena,$@)/pkg.picotool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} picotool; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	    cd $(call arena,$@)/pkg.picotool.$(call arch,$@) && $(call makegitlog) > picotool/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} picotool; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf $(call arena,$@)/pkg.picotool.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-# These archs use manually build openocd executables
+# These archs use manually build picotool executables
 .stage.WIN32.picotool: .stage.WIN32.start
 .stage.WIN64.picotool: .stage.WIN64.start
 .stage.OSX.picotool: .stage.OSX.start
@@ -674,7 +677,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call arena,$@)/openocd && make -j4 && make install) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="tool-openocd-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).openocd-$$(cd $(REPODIR)/openocd && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call makegitlog) > openocd/gitlog.txt && cp -a $(PATCHDIR) openocd/. && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf $(call arena,$@)/pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
