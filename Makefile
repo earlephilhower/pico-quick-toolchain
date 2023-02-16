@@ -129,7 +129,7 @@ WIN64_TAROPT := -rq
 WIN64_TAREXT := zip
 WIN64_ASYS   := windows_amd64
 
-OSX_HOST   := x86_64-apple-darwin14
+OSX_HOST   := x86_64-apple-darwin15
 OSX_AHOST  := x86_64-apple-darwin
 OSX_EXT    := .osx
 OSX_EXE    := 
