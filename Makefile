@@ -383,7 +383,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	(cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d) > $(call log,$@) 2>&1
 
-.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git .clean.pico-sdk.git .clean.openocd.git
+.clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.mklittlefs.git .clean.pico-sdk.git .clean.openocd.git .clean.picotool.git
 
 # Prep the git repos with no patches and any required libraries for gcc
 .stage.prepgit: .stage.download .clean.gits
@@ -681,7 +681,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf $(call arena,$@)/pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .stage.%.pioasm .stage.%.openocd
+.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .stage.%.pioasm .stage.%.openocd .stage.%.picotool
 	echo STAGE: $@
 	echo Done building $(call arch,$@)
 
@@ -697,6 +697,7 @@ install: .stage.LINUX.install
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc --ver "$${ver}" --glob '*$(ARCH)*.json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-elf2uf2 --ver "$${ver}" --glob '*elf2uf2*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-pioasm --ver "$${ver}" --glob '*pioasm*json' ; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-picotool --ver "$${ver}" --glob '*picotool*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-mklittlefs --ver "$${ver}" --glob '*mklittlefs*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-openocd --ver "$${ver}" --glob '*openocd*json' ; \
 	echo "Install done"
