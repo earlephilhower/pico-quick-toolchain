@@ -229,6 +229,11 @@ BLOBS = $(PWD)/blobs
 # GNU infra
 GMP_VER := 6.1.2
 
+# RPI stuff
+PICOSDK_BRANCH  := 1.5.1
+OPENOCD_BRANCH  := rp2040-v0.12.0
+PICOTOOL_BRANCH := 1.1.2
+
 # GCC et. al configure options
 configure  = --prefix=$(call install,$(1))
 configure += --build=$(shell gcc -dumpmachine)
@@ -450,9 +455,10 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/openocd && git reset --hard && git checkout rp2040 && git submodule update --init --recursive) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/openocd && git reset --hard && git checkout $(OPENOCD_BRANCH) && git submodule update --init --recursive) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/picotool && git reset --hard && git checkout $(PICOTOOL_BRANCH) && git submodule update --init --recursive) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/libexpat && git reset --hard && git checkout R_2_4_4 && git submodule update --init --recursive) >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSCK_BRANCH)) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSDK_BRANCH)) >> $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches

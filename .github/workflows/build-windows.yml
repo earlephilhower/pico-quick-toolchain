@@ -1,6 +1,6 @@
-# Manually started actino to build OpenOCD for Windows and upload to an artifact
+# Manually started action to build Picotool/OpenOCD for Windows and upload to an artifact
 
-name: OpenOCD Build All Windows
+name: Build All Windows
 on: [workflow_dispatch]
 jobs:
   build:
@@ -17,25 +17,49 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
-        install: development make libtool pkg-config autoconf automake texinfo mingw-w64-${{matrix.env}}-libusb mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch
-    - name: Build ${{matrix.env}}
+        install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-libusb mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config
+    - name: Build Picotool ${{matrix.env}}
+      run: |
+        # Get the SDK ready
+        git clone https://github.com/raspberrypi/pico-sdk.git
+        cd pico-sdk
+        git checkout 1.5.1
+        git submodule update --init
+        cd ..
+
+        # Check out this branch
+        git clone https://github.com/raspberrypi/picotool.git
+        cd picotool
+        git checkout 1.1.2
+
+        # Build!
+        mkdir build
+        cd build
+        if [ -e /mingw64/include/libusb-1.0/ ]; then cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -DLIBUSB_INCLUDE_DIR=/mingw64/include/libusb-1.0/ -S .. -B . ; else cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -DLIBUSB_INCLUDE_DIR=/mingw32/include/libusb-1.0/ -S .. -B . ; fi
+        make VERBOSE=1
+        strip picotool.exe
+
+        # Package
+        mkdir /tmp/picotool
+        mkdir /tmp/picotool/bin
+        cp /mingw*/bin/libhidapi*.dll /tmp/picotool/bin/.
+        cp /mingw*/bin/libusb*.dll /tmp/picotool/bin/.
+        cp -a picotool.exe /tmp/picotool/bin/.
+        cp -a ../LICENSE.TXT /tmp/picotool/bin/.
+        cp -a ../README.md /tmp/picotool/bin/.
+        tar cvf ../../picotool.${{matrix.env}}.tar -C /tmp picotool
+
+    - name: Upload Picotool ${{matrix.env}}
+      uses: actions/upload-artifact@v3
+      with:
+        name: picotool.${{matrix.env}}.tar
+        path: picotool.${{matrix.env}}.tar
+
+    - name: Build OpenOCD ${{matrix.env}}
       run: |
         git clone https://github.com/raspberrypi/openocd.git
         pushd openocd
-        git checkout rp2040
-        echo Fixing GCC 12 warning
-        echo ZGlmZiAtLWdpdCBhL3NyYy9oZWxwZXIvY29uZmlndXJhdGlvbi5jIGIvc3JjL2hlbHBlci9jb25m\
-        aWd1cmF0aW9uLmMKaW5kZXggMTE0YWQyYzZjLi45ZjhiNGM3ZjQgMTAwNjQ0Ci0tLSBhL3NyYy9o\
-        ZWxwZXIvY29uZmlndXJhdGlvbi5jCisrKyBiL3NyYy9oZWxwZXIvY29uZmlndXJhdGlvbi5jCkBA\
-        IC0xNDYsNiArMTQ2LDkgQEAgaW50IHBhcnNlX2NvbmZpZ19maWxlKHN0cnVjdCBjb21tYW5kX2Nv\
-        bnRleHQgKmNtZF9jdHgpCiAKIGNoYXIgKmdldF9ob21lX2Rpcihjb25zdCBjaGFyICphcHBlbmRf\
-        cGF0aCkKIHsKKyNpZmRlZiBfV0lOMzIKKwljaGFyIGhvbWVwYXRoW01BWF9QQVRIXTsKKyNlbmRp\
-        ZgogCWNoYXIgKmhvbWUgPSBnZXRlbnYoIkhPTUUiKTsKIAogCWlmIChob21lID09IE5VTEwpIHsK\
-        QEAgLTE1NSw3ICsxNTgsNiBAQCBjaGFyICpnZXRfaG9tZV9kaXIoY29uc3QgY2hhciAqYXBwZW5k\
-        X3BhdGgpCiAKIAkJaWYgKGhvbWUgPT0gTlVMTCkgewogCi0JCQljaGFyIGhvbWVwYXRoW01BWF9Q\
-        QVRIXTsKIAkJCWNoYXIgKmRyaXZlID0gZ2V0ZW52KCJIT01FRFJJVkUiKTsKIAkJCWNoYXIgKnBh\
-        dGggPSBnZXRlbnYoIkhPTUVQQVRIIik7CiAJCQlpZiAoZHJpdmUgJiYgcGF0aCkgewo= | base64 -d -i > bug.patch
-        patch -p1 < bug.patch
+        git checkout rp2040-v0.12.0
         bash bootstrap
         ./configure --prefix=/tmp/openocd --enable-picoprobe --enable-cmsis-dap-v2 --enable-cmsis-dap \
                     --disable-dummy --disable-rshim --disable-ftdi  --disable-stlink --disable-ti-icdi \
@@ -57,7 +81,8 @@ jobs:
         popd
         strip /tmp/openocd/bin/openocd.exe
         tar cvf openocd.${{matrix.env}}.tar -C /tmp openocd
-    - name: Upload Artifact
+
+    - name: Upload OpenOCD ${{matrix.env}}
       uses: actions/upload-artifact@v3
       with:
         name: openocd.${{matrix.env}}.tar
