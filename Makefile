@@ -76,7 +76,7 @@ else ifeq ($(GCC), 10.4)
     GCC_PKGREL    := 100400
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
-    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_BRANCH := binutils-2_36
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 10.5)
@@ -85,7 +85,7 @@ else ifeq ($(GCC), 10.5)
     GCC_PKGREL    := 100400
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
-    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_BRANCH := binutils-2_36
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 12.1)
@@ -207,6 +207,9 @@ install = $(PWD)/$(ARCH)$($(call arch,$(1))_EXT)
 
 # Binary stuff we need to access
 BLOBS = $(PWD)/blobs
+
+# GNU infra
+GMP_VER := 6.1.2
 
 # GCC et. al configure options
 configure  = --prefix=$(call install,$(1))
@@ -409,7 +412,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	for i in $(BINUTILS_DIR) $(GCC_DIR) newlib mklittlefs pico-sdk openocd libexpat; do \
             cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; \
         done > $(call log,$@) 2>&1
-	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
+	for url in $(GNUHTTP)/gmp-$(GMP_VER).tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
 	    echo "-------- getting $${name}" ; \
@@ -461,17 +464,26 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 # Build expat for proper GDB support
 .stage.%.expat: .stage.%.start
+	echo STAGE: $@
 	rm -rf $(call arena,$@)/expat $(call arena,$@)/cross > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/libexpat/expat $(call arena,$@)/expat >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/expat && bash buildconf.sh && ./configure $(call configure,$@) --prefix=$(call arena,$@)/cross && make && make install) >> $(call log,$@) 2>&1
 	touch $@
 
+# Build GMP for proper GDB support
+.stage.%.gmp: .stage.%.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
+	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp && make && make install) >> $(call log,$@) 2>&1
+	touch $@
+
 # Build binutils
-.stage.%.binutils-config: .stage.%.expat
+.stage.%.binutils-config: .stage.%.gmp .stage.%.expat
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/$(BINUTILS_DIR) > $(call log,$@) 2>&1
 	mkdir -p $(call arena,$@)/$(BINUTILS_DIR) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(REPODIR)/$(BINUTILS_DIR)/configure $(call configure,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(REPODIR)/$(BINUTILS_DIR)/configure $(call configure,$@) --with-libgmp-prefix=$(call arena,$@)/gmp) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.binutils-make: .stage.%.binutils-config
