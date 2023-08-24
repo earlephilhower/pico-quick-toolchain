@@ -1,0 +1,91 @@
+# Manually started actino to build Picotool for Mac and upload to an artifact
+
+name: Build MacOS
+on: [workflow_dispatch]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '13.1.0'
+
+    - name: Build Picotool
+      run: |
+        uname -a
+        brew update
+        brew install bash libtool automake libusb hidapi cmake
+
+        # Get the SDK ready
+        git clone https://github.com/raspberrypi/pico-sdk.git
+        cd pico-sdk
+        git checkout 1.5.1
+        git submodule update --init
+        cd ..
+
+        # Check out this branch
+        git clone https://github.com/raspberrypi/picotool.git
+        cd picotool
+        git checkout 1.1.2
+
+        # Build!
+        mkdir build
+        cd build
+        cmake -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
+        make -j
+        strip picotool
+
+        # Package
+        mkdir /tmp/picotool
+        mkdir /tmp/picotool/bin
+        cp -a /usr/local/Cellar/hidapi/*/lib/*.dylib /tmp/picotool/bin/.
+        cp -a /usr/local/Cellar/libusb/*/lib/*.dylib /tmp/picotool/bin/.
+        cp -a /usr/local/Cellar/capstone/*/lib/*.dylib /tmp/picotool/bin/.
+        cp -a picotool /tmp/picotool/bin/.
+        cp -a ../LICENSE.TXT /tmp/picotool/bin/.
+        cp -a ../README.md /tmp/picotool/bin/.
+        tar cvf ../../picotool.macos.tar -C /tmp picotool
+
+    - name: Upload Picotool
+      uses: actions/upload-artifact@v3
+      with:
+        name: picotool.macos.tar
+        path: picotool.macos.tar
+
+    - name: Build OpenOCD
+      run: |
+        uname -a
+        brew update
+        brew install bash libtool automake libusb hidapi
+        git clone https://github.com/raspberrypi/openocd.git
+        pushd openocd
+        git checkout rp2040-v0.12.0
+        # Remove TEXI warning
+        grep -v raggedright doc/openocd.texi > p2
+        mv p2 doc/openocd.texi
+        bash bootstrap
+        ./configure --prefix=/tmp/openocd --enable-picoprobe --enable-cmsis-dap-v2 --enable-cmsis-dap \
+                    --disable-dummy --disable-rshim --disable-ftdi  --disable-stlink --disable-ti-icdi \
+                    --disable-ulink --disable-usb-blaster-2 --disable-ft232r --disable-vsllink \
+                    --disable-xds110  --disable-osbdm --disable-opendous --disable-aice --disable-usbprog \
+                    --disable-rlink --disable-armjtagew --disable-nulink --disable-kitprog \
+                    --disable-usb-blaster --disable-presto --disable-openjtag --disable-jlink \
+                    --disable-parport --disable-parport-ppdev --disable-parport-giveio --disable-jtag_vpi \
+                    --disable-jtag_dpi --disable-amtjtagaccel --disable-zy1000-master --disable-zy1000 \
+                    --disable-ioutil --disable-bcm2835gpio --disable-imx_gpio --disable-ep93xx \
+                    --disable-at91rm9200 --disable-gw16012 --disable-oocd_trace --disable-buspirate \
+                    --disable-sysfsgpio --disable-xlnx-pcie-xvc --disable-minidriver-dummy \
+                    --disable-remote-bitbang
+        make -j
+        make install
+        popd
+        cp -a /usr/local/Cellar/hidapi/*/lib/*.dylib /tmp/openocd/bin/.
+        cp -a /usr/local/Cellar/libusb/*/lib/*.dylib /tmp/openocd/bin/.
+        cp -a /usr/local/Cellar/capstone/*/lib/*.dylib /tmp/openocd/bin/.
+        tar cvf openocd.macos.tar -C /tmp openocd
+
+    - name: Upload OpenOCD
+      uses: actions/upload-artifact@v3
+      with:
+        name: openocd.macos.tar
+        path: openocd.macos.tar

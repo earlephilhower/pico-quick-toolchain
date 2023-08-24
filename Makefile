@@ -70,6 +70,24 @@ else ifeq ($(GCC), 10.3)
     BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 10.4)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-10.4.0
+    GCC_PKGREL    := 100400
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_36
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 10.5)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-10.5.0
+    GCC_PKGREL    := 100400
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_36
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 12.1)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-12.1.0
@@ -77,6 +95,24 @@ else ifeq ($(GCC), 12.1)
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 12.2)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-12.2.0
+    GCC_PKGREL    := 120200
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_38
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 12.3)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-12.3.0
+    GCC_PKGREL    := 120300
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_38
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else
@@ -189,6 +225,14 @@ install = $(PWD)/$(ARCH)$($(call arch,$(1))_EXT)
 
 # Binary stuff we need to access
 BLOBS = $(PWD)/blobs
+
+# GNU infra
+GMP_VER := 6.1.2
+
+# RPI stuff
+PICOSDK_BRANCH  := 1.5.1
+OPENOCD_BRANCH  := rp2040-v0.12.0
+PICOTOOL_BRANCH := 1.1.2
 
 # GCC et. al configure options
 configure  = --prefix=$(call install,$(1))
@@ -391,7 +435,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	for i in $(BINUTILS_DIR) $(GCC_DIR) newlib mklittlefs pico-sdk openocd libexpat; do \
             cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; \
         done > $(call log,$@) 2>&1
-	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
+	for url in $(GNUHTTP)/gmp-$(GMP_VER).tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
 	    echo "-------- getting $${name}" ; \
@@ -411,9 +455,10 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/openocd && git reset --hard && git checkout rp2040 && git submodule update --init --recursive) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/openocd && git reset --hard && git checkout $(OPENOCD_BRANCH) && git submodule update --init --recursive) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/picotool && git reset --hard && git checkout $(PICOTOOL_BRANCH) && git submodule update --init --recursive) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/libexpat && git reset --hard && git checkout R_2_4_4 && git submodule update --init --recursive) >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSCK_BRANCH)) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSDK_BRANCH)) >> $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
@@ -443,17 +488,26 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 # Build expat for proper GDB support
 .stage.%.expat: .stage.%.start
+	echo STAGE: $@
 	rm -rf $(call arena,$@)/expat $(call arena,$@)/cross > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/libexpat/expat $(call arena,$@)/expat >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/expat && bash buildconf.sh && ./configure $(call configure,$@) --prefix=$(call arena,$@)/cross && make && make install) >> $(call log,$@) 2>&1
 	touch $@
 
+# Build GMP for proper GDB support
+.stage.%.gmp: .stage.%.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
+	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp && make && make install) >> $(call log,$@) 2>&1
+	touch $@
+
 # Build binutils
-.stage.%.binutils-config: .stage.%.expat
+.stage.%.binutils-config: .stage.%.gmp .stage.%.expat
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/$(BINUTILS_DIR) > $(call log,$@) 2>&1
 	mkdir -p $(call arena,$@)/$(BINUTILS_DIR) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(REPODIR)/$(BINUTILS_DIR)/configure $(call configure,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(REPODIR)/$(BINUTILS_DIR)/configure $(call configure,$@) --with-libgmp-prefix=$(call arena,$@)/gmp) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.binutils-make: .stage.%.binutils-config
