@@ -36,7 +36,7 @@ jobs:
         mkdir build
         cd build
         if [ -e /mingw64/include/libusb-1.0/ ]; then cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -DLIBUSB_INCLUDE_DIR=/mingw64/include/libusb-1.0/ -S .. -B . ; else cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -DLIBUSB_INCLUDE_DIR=/mingw32/include/libusb-1.0/ -S .. -B . ; fi
-        make VERBOSE=1
+        make -j
         strip picotool.exe
 
         # Package
@@ -73,7 +73,7 @@ jobs:
                     --disable-at91rm9200 --disable-gw16012 --disable-oocd_trace --disable-buspirate \
                     --disable-sysfsgpio --disable-xlnx-pcie-xvc --disable-minidriver-dummy \
                     --disable-remote-bitbang
-        make
+        make -j
         make install
         echo Copying needed DLLs and packaging as tarball
         cp /mingw*/bin/libhidapi*.dll /tmp/openocd/bin/.

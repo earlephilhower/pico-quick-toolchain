@@ -32,7 +32,7 @@ jobs:
         mkdir build
         cd build
         cmake -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
-        make
+        make -j
         strip picotool
 
         # Package
