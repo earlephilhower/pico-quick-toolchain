@@ -79,6 +79,15 @@ else ifeq ($(GCC), 10.4)
     BINUTILS_BRANCH := binutils-2_32
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 10.5)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-10.5.0
+    GCC_PKGREL    := 100400
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_32
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 12.1)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-12.1.0
