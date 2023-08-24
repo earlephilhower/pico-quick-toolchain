@@ -72,8 +72,8 @@ else ifeq ($(GCC), 10.3)
     BINUTILS_DIR  := binutils-gdb-gnu
 else ifeq ($(GCC), 10.4)
     ISL           := 0.18
-    GCC_BRANCH    := releases/gcc-10.3.0
-    GCC_PKGREL    := 100300
+    GCC_BRANCH    := releases/gcc-10.4.0
+    GCC_PKGREL    := 100400
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_32
