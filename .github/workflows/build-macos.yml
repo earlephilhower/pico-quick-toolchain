@@ -1,4 +1,4 @@
-# Manually started actino to build Picotool for Mac and upload to an artifact
+# Manually started action to build Picotool and OpenOCD for Mac and upload to an artifact
 
 name: Build MacOS
 on: [workflow_dispatch]
