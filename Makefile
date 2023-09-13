@@ -112,7 +112,16 @@ else ifeq ($(GCC), 12.3)
     GCC_PKGREL    := 120300
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
-    BINUTILS_BRANCH := binutils-2_38
+    BINUTILS_BRANCH := gdb-13.2-release #binutils-2_38
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 13.2)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-13.2.0
+    GCC_PKGREL    := 130200
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := gdb-13.2-release #binutils-2_41
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else
@@ -500,6 +509,14 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp && make && make install) >> $(call log,$@) 2>&1
+	touch $@
+
+# Build GMP for proper GDB support - MacOS has linker error without --disable-assembly
+.stage.OSX.gmp: .stage.OSX.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
+	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp --disable-assembly && make && make install) >> $(call log,$@) 2>&1
 	touch $@
 
 # Build binutils
