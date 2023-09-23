@@ -535,7 +535,21 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call install,$@)/bin; ln -sf $(ARCH)-gcc$(call exe,$@) $(ARCH)-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.gcc1-config: .stage.%.binutils-make
+# Copy certain DLLs needed by GDB for Windows installations, no-op otherwise
+.stage.WIN32.binutils-post: .stage.WIN32.binutils-make
+	echo STAGE: $@ - copying GDB support files
+	echo cp /usr/lib/gcc/i686-w64-mingw32/7.3-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/7.3-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN32.binutils-post)/bin > $(call log,$@) 2>&1
+	cp /usr/lib/gcc/i686-w64-mingw32/7.3-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/7.3-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN32.binutils-post)/bin >> $(call log,$@) 2>&1
+
+.stage.WIN64.binutils-post: .stage.WIN64.binutils-make
+	echo STAGE: $@ - copying GDB support files
+	echo cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN64.binutils-post)/bin > $(call log,$@) 2>&1
+	cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN64.binutils-post)/bin >> $(call log,$@) 2>&1
+
+.stage.%.binutils-post: .stage.%.binutils-make
+	echo STAGE: $@
+
+.stage.%.gcc1-config: .stage.%.binutils-post
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/$(GCC_DIR) > $(call log,$@) 2>&1
 	mkdir -p $(call arena,$@)/$(GCC_DIR) >> $(call log,$@) 2>&1
