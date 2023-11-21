@@ -41,12 +41,11 @@ jobs:
 
         # Package
         mkdir /tmp/picotool
-        mkdir /tmp/picotool/bin
-        cp /mingw*/bin/libhidapi*.dll /tmp/picotool/bin/.
-        cp /mingw*/bin/libusb*.dll /tmp/picotool/bin/.
-        cp -a picotool.exe /tmp/picotool/bin/.
-        cp -a ../LICENSE.TXT /tmp/picotool/bin/.
-        cp -a ../README.md /tmp/picotool/bin/.
+        cp /mingw*/bin/libhidapi*.dll /tmp/picotool/.
+        cp /mingw*/bin/libusb*.dll /tmp/picotool/.
+        cp -a picotool.exe /tmp/picotool/.
+        cp -a ../LICENSE.TXT /tmp/picotool/.
+        cp -a ../README.md /tmp/picotool/.
         tar cvf ../../picotool.${{matrix.env}}.tar -C /tmp picotool
 
     - name: Upload Picotool ${{matrix.env}}
