@@ -6,6 +6,10 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: false
+
     - uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: '13.1.0'
@@ -37,12 +41,17 @@ jobs:
 
         # Package
         mkdir /tmp/picotool
-        cp -a /usr/local/Cellar/hidapi/*/lib/*.dylib /tmp/picotool/.
         cp -a /usr/local/Cellar/libusb/*/lib/*.dylib /tmp/picotool/.
-        cp -a /usr/local/Cellar/capstone/*/lib/*.dylib /tmp/picotool/.
         cp -a picotool /tmp/picotool/.
         cp -a ../LICENSE.TXT /tmp/picotool/.
         cp -a ../README.md /tmp/picotool/.
+
+        # Make dylibs relative
+        otool -L /tmp/picotool/picotool
+        (cwd=$(pwd); cd /tmp/picotool; bash $cwd/../../osx-relative-dylibs.sh)
+        otool -L /tmp/picotool/picotool
+
+        # Create tarball
         tar cvf ../../picotool.macos.tar -C /tmp picotool
 
     - name: Upload Picotool
@@ -81,6 +90,12 @@ jobs:
         cp -a /usr/local/Cellar/hidapi/*/lib/*.dylib /tmp/openocd/bin/.
         cp -a /usr/local/Cellar/libusb/*/lib/*.dylib /tmp/openocd/bin/.
         cp -a /usr/local/Cellar/capstone/*/lib/*.dylib /tmp/openocd/bin/.
+
+        # Make dylibs relative
+        otool -L /tmp/openocd/bin/openocd
+        (cwd=$(pwd); cd /tmp/openocd/bin; bash $cwd/osx-relative-dylibs.sh)
+        otool -L /tmp/openocd/bin/openocd
+
         tar cvf openocd.macos.tar -C /tmp openocd
 
     - name: Upload OpenOCD
