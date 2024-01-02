@@ -6,6 +6,10 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: false
+
     - uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: '13.1.0'
@@ -43,6 +47,13 @@ jobs:
         cp -a picotool /tmp/picotool/.
         cp -a ../LICENSE.TXT /tmp/picotool/.
         cp -a ../README.md /tmp/picotool/.
+
+        # Make dynlibs relative
+        otool -L /tmp/picotool/picotool
+        (cwd=$(pwd); cd /tmp/picotool; bash $cwd/osx-relative-dynlib.sh)
+        otool -L /tmp/picotool/picotool
+
+        # Create tarball
         tar cvf ../../picotool.macos.tar -C /tmp picotool
 
     - name: Upload Picotool
