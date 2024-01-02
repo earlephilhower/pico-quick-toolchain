@@ -17,7 +17,7 @@ process_binary() {
 
     # When empty, skip the loop to avoid a Bash unbound variable error
     if [ ${#libraries[@]} -le 0 ]; then
-        continue
+        return
     fi
 
     for lib in "${libraries[@]}"; do
