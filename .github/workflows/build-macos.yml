@@ -90,6 +90,12 @@ jobs:
         cp -a /usr/local/Cellar/hidapi/*/lib/*.dylib /tmp/openocd/bin/.
         cp -a /usr/local/Cellar/libusb/*/lib/*.dylib /tmp/openocd/bin/.
         cp -a /usr/local/Cellar/capstone/*/lib/*.dylib /tmp/openocd/bin/.
+
+        # Make dynlibs relative
+        otool -L /tmp/openocd/bin/openocd
+        (cwd=$(pwd); cd /tmp/openocd/bin; bash $cwd/osx-relative-dynlib.sh)
+        otool -L /tmp/openocd/bin/openocd
+
         tar cvf openocd.macos.tar -C /tmp openocd
 
     - name: Upload OpenOCD
