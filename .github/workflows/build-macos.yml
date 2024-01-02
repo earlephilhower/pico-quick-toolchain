@@ -41,16 +41,14 @@ jobs:
 
         # Package
         mkdir /tmp/picotool
-        cp -a /usr/local/Cellar/hidapi/*/lib/*.dylib /tmp/picotool/.
         cp -a /usr/local/Cellar/libusb/*/lib/*.dylib /tmp/picotool/.
-        cp -a /usr/local/Cellar/capstone/*/lib/*.dylib /tmp/picotool/.
         cp -a picotool /tmp/picotool/.
         cp -a ../LICENSE.TXT /tmp/picotool/.
         cp -a ../README.md /tmp/picotool/.
 
         # Make dynlibs relative
         otool -L /tmp/picotool/picotool
-        (cwd=$(pwd); cd /tmp/picotool; bash $cwd/osx-relative-dynlib.sh)
+        (cwd=$(pwd); cd /tmp/picotool; bash $cwd/../../osx-relative-dynlib.sh)
         otool -L /tmp/picotool/picotool
 
         # Create tarball
