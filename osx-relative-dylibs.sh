@@ -8,7 +8,7 @@ process_binary() {
     local libraries=(
         $(otool -L "$binary" | grep '/usr/local/opt/' | awk '{print $1}')
     )
-    
+
     # If this is a dylib, the first entry is the ID of the library itself, which
     # we don't really care about.
     if [ "${binary##*.}" = "dylib" ]; then
