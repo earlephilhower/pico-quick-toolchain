@@ -139,6 +139,7 @@ LINUX_TARCMD := tar
 LINUX_TAROPT := zcf
 LINUX_TAREXT := tar.gz
 LINUX_ASYS   := linux_x86_64
+LINUX_DEB    := amd64
 
 LINUX32_HOST   := i686-linux-gnu
 LINUX32_AHOST  := i686-pc-linux-gnu
@@ -531,6 +532,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	# Need LDFLAGS override to guarantee gdb is made static
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE)) > $(call log,$@) 2>&1
+	# Replace any termcap(tinfo) with the static lib instead
+	sed -i 's/-ltermcap/..\/..\/..\/blobs\/x86_64-linux-gnu-tinfo.a/' $(call arena,$@)/$(BINUTILS_DIR)/gdb/Makefile >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR)/gdb && rm -f ./gdb && $(call setenv,$@) && $(MAKE)) > $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	(cd $(call install,$@)/bin; ln -sf $(ARCH)-gcc$(call exe,$@) $(ARCH)-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
@@ -665,7 +669,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.LINUX.picotool-prep: .stage.LINUX.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/picotool > $(call log,$@) 2>&1
-	(mkdir $(call arena,$@)/picotool; cd $(call arena,$@)/picotool; PICO_SDK_PATH=$(REPODIR)/pico-sdk cmake $(REPODIR)/picotool) >> $(call log,$@) 2>&1
+	mkdir $(call arena,$@)/picotool >> $(call log,$@) 2>&1
+	# Make libusb.a static, which means we ned to manually list the pthrread and udev dependencies
+	(cd $(call arena,$@)/picotool; PICO_SDK_PATH=$(REPODIR)/pico-sdk cmake $(REPODIR)/picotool -DCMAKE_CXX_STANDARD_LIBRARIES=/lib/x86_64-linux-gnu/libudev.so.1 -DCMAKE_EXE_LINKER_FLAGS_INIT="-pthread" -DLIBUSB_LIBRARIES="/usr/lib/x86_64-linux-gnu/libusb-1.0.a") >> $(call log,$@) 2>&1
 
 .stage.ARM64.picotool-prep: .stage.ARM64.start
 .stage.RPI.picotool-prep: .stage.RPI.start
@@ -673,7 +679,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.ARM64.picotool-prep .stage.RPI.picotool-prep .stage.LINUX32.picotool-prep:
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/picotool > $(call log,$@) 2>&1
-	(mkdir $(call arena,$@)/picotool ; cd $(call arena,$@)/picotool; for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
+	(mkdir $(call arena,$@)/picotool; cd $(call arena,$@)/picotool; for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
 	(if [ -e $(call arena,$@)/picotool/lib/i386-linux-gnu ]; then mv $(call arena,$@)/picotool/lib/i386-linux-gnu $(call arena,$@)/picotool/lib/i686-linux-gnu; fi) 2>&1
 	(if [ -e $(call arena,$@)/picotool/usr/lib/i386-linux-gnu ]; then mv $(call arena,$@)/picotool/usr/lib/i386-linux-gnu $(call arena,$@)/picotool/usr/lib/i686-linux-gnu; fi) 2>&1
 	(for i in $(call arena,$@)/picotool/usr/lib/$(call host,$@)/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/usr@' $$i; done) >> $(call log,$@) 2>&1
@@ -705,21 +711,13 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	touch $@
 
 .stage.ARM64.openocd-prep: .stage.ARM64.start
-	echo STAGE: $@
-	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
-	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
-	(cd $(call arena,$@); for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
-	(for i in $(call arena,$@)/usr/lib/$(call host,$@)/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/usr@' $$i; done) >> $(call log,$@) 2>&1
-	(echo cp $(call arena,$@)/lib/$(call host,$@)/* $(call arena,$@)/usr/lib/$(call host,$@)/.) >> $(call log,$@) 2>&1
-	(cp $(call arena,$@)/lib/$(call host,$@)/* $(call arena,$@)/usr/lib/$(call host,$@)/.) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd; PKG_CONFIG_PATH=$(call arena,$@)/usr/lib/$(call host,$@)/pkgconfig LIBS="-ludev -lpthread" LDFLAGS=-L$(call arena,$@)/lib/$(call host,$@) \
-         ./configure $(CONFIGOPENOCD) --prefix $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd --host=$(call host,$@)) >> $(call log,$@) 2>&1
-
 .stage.RPI.openocd-prep: .stage.RPI.start
+.stage.ARM64.openocd-prep .stage.RPI.openocd-prep:
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
 	(cd $(call arena,$@); for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/usr/lib/*; rm ./libhidapi-hidraw.so* ./libhidapi-libusb.so*) >> $(call log,$@) 2>&1
 	(for i in $(call arena,$@)/usr/lib/$(call host,$@)/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/usr@' $$i; done) >> $(call log,$@) 2>&1
 	(echo cp $(call arena,$@)/lib/$(call host,$@)/* $(call arena,$@)/usr/lib/$(call host,$@)/.) >> $(call log,$@) 2>&1
 	(cp $(call arena,$@)/lib/$(call host,$@)/* $(call arena,$@)/usr/lib/$(call host,$@)/.) >> $(call log,$@) 2>&1
@@ -731,6 +729,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/openocd $(call arena,$@)/openocd >> $(call log,$@) 2>&1
 	(cd $(call arena,$@); for i in $(BLOBS)/*_$(call deb, $@).deb; do ar x $$i; tar xvf data.tar.xz; done) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/usr/lib/*; rm ./libhidapi-hidraw.so* ./libhidapi-libusb.so*) >> $(call log,$@) 2>&1
 	(for i in $(call arena,$@)/usr/lib/i386-linux-gnu/pkgconfig/*.pc; do sed -i 's@^prefix=.*@prefix=$(call arena,$@)/usr@' $$i; done) >> $(call log,$@) 2>&1
 	(cp $(call arena,$@)/lib/i386-linux-gnu/* $(call arena,$@)/usr/lib/i386-linux-gnu/.) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/openocd; PKG_CONFIG_PATH=$(call arena,$@)/usr/lib/i386-linux-gnu/pkgconfig LIBS="-ludev -lpthread" LDFLAGS=-L$(call arena,$@)/lib/i386-linux-gnu \
@@ -759,7 +758,10 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.openocd: .stage.%.openocd-prep
 	echo STAGE: $@
-	(cd $(call arena,$@)/openocd && make -j4 && make install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && make -j4) >> $(call log,$@) 2>&1
+	# Hack to rebuild with static libs only for x86_64.  All others already configured properly
+	if [ $(call host,$@) = x86_64-linux-gnu ]; then (cd $(call arena,$@)/openocd && gcc -pthread -Wall -Wstrict-prototypes -Wformat-security -Wshadow -Wextra -Wno-unused-parameter -Wbad-function-cast -Wcast-align -Wredundant-decls -Wpointer-arith -Wundef -g -O2 -o src/openocd src/main.o  src/.libs/libopenocd.a ./jimtcl/libjim.a -lutil -ldl /usr/lib/x86_64-linux-gnu/libhidapi-hidraw.a /usr/lib/x86_64-linux-gnu/libusb-1.0.a /lib/x86_64-linux-gnu/libudev.so.1); fi >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && make install) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="tool-openocd-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).openocd-$$(cd $(REPODIR)/openocd && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call makegitlog) > openocd/gitlog.txt && cp -a $(PATCHDIR) openocd/. && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
