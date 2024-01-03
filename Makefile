@@ -491,7 +491,13 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	done >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.start: .stage.patch
+# Patchelf lets us change the RUNPATH for exes which need special libs we ship
+.stage.patchelf: .stage.patch
+	echo STAGE: $@
+	echo rm -rf $(call arena,"")/patchelf > $(call log,$@) 2>&1
+	(mkdir $(call arena,$@)/patchelf; cd $(call arena,$@)/patchelf; tar zxvf $(BLOBS)/patchelf-*x86_64.tar.gz) >> $(call log,$@) 2>&1
+
+.stage.%.start: .stage.patchelf
 	echo STAGE: $@
 	mkdir -p $(call arena,$@) > $(call log,$@) 2>&1
 
@@ -685,7 +691,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call arena,$@)/picotool && make -j4 && mkdir -p $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool && cp picotool $(REPODIR)/picotool/LICENSE.TXT $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool/.) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool; $(call setenv,$@); pkgdesc="picotool-utility"; pkgname="tool-picotool-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).picotool-$$(cd $(REPODIR)/picotool && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd $(call arena,$@)/pkg.picotool.$(call arch,$@) && $(call makegitlog) > picotool/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} picotool; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	    cd $(call arena,$@)/pkg.picotool.$(call arch,$@) && $(call makegitlog) > picotool/gitlog.txt && \
+            $(call arena,xxx)/patchelf/bin/patchelf --set-rpath '$$ORIGIN/.' picotool/picotool && \
+            $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} picotool; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf $(call arena,$@)/pkg.picotool.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -762,7 +770,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call arena,$@)/openocd && make -j4 && make install) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="tool-openocd-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).openocd-$$(cd $(REPODIR)/openocd && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call makegitlog) > openocd/gitlog.txt && cp -a $(PATCHDIR) openocd/. && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call makegitlog) > openocd/gitlog.txt && cp -a $(PATCHDIR) openocd/. && \
+            $(call arena,xxx)/patchelf/bin/patchelf --set-rpath '$$ORIGIN/.' openocd/bin/openocd && \
+            $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf $(call arena,$@)/pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
