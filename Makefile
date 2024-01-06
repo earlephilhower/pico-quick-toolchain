@@ -265,6 +265,7 @@ configure += --disable-libstdcxx-verbose
 configure += --disable-decimal-float
 configure += --with-cpu=cortex-m0plus
 configure += --with-no-thumb-interwork
+configure += --without-termcap
 
 # Newlib configuration common
 CONFIGURENEWLIBCOM  = --with-newlib
@@ -501,7 +502,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/expat $(call arena,$@)/cross > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/libexpat/expat $(call arena,$@)/expat >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/expat && bash buildconf.sh && ./configure $(call configure,$@) --prefix=$(call arena,$@)/cross && make && make install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/expat && bash buildconf.sh && ./configure $(call configure,$@) --prefix=$(call arena,$@)/cross && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 # Build GMP for proper GDB support
@@ -509,7 +510,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp && make && make install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 # Build GMP for proper GDB support - MacOS has linker error without --disable-assembly
@@ -517,7 +518,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp --disable-assembly && make && make install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp --disable-assembly && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 # Build binutils
@@ -532,9 +533,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	# Need LDFLAGS override to guarantee gdb is made static
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE)) > $(call log,$@) 2>&1
-	# Replace any termcap(tinfo) with the static lib instead
-	sed -i 's/-ltermcap/..\/..\/..\/blobs\/x86_64-linux-gnu-tinfo.a/' $(call arena,$@)/$(BINUTILS_DIR)/gdb/Makefile >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(BINUTILS_DIR)/gdb && rm -f ./gdb && $(call setenv,$@) && $(MAKE)) > $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	(cd $(call install,$@)/bin; ln -sf $(ARCH)-gcc$(call exe,$@) $(ARCH)-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
@@ -542,13 +540,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 # Copy certain DLLs needed by GDB for Windows installations, no-op otherwise
 .stage.WIN32.binutils-post: .stage.WIN32.binutils-make
 	echo STAGE: $@ - copying GDB support files
-	echo cp /usr/lib/gcc/i686-w64-mingw32/7.3-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/7.3-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN32.binutils-post)/bin > $(call log,$@) 2>&1
-	cp /usr/lib/gcc/i686-w64-mingw32/7.3-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/7.3-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN32.binutils-post)/bin >> $(call log,$@) 2>&1
+	cp /usr/lib/gcc/i686-w64-mingw32/*-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/*-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN32.binutils-post)/bin >> $(call log,$@) 2>&1
 
 .stage.WIN64.binutils-post: .stage.WIN64.binutils-make
 	echo STAGE: $@ - copying GDB support files
-	echo cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN64.binutils-post)/bin > $(call log,$@) 2>&1
-	cp /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/7.3-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN64.binutils-post)/bin >> $(call log,$@) 2>&1
+	cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN64.binutils-post)/bin >> $(call log,$@) 2>&1
 
 .stage.%.binutils-post: .stage.%.binutils-make
 	echo STAGE: $@
@@ -688,7 +684,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.picotool: .stage.%.picotool-prep
 	echo STAGE: $@
-	(cd $(call arena,$@)/picotool && make -j4 && mkdir -p $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool && cp picotool $(REPODIR)/picotool/LICENSE.TXT $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool/.) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/picotool && $(MAKE) && mkdir -p $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool && cp picotool $(REPODIR)/picotool/LICENSE.TXT $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool/.) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/pkg.picotool.$(call arch,$@)/picotool; $(call setenv,$@); pkgdesc="picotool-utility"; pkgname="tool-picotool-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).picotool-$$(cd $(REPODIR)/picotool && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd $(call arena,$@)/pkg.picotool.$(call arch,$@) && $(call makegitlog) > picotool/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} picotool; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
@@ -758,10 +754,10 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.openocd: .stage.%.openocd-prep
 	echo STAGE: $@
-	(cd $(call arena,$@)/openocd && make -j4) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && $(MAKE)) >> $(call log,$@) 2>&1
 	# Hack to rebuild with static libs only for x86_64.  All others already configured properly
 	if [ $(call host,$@) = x86_64-linux-gnu ]; then (cd $(call arena,$@)/openocd && gcc -pthread -Wall -Wstrict-prototypes -Wformat-security -Wshadow -Wextra -Wno-unused-parameter -Wbad-function-cast -Wcast-align -Wredundant-decls -Wpointer-arith -Wundef -g -O2 -o src/openocd src/main.o  src/.libs/libopenocd.a ./jimtcl/libjim.a -lutil -ldl /usr/lib/x86_64-linux-gnu/libhidapi-hidraw.a /usr/lib/x86_64-linux-gnu/libusb-1.0.a /lib/x86_64-linux-gnu/libudev.so.1); fi >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/openocd && make install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/openocd && $(MAKE) install) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/pkg.openocd.$(call arch,$@)/openocd; $(call setenv,$@); pkgdesc="openocd-utility"; pkgname="tool-openocd-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).openocd-$$(cd $(REPODIR)/openocd && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd $(call arena,$@)/pkg.openocd.$(call arch,$@) && $(call makegitlog) > openocd/gitlog.txt && cp -a $(PATCHDIR) openocd/. && $(call tarcmd,$@) $(call taropt,$@) ../../$${tarball} openocd; cd ../..; $(call makejson,$@)) >> $(call log,$@) 2>&1
