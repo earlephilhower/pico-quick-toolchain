@@ -231,7 +231,7 @@ arena = $(PWD)/arena$(call ext,$(1))
 # The architecture for this recipe
 arch = $(subst .,,$(suffix $(basename $(1))))
 # This installation directory for this architecture
-install = $(PWD)/$(ARCH)$($(call arch,$(1))_EXT)
+install = $(call arena,$(1))/$(ARCH)
 
 # Binary stuff we need to access
 BLOBS = $(PWD)/blobs
@@ -584,11 +584,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.%.libstdcpp-nox: .stage.%.libstdcpp
 	echo STAGE: $@
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
-	cp $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++-exc.a >> $(call log,$@) 2>&1
+	cp $(call install,$@)/$(ARCH)/lib/thumb/libstdc++.a $(call install,$@)/$(ARCH)/lib/thumb/libstdc++-exc.a >> $(call log,$@) 2>&1
 	rm -rf $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox > $(call log,$@) 2>&1
 	cp -a $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(ARCH)$(call ext,$@)/$(ARCH)/lib/thumb/libstdc++.a >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(call install,$@)/$(ARCH)/lib/thumb/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.strip: .stage.%.libstdcpp-nox
@@ -789,12 +789,11 @@ install: .stage.LINUX.install
 upload: .stage.LINUX.upload
 .stage.LINUX.upload:
 	echo STAGE: $@
-	cp -f blobs/* .
 	rm -rf ./venv
 	python3 -m venv ./venv
 	cd ./venv; . bin/activate; \
 	    pip3 install -q pygithub ; \
-	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/earlephilhower/arduino-pico for more info'  --name "Raspberry Pi Pico Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` ;
+	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/earlephilhower/arduino-pico for more info'  --name "Raspberry Pi Pico Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` `find ../blobs -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"`
 	rm -rf ./venv
 
 # Platform.IO publish the package
