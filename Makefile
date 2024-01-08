@@ -265,7 +265,7 @@ configure += --disable-libstdcxx-verbose
 configure += --disable-decimal-float
 configure += --with-cpu=cortex-m0plus
 configure += --with-no-thumb-interwork
-configure += --without-termcap
+configure += --disable-tui
 
 # Newlib configuration common
 CONFIGURENEWLIBCOM  = --with-newlib
@@ -521,8 +521,19 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp --disable-assembly && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
+# Build ncurses for GDB
+.stage.LINUX.ncurses: .stage.%.start
+	echo STAGE: $@
+	rm -rf $(call arena,$@)/ncurses* > $(call log,$@) 2>&1
+	(cd $(call arena,$@) && tar xvf $(BLOBS)/ncurses-6.4.tar.gz) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/ncurses-6.4 && ./configure --prefix=$(call arena,$@)/cross --without-progs --without-manpages --without-shared --with-termlib --without-tack --without-tests --disable-widec && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
+	touch $@
+
+.stage.%.ncurses: .stage.%.start
+	touch $@
+
 # Build binutils
-.stage.%.binutils-config: .stage.%.gmp .stage.%.expat
+.stage.%.binutils-config: .stage.%.gmp .stage.%.expat .stage.%.ncurses
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/$(BINUTILS_DIR) > $(call log,$@) 2>&1
 	mkdir -p $(call arena,$@)/$(BINUTILS_DIR) >> $(call log,$@) 2>&1
@@ -533,6 +544,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	# Need LDFLAGS override to guarantee gdb is made static
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE)) > $(call log,$@) 2>&1
+	# Replace any termcap(tinfo) with the static lib instead
+	sed -i 's/-ltermcap/..\/..\/cross\/lib\/libtinfo.a/' $(call arena,$@)/$(BINUTILS_DIR)/gdb/Makefile >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR)/gdb && rm -f ./gdb && $(call setenv,$@) && $(MAKE)) > $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	(cd $(call install,$@)/bin; ln -sf $(ARCH)-gcc$(call exe,$@) $(ARCH)-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
