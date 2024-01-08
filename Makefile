@@ -530,7 +530,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	touch $@
 
 .stage.%.ncurses: .stage.%.start
-	touch $@
+	echo STAGE: $@
 
 # Build binutils
 .stage.%.binutils-config: .stage.%.gmp .stage.%.expat .stage.%.ncurses
@@ -544,23 +544,30 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	# Need LDFLAGS override to guarantee gdb is made static
 	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE)) > $(call log,$@) 2>&1
+
+.stage.LINUX.binutils-gdbrelink: .stage.LINUX.binutils-make
 	# Replace any termcap(tinfo) with the static lib instead
-	sed -i 's/-ltermcap/..\/..\/cross\/lib\/libtinfo.a/' $(call arena,$@)/$(BINUTILS_DIR)/gdb/Makefile >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(BINUTILS_DIR)/gdb && rm -f ./gdb && $(call setenv,$@) && $(MAKE)) > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
+	sed -i 's/-ltermcap/..\/..\/cross\/lib\/libtinfo.a/' $(call arena,$@)/$(BINUTILS_DIR)/gdb/Makefile > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR)/gdb && rm -f ./gdb && $(call setenv,$@) && $(MAKE)) >> $(call log,$@) 2>&1
+
+.stage.%.binutils-gdbrelink: .stage.%.binutils-make
+	echo STAGE: $@
+
+.stage.%.binutils-install: .stage.%.binutils-gdbrelink
+	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) > $(call log,$@) 2>&1
 	(cd $(call install,$@)/bin; ln -sf $(ARCH)-gcc$(call exe,$@) $(ARCH)-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 # Copy certain DLLs needed by GDB for Windows installations, no-op otherwise
-.stage.WIN32.binutils-post: .stage.WIN32.binutils-make
+.stage.WIN32.binutils-post: .stage.WIN32.binutils-install
 	echo STAGE: $@ - copying GDB support files
 	cp /usr/lib/gcc/i686-w64-mingw32/*-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/*-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN32.binutils-post)/bin >> $(call log,$@) 2>&1
 
-.stage.WIN64.binutils-post: .stage.WIN64.binutils-make
+.stage.WIN64.binutils-post: .stage.WIN64.binutils-install
 	echo STAGE: $@ - copying GDB support files
 	cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN64.binutils-post)/bin >> $(call log,$@) 2>&1
 
-.stage.%.binutils-post: .stage.%.binutils-make
+.stage.%.binutils-post: .stage.%.binutils-install
 	echo STAGE: $@
 
 .stage.%.gcc1-config: .stage.%.binutils-post
