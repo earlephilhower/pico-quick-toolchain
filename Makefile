@@ -1,12 +1,15 @@
 
+ifeq ($(V),1)
+# Chatty
+else
 .SILENT:
+endif
 
 # General rule is that CAPITAL variables are constants and can be used
 # via $(VARNAME), while lowercase variables are dynamic and need to be
 # used via $(call varname,$@) (note no space between comma and $@)
 
 REL     := $(if $(REL),$(REL),1.0.0)
-SUBREL  := $(if $(SUBREL),$(SUBREL),testing)
 ARDUINO := $(if $(ARDUINO),$(ARDUINO),$(shell pwd)/arduino)
 GCC     := $(if $(GCC),$(GCC),10.3)
 
@@ -370,7 +373,7 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
 	   tarballsha256=$$(sha256sum $${tarball} | cut -f1 -d" "); \
 	   ( echo '{' && \
 	     echo ' "host": "'$(call ahost,$(1))'",' && \
-	     echo ' "url": "https://github.com/$(GHUSER)/pico-quick-toolchain/releases/download/'$(REL)-$(SUBREL)'/'$${tarball}'",' && \
+	     echo ' "url": "https://github.com/$(GHUSER)/pico-quick-toolchain/releases/download/'$(REL)'/'$${tarball}'",' && \
 	     echo ' "archiveFileName": "'$${tarball}'",' && \
 	     echo ' "checksum": "SHA-256:'$${tarballsha256}'",' && \
 	     echo ' "size": "'$${tarballsize}'"' && \
@@ -579,7 +582,8 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.gcc1-make: .stage.%.gcc1-config
 	echo STAGE: $@
-	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) all-gcc; $(MAKE) install-gcc) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) all-gcc)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) install-gcc) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.newlib-config: .stage.%.gcc1-make
@@ -797,7 +801,7 @@ install: .stage.LINUX.install
 	git clone https://github.com/$(GHUSER)/arduino-pico $(ARDUINO)
 	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
 	echo "-------- Updating package.json"
-	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_pico_index.template.json; \
+	ver=$(REL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_pico_index.template.json; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc --ver "$${ver}" --glob '*$(ARCH)*.json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-elf2uf2 --ver "$${ver}" --glob '*elf2uf2*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-pioasm --ver "$${ver}" --glob '*pioasm*json' ; \
@@ -814,7 +818,7 @@ upload: .stage.LINUX.upload
 	python3 -m venv ./venv
 	cd ./venv; . bin/activate; \
 	    pip3 install -q pygithub ; \
-	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL)-$(SUBREL) --msg 'See https://github.com/earlephilhower/arduino-pico for more info'  --name "Raspberry Pi Pico Quick Toolchain for $(REL)-$(SUBREL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` `find ../blobs -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"`
+	    python3 ../upload_release.py --user "$(GHUSER)" --token "$(GHTOKEN)" --tag $(REL) --msg 'See https://github.com/earlephilhower/arduino-pico for more info'  --name "Raspberry Pi Pico Quick Toolchain for $(REL)" `find ../ -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"` `find ../blobs -maxdepth 1 -name "*.tar.gz" -o -name "*.zip"`
 	rm -rf ./venv
 
 # Platform.IO publish the package

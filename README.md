@@ -18,7 +18,7 @@ to clone the GCC and libs needed to the repo/ directory.  This takes a while, so
 
 If you're only compiling natively, you can just clone this repo and run
 ````
-make GCC={9.3|10.2|10.3|12.1|12.3} REL=x.x.x SUBREL=x -jx  # I like -j32 on a 16-core server, adjust according to your CPU power
+make GCC={9.3|10.2|10.3|12.1|12.3} REL=x.x.x -jx  # I like -j32 on a 16-core server, adjust according to your CPU power
 ````
 
 Note that to build a non-linux toolchain, you first need to build a linux chain in the directory.  This is because the cross compiler requires a local host executable gcc for the target architecture to build properly.
@@ -29,19 +29,19 @@ To build all architectures use the commands
 ````
 git clone https://github.com/earlephilhower/pico-quick-toolchain
 cd pico-quick-toolchain
-docker run --user $(id -u):$(id -g) --rm -v $(pwd):/workdir earlephilhower/gcc-cross-v11 bash -c "cd /workdir; make -j32 GCC={9.3|10.1|10.2|10.3|12.1} REL=2.5.0 SUBREL=3 all"
+docker run --user $(id -u):$(id -g) --rm -v $(pwd):/workdir earlephilhower/gcc-cross-v11 bash -c "cd /workdir; make -j32 GCC={9.3|10.1|10.2|10.3|12.1} REL=2.5.0 all"
 ````
 
 To make a draft release of the binaries:
 ````
-make GCC={9.3|10.2|10.3|12.1|12.3} REL=2.5.0 SUBREL=3 upload
+make GCC={9.3|10.2|10.3|12.1|12.3} REL=2.5.0 upload
 ````
 
 You then promote the draft to a pre-release so it becomes visible and can then make a PR against the Arduino core to merge it.
 
 Then to install the libraries and headers into the Arduino core (not including the toolchain exes) just
 ````
-make GCC={9.3|10.2|10.3|12.1|12.3} REL=2.5.0 SUBREL=3 install  (INSTALLBRANCH=xxx may be added to apply against a predefined branch other than master)
+make GCC={9.3|10.2|10.3|12.1|12.3} REL=2.5.0 install  (INSTALLBRANCH=xxx may be added to apply against a predefined branch other than master)
 <in Arduino dir>
 git commit -a
 ````
