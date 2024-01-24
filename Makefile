@@ -1,5 +1,7 @@
 
+ifneq ($(V),1)
 .SILENT:
+endif
 
 # General rule is that CAPITAL variables are constants and can be used
 # via $(VARNAME), while lowercase variables are dynamic and need to be
@@ -163,6 +165,7 @@ WIN32_TARCMD := zip
 WIN32_TAROPT := -rq
 WIN32_TAREXT := zip
 WIN32_ASYS   := windows_x86
+WIN32_LSSP   := -lssp
 
 WIN64_HOST   := x86_64-w64-mingw32
 WIN64_AHOST  := x86_64-mingw32
@@ -174,6 +177,7 @@ WIN64_TARCMD := zip
 WIN64_TAROPT := -rq
 WIN64_TAREXT := zip
 WIN64_ASYS   := windows_amd64
+WIN64_LSSP   := -lssp
 
 OSX_HOST   := x86_64-apple-darwin15
 OSX_AHOST  := x86_64-apple-darwin
@@ -221,6 +225,7 @@ tarcmd = $($(call arch,$(1))_TARCMD)
 taropt = $($(call arch,$(1))_TAROPT)
 tarext = $($(call arch,$(1))_TAREXT)
 deb    = $($(call arch,$(1))_DEB)
+lssp   = $($(call arch,$(1))_LSSP)
 log    = log$(1)
 
 # For package.json
@@ -447,7 +452,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
             cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; \
         done > $(call log,$@) 2>&1
 	for url in $(GNUHTTP)/gmp-$(GMP_VER).tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
-	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
+	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz; do \
 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
 	    echo "-------- getting $${name}" ; \
 	    cd $(REPODIR) && ( test -r $${archive} || wget $${url} ) ; \
@@ -497,10 +502,13 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	mkdir -p $(call arena,$@) > $(call log,$@) 2>&1
 
+.stage.%.cleancross: .stage.%.start
+	rm -rf $(call arena,$@)/cross
+
 # Build expat for proper GDB support
-.stage.%.expat: .stage.%.start
+.stage.%.expat: .stage.%.cleancross
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/expat $(call arena,$@)/cross > $(call log,$@) 2>&1
+	rm -rf $(call arena,$@)/expat > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/libexpat/expat $(call arena,$@)/expat >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/expat && bash buildconf.sh && ./configure $(call configure,$@) --prefix=$(call arena,$@)/cross && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
@@ -543,7 +551,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.%.binutils-make: .stage.%.binutils-config
 	echo STAGE: $@
 	# Need LDFLAGS override to guarantee gdb is made static
-	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE) LSSP=$(call lssp,$@)) > $(call log,$@) 2>&1
 
 .stage.LINUX.binutils-gdbrelink: .stage.LINUX.binutils-make
 	# Replace any termcap(tinfo) with the static lib instead

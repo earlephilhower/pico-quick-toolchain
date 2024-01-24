@@ -1,0 +1,13 @@
+diff --git a/gdb/Makefile.in b/gdb/Makefile.in
+index 215ef7933cb..8a6e907f567 100644
+--- a/gdb/Makefile.in
++++ b/gdb/Makefile.in
+@@ -595,7 +595,7 @@ CLIBS = $(SIM) $(READLINE) $(OPCODES) $(BFD) $(ZLIB) $(INTL) $(LIBIBERTY) $(LIBD
+ 	@LIBS@ @GUILE_LIBS@ @PYTHON_LIBS@ \
+ 	$(LIBEXPAT) $(LIBLZMA) $(LIBBABELTRACE) $(LIBIPT) \
+ 	$(LIBIBERTY) $(WIN32LIBS) $(LIBGNU) $(LIBICONV) $(LIBMPFR) \
+-	$(SRCHIGH_LIBS)
++	$(SRCHIGH_LIBS) $(LSSP)
+ CDEPS = $(NAT_CDEPS) $(SIM) $(BFD) $(READLINE_DEPS) \
+ 	$(OPCODES) $(INTL_DEPS) $(LIBIBERTY) $(CONFIG_DEPS) $(LIBGNU)
+ 
