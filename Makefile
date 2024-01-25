@@ -9,7 +9,7 @@ endif
 
 REL     := $(if $(REL),$(REL),1.0.0)
 ARDUINO := $(if $(ARDUINO),$(ARDUINO),$(shell pwd)/arduino)
-GCC     := $(if $(GCC),$(GCC),10.3)
+GCC     := $(if $(GCC),$(GCC),12.3)
 
 # General constants
 PWD      := $(shell pwd)
@@ -141,6 +141,7 @@ LINUX_TAROPT := zcf
 LINUX_TAREXT := tar.gz
 LINUX_ASYS   := linux_x86_64
 LINUX_DEB    := amd64
+LINUX_STATIC := -static-libgcc -static-libstdc++
 
 LINUX32_HOST   := i686-linux-gnu
 LINUX32_AHOST  := i686-pc-linux-gnu
@@ -153,6 +154,7 @@ LINUX32_TAROPT := zcf
 LINUX32_TAREXT := tar.gz
 LINUX32_ASYS   := linux_i686
 LINUX32_DEB    := i386
+LINUX32_STATIC := -static-libgcc -static-libstdc++
 
 WIN32_HOST   := i686-w64-mingw32
 WIN32_AHOST  := i686-mingw32
@@ -165,6 +167,7 @@ WIN32_TAROPT := -rq
 WIN32_TAREXT := zip
 WIN32_ASYS   := windows_x86
 WIN32_LSSP   := -lssp
+WIN32_STATIC := -static-libgcc -static-libstdc++
 
 WIN64_HOST   := x86_64-w64-mingw32
 WIN64_AHOST  := x86_64-mingw32
@@ -177,17 +180,32 @@ WIN64_TAROPT := -rq
 WIN64_TAREXT := zip
 WIN64_ASYS   := windows_amd64
 WIN64_LSSP   := -lssp
+WIN64_STATIC := -static-libgcc -static-libstdc++
 
-OSX_HOST   := x86_64-apple-darwin15
-OSX_AHOST  := x86_64-apple-darwin
-OSX_EXT    := .osx
-OSX_EXE    := 
-OSX_MKTGT  := osx
-OSX_BFLGS  :=
-OSX_TARCMD := tar
-OSX_TAROPT := zcf
-OSX_TAREXT := tar.gz
-OSX_ASYS   := darwin_x86_64\",\ \"darwin_arm64
+MACOSX86_HOST   := x86_64-apple-darwin20.4
+MACOSX86_AHOST  := x86_64-apple-darwin
+MACOSX86_EXT    := .macosx86
+MACOSX86_EXE    :=
+MACOSX86_MKTGT  := macosx86
+MACOSX86_BFLGS  :=
+MACOSX86_TARCMD := tar
+MACOSX86_TAROPT := zcf
+MACOSX86_TAREXT := tar.gz
+MACOSX86_ASYS   := darwin_x86_64
+MACOSX86_STATIC := -static-libgcc -static-libstdc++
+
+MACOSARM_HOST   := aarch64-apple-darwin20.4
+MACOSARM_AHOST  := aarch64-apple-darwin
+MACOSARM_EXT    := .macosarm
+MACOSARM_EXE    :=
+MACOSARM_MKTGT  := macosarm
+MACOSARM_BFLGS  :=
+MACOSARM_TARCMD := tar
+MACOSARM_TAROPT := zcf
+MACOSARM_TAREXT := tar.gz
+MACOSARM_ASYS   := darwin_arm64
+MACOSARM_OVER   := CC=$(MACOSARM_HOST)-cc CXX=$(MACOSARM_HOST)-c++ STRIP=$(MACOSARM_HOST)-strip
+MACOSARM_STATIC := -lc -lc++
 
 ARM64_HOST   := aarch64-linux-gnu
 ARM64_AHOST  := aarch64-linux-gnu
@@ -200,6 +218,7 @@ ARM64_TAROPT := zcf
 ARM64_TAREXT := tar.gz
 ARM64_ASYS   := linux_aarch64
 ARM64_DEB    := arm64
+ARM64_STATIC := -static-libgcc -static-libstdc++
 
 RPI_HOST   := arm-linux-gnueabihf
 RPI_AHOST  := arm-linux-gnueabihf
@@ -212,6 +231,7 @@ RPI_TAROPT := zcf
 RPI_TAREXT := tar.gz
 RPI_ASYS   := linux_armv6l\",\ \"linux_armv7l
 RPI_DEB    := armhf
+RPI_STATIC := -static-libgcc -static-libstdc++
 
 # Call with $@ to get the appropriate variable for this architecture
 host   = $($(call arch,$(1))_HOST)
@@ -225,6 +245,8 @@ taropt = $($(call arch,$(1))_TAROPT)
 tarext = $($(call arch,$(1))_TAREXT)
 deb    = $($(call arch,$(1))_DEB)
 lssp   = $($(call arch,$(1))_LSSP)
+over   = $($(call arch,$(1))_OVER)
+static = $($(call arch,$(1))_STATIC)
 log    = log$(1)
 
 # For package.json
@@ -270,6 +292,9 @@ configure += --disable-decimal-float
 configure += --with-cpu=cortex-m0plus
 configure += --with-no-thumb-interwork
 configure += --disable-tui
+configure += --disable-pie-tools
+configure += --disable-libquadmath
+configure += $(call over,$(1))
 
 # Newlib configuration common
 CONFIGURENEWLIBCOM  = --with-newlib
@@ -392,28 +417,28 @@ linux default: .stage.LINUX.done
 .PHONY: .stage.download
 
 # Build all toolchain versions
-all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.OSX.done .stage.ARM64.done .stage.RPI.done
+all: .stage.LINUX.done .stage.LINUX32.done .stage.WIN32.done .stage.WIN64.done .stage.MACOSX86.done .stage.MACOSARM.done .stage.ARM64.done .stage.RPI.done
 	echo STAGE: $@
 	echo All complete
 
 download: .stage.download
 
-pioasm: .stage.LINUX32.pioasm .stage.WIN32.pioasm .stage.WIN64.pioasm .stage.OSX.pioasm .stage.ARM64.pioasm .stage.RPI.pioasm .stage.LINUX.pioasm
+pioasm: .stage.LINUX32.pioasm .stage.WIN32.pioasm .stage.WIN64.pioasm .stage.MACOSX86.pioasm .stage.MACOSARM.pioasm .stage.ARM64.pioasm .stage.RPI.pioasm .stage.LINUX.pioasm
 
-mklittlefs: .stage.LINUX32.mklittlefs .stage.WIN32.mklittlefs .stage.WIN64.mklittlefs .stage.OSX.mklittlefs .stage.ARM64.mklittlefs .stage.RPI.mklittlefs .stage.LINUX.mklittlefs
+mklittlefs: .stage.LINUX32.mklittlefs .stage.WIN32.mklittlefs .stage.WIN64.mklittlefs .stage.MACOSX86.mklittlefs .stage.MACOSARM.mklittlefs .stage.ARM64.mklittlefs .stage.RPI.mklittlefs .stage.LINUX.mklittlefs
 
-elf2uf2: .stage.LINUX32.elf2uf2 .stage.WIN32.elf2uf2 .stage.WIN64.elf2uf2 .stage.OSX.elf2uf2 .stage.ARM64.elf2uf2 .stage.RPI.elf2uf2 .stage.LINUX.elf2uf2
+elf2uf2: .stage.LINUX32.elf2uf2 .stage.WIN32.elf2uf2 .stage.WIN64.elf2uf2 .stage.MACOSX86.elf2uf2 .stage.MACOSARM.elf2uf2 .stage.ARM64.elf2uf2 .stage.RPI.elf2uf2 .stage.LINUX.elf2uf2
 
-openocd: .stage.LINUX32.openocd .stage.WIN32.openocd .stage.WIN64.openocd .stage.OSX.openocd .stage.ARM64.openocd .stage.RPI.openocd .stage.LINUX.openocd
+openocd: .stage.LINUX32.openocd .stage.WIN32.openocd .stage.WIN64.openocd .stage.MACOSX86.openoce .stage.MACOSARM.openocd .stage.ARM64.openocd .stage.RPI.openocd .stage.LINUX.openocd
 
-picotool: .stage.LINUX32.picotool .stage.WIN32.picotool .stage.WIN64.picotool .stage.OSX.picotool .stage.ARM64.picotool .stage.RPI.picotool .stage.LINUX.picotool
+picotool: .stage.LINUX32.picotool .stage.WIN32.picotool .stage.WIN64.picotool .stage.MACOSX86.picotool .stage.MACOSARM.picotool .stage.ARM64.picotool .stage.RPI.picotool .stage.LINUX.picotool
 
 # Other cross-compile cannot start until Linux is built
-.stage.LINUX32.gcc1-make .stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.OSX.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
+.stage.LINUX32.gcc1-make .stage.WIN32.gcc1-make .stage.WIN64.gcc1-make .stage.MACOSX86.gcc1-make .stage.MACOSARM.gcc1-make .stage.ARM64.gcc1-make .stage.RPI.gcc1-make: .stage.LINUX.done
 
 
 # Clean all temporary outputs
-clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
+clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.MACOSX86.clean .cleaninst.MACOSARM.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
 	echo STAGE: $@
 	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
 
@@ -521,7 +546,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	touch $@
 
 # Build GMP for proper GDB support - MacOS has linker error without --disable-assembly
-.stage.OSX.gmp: .stage.OSX.start
+.stage.MACOSX86.gmp: .stage.MACOSX86.start
+.stage.MACOSARM.gmp: .stage.MACOSARM.start
+.stage.MACOSX86.gmp .stage.MACOSARM.gmp:
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
@@ -586,7 +613,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.gcc1-make: .stage.%.gcc1-config
 	echo STAGE: $@
-	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) all-gcc)) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) all-gcc) > $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) install-gcc) >> $(call log,$@) 2>&1
 	touch $@
 
@@ -650,7 +677,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	# Dependencies borked in mklittlefs makefile, so don't use parallel make
 	(cd $(call arena,$@)/mklittlefs;\
 	    $(call setenv,$@); \
-	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip \
+	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip $(call over,$@) \
             make -j1 clean mklittlefs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-rpipico") >> $(call log,$@) 2>&1
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.mklittlefs.$(call arch,$@)/mklittlefs >> $(call log,$@) 2>&1
@@ -665,7 +692,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/elf2uf2 > $(call log,$@) 2>&1
 	mkdir $(call arena,$@)/elf2uf2 >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk/tools/elf2uf2; $(call host,$@)-g++ -std=gnu++11 -o $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) -I../../src/common/boot_uf2/include main.cpp -static-libgcc -static-libstdc++) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk/tools/elf2uf2; CXX=$(call host,$@)-g++ $(call over,$@); $$CXX -std=gnu++11 -o $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) -I../../src/common/boot_uf2/include main.cpp $(call static,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.elf2uf2.$(call arch,$@)/elf2uf2 >> $(call log,$@) 2>&1
 	(cd pkg.elf2uf2.$(call arch,$@)/elf2uf2; $(call setenv,$@); pkgdesc="elf2uf2-utility"; pkgname="tool-elf2uf2-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
@@ -680,7 +707,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/pioasm > $(call log,$@) 2>&1
 	mkdir $(call arena,$@)/pioasm >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk/tools/pioasm; $(call host,$@)-g++ -std=gnu++11 -o $(call arena,$@)/pioasm/pioasm$(call exe,$@) main.cpp pio_assembler.cpp pio_disassembler.cpp gen/lexer.cpp gen/parser.cpp c_sdk_output.cpp python_output.cpp hex_output.cpp -Igen/ -I. -static-libgcc -static-libstdc++) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk/tools/pioasm; CXX=$(call host,$@)-g++ $(call over,$@); $$CXX -std=gnu++11 -o $(call arena,$@)/pioasm/pioasm$(call exe,$@) main.cpp pio_assembler.cpp pio_disassembler.cpp gen/lexer.cpp gen/parser.cpp c_sdk_output.cpp python_output.cpp hex_output.cpp -Igen/ -I. $(call static, $@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.pioasm.$(call arch,$@)/pioasm >> $(call log,$@) 2>&1
 	(cd pkg.pioasm.$(call arch,$@)/pioasm; $(call setenv,$@); pkgdesc="pioasm-utility"; pkgname="tool-pioasm-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
@@ -723,8 +750,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 # These archs use manually build picotool executables
 .stage.WIN32.picotool: .stage.WIN32.start
 .stage.WIN64.picotool: .stage.WIN64.start
-.stage.OSX.picotool: .stage.OSX.start
-.stage.WIN32.picotool .stage.WIN64.picotool .stage.OSX.picotool:
+.stage.MACOSX86.picotool: .stage.MACOSX86.start
+.stage.MACOSARM.picotool: .stage.MACOSARM.start
+.stage.WIN32.picotool .stage.WIN64.picotool .stage.MACOSX86.picotool .stage.MACOSARM.picotool:
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/picotool > $(call log,$@) 2>&1
 	mkdir -p pkg.picotool.$(call arch,$@) >> $(call log,$@) 2>&1
@@ -769,8 +797,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 # These archs use manually build openocd executables
 .stage.WIN32.openocd: .stage.WIN32.start
 .stage.WIN64.openocd: .stage.WIN64.start
-.stage.OSX.openocd: .stage.OSX.start
-.stage.WIN32.openocd .stage.WIN64.openocd .stage.OSX.openocd:
+.stage.MACOSX86.openocd: .stage.MACOSX86.start
+.stage.MACOSARM.openocd: .stage.MACOSARM.start
+.stage.WIN32.openocd .stage.WIN64.openocd .stage.MACOSX86.openocd .stage.MACOSARM.openocd:
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/openocd > $(call log,$@) 2>&1
 	mkdir -p pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1

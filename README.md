@@ -29,7 +29,7 @@ To build all architectures use the commands
 ````
 git clone https://github.com/earlephilhower/pico-quick-toolchain
 cd pico-quick-toolchain
-docker run --user $(id -u):$(id -g) --rm -v $(pwd):/workdir earlephilhower/gcc-cross-v11 bash -c "cd /workdir; make -j32 GCC={9.3|10.1|10.2|10.3|12.1} REL=2.5.0 all"
+docker run --user $(id -u):$(id -g) --rm -v $(pwd):/workdir earlephilhower/gcc-cross-v12 bash -c "cd /workdir; make -j32 GCC={10.3|12.1} REL=2.5.0 all"
 ````
 
 To make a draft release of the binaries:
