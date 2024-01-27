@@ -204,7 +204,7 @@ MACOSARM_TARCMD := tar
 MACOSARM_TAROPT := zcf
 MACOSARM_TAREXT := tar.gz
 MACOSARM_ASYS   := darwin_arm64
-MACOSARM_OVER   := CC=$(MACOSARM_HOST)-cc CXX=$(MACOSARM_HOST)-c++ STRIP=$(MACOSARM_HOST)-strip
+MACOSARM_OVER   := CC=$(MACOSARM_HOST)-cc CXX=$(MACOSARM_HOST)-c++ STRIP=touch
 MACOSARM_STATIC := -lc -lc++
 
 ARM64_HOST   := aarch64-linux-gnu
@@ -647,6 +647,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(call install,$@)/$(ARCH)/lib/thumb/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
+.stage.MACOSARM.strip: .stage.MACOSARM.libstdcpp-nox
+	echo STAGE: $@
+	# STRIP breaks the app on M1s
+	touch $@
+
 .stage.%.strip: .stage.%.libstdcpp-nox
 	echo STAGE: $@
 	($(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/c*$(call exe,$@) || true ) > $(call log,$@) 2>&1
@@ -677,7 +682,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	# Dependencies borked in mklittlefs makefile, so don't use parallel make
 	(cd $(call arena,$@)/mklittlefs;\
 	    $(call setenv,$@); \
-	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=$(call host,$@)-strip $(call over,$@) \
+	    TARGET_OS=$(call mktgt,$@) CC=$(call host,$@)-gcc CXX=$(call host,$@)-g++ STRIP=touch $(call over,$@) \
             make -j1 clean mklittlefs$(call exe,$@) BUILD_CONFIG_NAME="-arduino-rpipico") >> $(call log,$@) 2>&1
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.mklittlefs.$(call arch,$@)/mklittlefs >> $(call log,$@) 2>&1
@@ -696,7 +701,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.elf2uf2.$(call arch,$@)/elf2uf2 >> $(call log,$@) 2>&1
 	(cd pkg.elf2uf2.$(call arch,$@)/elf2uf2; $(call setenv,$@); pkgdesc="elf2uf2-utility"; pkgname="tool-elf2uf2-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
-	$(call host,$@)-strip $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) >> $(call log,$@) 2>&1
+	#$(call host,$@)-strip $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) pkg.elf2uf2.$(call arch,$@)/elf2uf2/. >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).elf2uf2-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.elf2uf2.$(call arch,$@) && $(call makegitlog) > elf2uf2/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} elf2uf2; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
@@ -711,7 +716,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.pioasm.$(call arch,$@)/pioasm >> $(call log,$@) 2>&1
 	(cd pkg.pioasm.$(call arch,$@)/pioasm; $(call setenv,$@); pkgdesc="pioasm-utility"; pkgname="tool-pioasm-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
-	$(call host,$@)-strip $(call arena,$@)/pioasm/pioasm$(call exe,$@) >> $(call log,$@) 2>&1
+	#$(call host,$@)-strip $(call arena,$@)/pioasm/pioasm$(call exe,$@) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/pioasm/pioasm$(call exe,$@) pkg.pioasm.$(call arch,$@)/pioasm/. >> $(call log,$@) 2>&1
 	(tarball=$(call host,$@).pioasm-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkg.pioasm.$(call arch,$@) && $(call makegitlog) > pioasm/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} pioasm; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
