@@ -38,11 +38,9 @@ jobs:
         cmake -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
         make -j
 
-        ls -altR /opt/homebrew/lib/
-
         # Package
         mkdir /tmp/picotool
-        cp -a /opt/homebrew/lib/libusb*.dylib /tmp/picotool/.
+        cp -a /opt/homebrew/opt/libusb/lib/libusb-1.0.0.dylib /tmp/picotool/.
         cp -a picotool /tmp/picotool/.
         cp -a ../LICENSE.TXT /tmp/picotool/.
         cp -a ../README.md /tmp/picotool/.
