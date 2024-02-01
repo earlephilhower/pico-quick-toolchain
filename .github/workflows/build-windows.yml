@@ -49,7 +49,7 @@ jobs:
         tar cvf ../../picotool.${{matrix.env}}.tar -C /tmp picotool
 
     - name: Upload Picotool ${{matrix.env}}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: picotool.${{matrix.env}}.tar
         path: picotool.${{matrix.env}}.tar
@@ -82,7 +82,7 @@ jobs:
         tar cvf openocd.${{matrix.env}}.tar -C /tmp openocd
 
     - name: Upload OpenOCD ${{matrix.env}}
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: openocd.${{matrix.env}}.tar
         path: openocd.${{matrix.env}}.tar

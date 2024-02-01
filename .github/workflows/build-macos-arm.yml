@@ -86,9 +86,8 @@ jobs:
         make -j
         make install
         popd
-        cp -a /opt/homebrew/lib/libhid*.dylib /tmp/openocd/bin/.
-        cp -a /opt/homebrew/lib/libusb*.dylib /tmp/openocd/bin/.
-        cp -a /opt/homebrew/lib/libcap*.dylib /tmp/openocd/bin/.
+        cp -a /opt/homebrew/opt/libusb/lib/libusb-1.0.0.dylib /tmp/openocd/bin/.
+        cp -a /opt/homebrew/opt/hidapi/lib/libhidapi.0.14.0.dylib /tmp/openocd/bin/libhidapi.0.dylib
 
         # Make dylibs relative
         otool -L /tmp/openocd/bin/openocd
