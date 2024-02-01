@@ -38,11 +38,9 @@ jobs:
         cmake -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
         make -j
 
-        ls -altR /opt/homebrew/lib/
-
         # Package
         mkdir /tmp/picotool
-        cp -a /opt/homebrew/lib/libusb*.dylib /tmp/picotool/.
+        cp -a /opt/homebrew/opt/libusb/lib/libusb-1.0.0.dylib /tmp/picotool/.
         cp -a picotool /tmp/picotool/.
         cp -a ../LICENSE.TXT /tmp/picotool/.
         cp -a ../README.md /tmp/picotool/.
@@ -84,13 +82,12 @@ jobs:
                     --disable-ioutil --disable-bcm2835gpio --disable-imx_gpio --disable-ep93xx \
                     --disable-at91rm9200 --disable-gw16012 --disable-oocd_trace --disable-buspirate \
                     --disable-sysfsgpio --disable-xlnx-pcie-xvc --disable-minidriver-dummy \
-                    --disable-remote-bitbang
+                    --disable-remote-bitbang --disable-werror
         make -j
         make install
         popd
-        cp -a /opt/homebrew/lib/libhid*.dylib /tmp/openocd/bin/.
-        cp -a /opt/homebrew/lib/libusb*.dylib /tmp/openocd/bin/.
-        cp -a /opt/homebrew/lib/libcap*.dylib /tmp/openocd/bin/.
+        cp -a /opt/homebrew/opt/libusb/lib/libusb-1.0.0.dylib /tmp/openocd/bin/.
+        cp -a /opt/homebrew/opt/hidapi/lib/libhidapi.0.14.0.dylib /tmp/openocd/bin/libhidapi.0.dylib
 
         # Make dylibs relative
         otool -L /tmp/openocd/bin/openocd

@@ -7,6 +7,7 @@ process_binary() {
     # Find all linked libraries from the Homebrew prefix
     local libraries=(
         $(otool -L "$binary" | grep '/usr/local/opt/' | awk '{print $1}')
+        $(otool -L "$binary" | grep '/opt/homebrew/' | awk '{print $1}')
     )
 
     # If this is a dylib, the first entry is the ID of the library itself, which

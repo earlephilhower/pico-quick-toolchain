@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: macos-14
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: false
 
@@ -40,7 +40,7 @@ jobs:
         tar cvf /tmp/python3.18-portable-darwin_arm64.tar python3
 
     - name: Upload Python3-ARM
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: python3.18-portable-darwin_arm64.tar
         path: /tmp/python3.18-portable-darwin_arm64.tar
