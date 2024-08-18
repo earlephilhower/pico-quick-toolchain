@@ -17,7 +17,7 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
-        install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config
+        install: mingw-w64-${{matrix.env}}-7zip development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config
     - name: Build Picotool ${{matrix.env}}
       run: |
         # Get the SDK ready
@@ -27,6 +27,15 @@ jobs:
         git submodule update --init
         cd ..
 
+        # Manually bring in libusb from upstream, mingw not finding it anymore
+        mkdir libusb
+        cd libusb
+        wget https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.7z
+        7z x libusb-1.0.27.7z
+        cp -a include /mingw64/include/libusb-1.0
+        cp MinGW32/static/* /mingw*/bin/
+        cd ..
+        
         # Check out this branch
         git clone https://github.com/raspberrypi/picotool.git
         cd picotool
