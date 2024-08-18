@@ -33,6 +33,8 @@ jobs:
         cp -ar bin lib
         cd ..
         ls -altR libusb
+        mkdir -p /msys64/mingw32/include/libusb-1.0
+        cp include/* /msys64/mingw32/include/libusb-1.0/.
         export LIBUSB_ROOT=$PWD/libusb
 
         # Get the SDK ready
