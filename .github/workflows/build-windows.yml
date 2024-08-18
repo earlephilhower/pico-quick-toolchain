@@ -20,22 +20,25 @@ jobs:
         install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config
     - name: Build Picotool ${{matrix.env}}
       run: |
-        # Get the SDK ready
-        git clone https://github.com/raspberrypi/pico-sdk.git
-        cd pico-sdk
-        git checkout 2.0.0
-        git submodule update --init
-        cd ..
-
         # Manually bring in libusb from upstream, mingw not finding it anymore
         mkdir libusb
         cd libusb
         wget https://www.7-zip.org/a/7zr.exe
         wget https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.7z
         ./7zr x libusb-1.0.27.7z
-        cp -ar include /mingw64/include/libusb-1.0
-        if [ ${{matrix.env}} == i686 ]; then cp -ra MinGW32/static/* /mingw*/bin/; fi
-        if [ ${{matrix.env}} == x86_64 ]; then cp -ra MinGW64/static/* /mingw*/bin/; fi
+        mkdir bin
+        if [ ${{matrix.env}} == i686 ]; then cp -ra MinGW32/static/* ./bin/; fi
+        if [ ${{matrix.env}} == x86_64 ]; then cp -ra MinGW64/static/* ./bin/; fi
+        cp -ar bin lib
+        cd ..
+        ls -altR libusb
+        export LIBUSB_ROOT=$PWD/libusb
+        
+        # Get the SDK ready
+        git clone https://github.com/raspberrypi/pico-sdk.git
+        cd pico-sdk
+        git checkout 2.0.0
+        git submodule update --init
         cd ..
         
         # Check out this branch
