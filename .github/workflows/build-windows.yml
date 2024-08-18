@@ -17,9 +17,18 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
-        install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-libusb mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config
+        install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config
     - name: Build Picotool ${{matrix.env}}
       run: |
+        # Manually bring in libusb from upstream, mingw not finding it anymore
+        mkdir libusb
+        cd libusb
+        wget https://www.7-zip.org/a/7zr.exe
+        wget https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.7z
+        ./7zr x libusb-1.0.27.7z
+        cd ..
+        export LIBUSB_ROOT=$PWD/libusb
+
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
         cd pico-sdk
@@ -35,14 +44,18 @@ jobs:
         # Build!
         mkdir build
         cd build
-        if [ -e /mingw64/include/libusb-1.0/ ]; then cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -DLIBUSB_INCLUDE_DIR=/mingw64/include/libusb-1.0/ -S .. -B . ; else cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -DLIBUSB_INCLUDE_DIR=/mingw32/include/libusb-1.0/ -S .. -B . ; fi
-        make -j
+        cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
+        make VERBOSE=1 -j
         strip picotool.exe
 
         # Package
         mkdir /tmp/picotool
         cp /mingw*/bin/libhidapi*.dll /tmp/picotool/.
-        cp /mingw*/bin/libusb*.dll /tmp/picotool/.
+        if [ ${{matrix.env}} == i686 ]; then cp $LIBUSB_ROOT/MinGW32/DLL/* /tmp/picotool/.; fi
+        if [ ${{matrix.env}} == x86_64 ]; then cp $LIBUSB_ROOT/MinGW64/dll/* /tmp/picotool/.; fi
+        cp /mingw*/bin/libstdc++*.dll /tmp/picotool/.
+        cp /mingw*/bin/libwinpthread*.dll /tmp/picotool/.
+        cp /mingw*/bin/libgcc*.dll /tmp/picotool/.
         cp -a picotool.exe /tmp/picotool/.
         cp -a ../LICENSE.TXT /tmp/picotool/.
         cp -a ../README.md /tmp/picotool/.
@@ -56,6 +69,7 @@ jobs:
 
     - name: Build OpenOCD ${{matrix.env}}
       run: |
+        export LIBUSB_ROOT=$PWD/libusb
         git clone https://github.com/raspberrypi/openocd.git
         pushd openocd
         git checkout sdk-2.0.0
@@ -76,7 +90,7 @@ jobs:
         make install
         echo Copying needed DLLs and packaging as tarball
         cp /mingw*/bin/libhidapi*.dll /tmp/openocd/bin/.
-        cp /mingw*/bin/libusb*.dll /tmp/openocd/bin/.
+        #cp /mingw*/bin/libusb*.dll /tmp/openocd/bin/.
         popd
         strip /tmp/openocd/bin/openocd.exe
         tar cvf openocd.${{matrix.env}}.tar -C /tmp openocd
