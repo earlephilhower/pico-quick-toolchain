@@ -1,0 +1,26 @@
+diff --git a/src/jtag/drivers/angie.c b/src/jtag/drivers/angie.c
+index c024667bd..0acc3c510 100644
+--- a/src/jtag/drivers/angie.c
++++ b/src/jtag/drivers/angie.c
+@@ -1508,7 +1508,7 @@ static long angie_calculate_frequency(enum angie_delay_type type, int delay)
+ 	}
+ 
+ 	f_float = 1000000.0 / t_us;
+-	return roundf(f_float);
++	return (f_float);
+ }
+ 
+ /******************* Interface between ANGIE and OpenOCD ******************/
+diff --git a/src/jtag/drivers/ulink.c b/src/jtag/drivers/ulink.c
+index 4f23c6c7f..c6923b0c2 100644
+--- a/src/jtag/drivers/ulink.c
++++ b/src/jtag/drivers/ulink.c
+@@ -1382,7 +1382,7 @@ static long ulink_calculate_frequency(enum ulink_delay_type type, int delay)
+ 	}
+ 
+ 	f_float = 1.0 / t;
+-	return roundf(f_float);
++	return (f_float);
+ }
+ 
+ /******************* Interface between OpenULINK and OpenOCD ******************/

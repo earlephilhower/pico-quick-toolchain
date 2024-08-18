@@ -23,14 +23,14 @@ jobs:
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
         cd pico-sdk
-        git checkout 1.5.1
+        git checkout 2.0.0
         git submodule update --init
         cd ..
 
         # Check out this branch
         git clone https://github.com/raspberrypi/picotool.git
         cd picotool
-        git checkout 1.1.2
+        git checkout 2.0.0
 
         # Build!
         mkdir build
@@ -67,7 +67,7 @@ jobs:
         brew install bash libtool automake libusb hidapi
         git clone https://github.com/raspberrypi/openocd.git
         pushd openocd
-        git checkout rp2040-v0.12.0
+        git checkout sdk-2.0.0
         # Remove TEXI warning
         grep -v raggedright doc/openocd.texi > p2
         mv p2 doc/openocd.texi

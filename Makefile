@@ -116,6 +116,15 @@ else ifeq ($(GCC), 12.3)
     BINUTILS_BRANCH := gdb-13.2-release #binutils-2_38
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 12.4)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-12.4.0
+    GCC_PKGREL    := 120400
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := gdb-13.2-release #binutils-2_38
+    BINUTILS_DIR  := binutils-gdb-gnu
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
 else ifeq ($(GCC), 13.2)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-13.2.0
@@ -266,9 +275,9 @@ BLOBS = $(PWD)/blobs
 GMP_VER := 6.1.2
 
 # RPI stuff
-PICOSDK_BRANCH  := 1.5.1
-OPENOCD_BRANCH  := rp2040-v0.12.0
-PICOTOOL_BRANCH := 1.1.2
+PICOSDK_BRANCH  := 2.0.0
+OPENOCD_BRANCH  := sdk-2.0.0
+PICOTOOL_BRANCH := 2.0.0
 
 # GCC et. al configure options
 configure  = --prefix=$(call install,$(1))
@@ -426,8 +435,6 @@ download: .stage.download
 pioasm: .stage.LINUX32.pioasm .stage.WIN32.pioasm .stage.WIN64.pioasm .stage.MACOSX86.pioasm .stage.MACOSARM.pioasm .stage.ARM64.pioasm .stage.RPI.pioasm .stage.LINUX.pioasm
 
 mklittlefs: .stage.LINUX32.mklittlefs .stage.WIN32.mklittlefs .stage.WIN64.mklittlefs .stage.MACOSX86.mklittlefs .stage.MACOSARM.mklittlefs .stage.ARM64.mklittlefs .stage.RPI.mklittlefs .stage.LINUX.mklittlefs
-
-elf2uf2: .stage.LINUX32.elf2uf2 .stage.WIN32.elf2uf2 .stage.WIN64.elf2uf2 .stage.MACOSX86.elf2uf2 .stage.MACOSARM.elf2uf2 .stage.ARM64.elf2uf2 .stage.RPI.elf2uf2 .stage.LINUX.elf2uf2
 
 openocd: .stage.LINUX32.openocd .stage.WIN32.openocd .stage.WIN64.openocd .stage.MACOSX86.openoce .stage.MACOSARM.openocd .stage.ARM64.openocd .stage.RPI.openocd .stage.LINUX.openocd
 
@@ -693,21 +700,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.elf2uf2: .stage.%.start
-	echo STAGE: $@
-	rm -rf $(call arena,$@)/elf2uf2 > $(call log,$@) 2>&1
-	mkdir $(call arena,$@)/elf2uf2 >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk/tools/elf2uf2; CXX=$(call host,$@)-g++ $(call over,$@); $$CXX -std=gnu++11 -o $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) -I../../src/common/boot_uf2/include main.cpp $(call static,$@)) >> $(call log,$@) 2>&1
-	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
-	mkdir -p pkg.elf2uf2.$(call arch,$@)/elf2uf2 >> $(call log,$@) 2>&1
-	(cd pkg.elf2uf2.$(call arch,$@)/elf2uf2; $(call setenv,$@); pkgdesc="elf2uf2-utility"; pkgname="tool-elf2uf2-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
-	#$(call host,$@)-strip $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/elf2uf2/elf2uf2$(call exe,$@) pkg.elf2uf2.$(call arch,$@)/elf2uf2/. >> $(call log,$@) 2>&1
-	(tarball=$(call host,$@).elf2uf2-$$(cd $(REPODIR)/pico-sdk && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.elf2uf2.$(call arch,$@) && $(call makegitlog) > elf2uf2/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} elf2uf2; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
-	rm -rf pkg.elf2uf2.$(call arch,$@) >> $(call log,$@) 2>&1
-	touch $@
-
 .stage.%.pioasm: .stage.%.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/pioasm > $(call log,$@) 2>&1
@@ -827,7 +819,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	rm -rf $(call arena,$@)/pkg.openocd.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.elf2uf2 .stage.%.pioasm .stage.%.openocd .stage.%.picotool
+.stage.%.done: .stage.%.package .stage.%.mklittlefs .stage.%.pioasm .stage.%.openocd .stage.%.picotool
 	echo STAGE: $@
 	echo Done building $(call arch,$@)
 
@@ -841,7 +833,6 @@ install: .stage.LINUX.install
 	echo "-------- Updating package.json"
 	ver=$(REL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_pico_index.template.json; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc --ver "$${ver}" --glob '*$(ARCH)*.json' ; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-elf2uf2 --ver "$${ver}" --glob '*elf2uf2*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-pioasm --ver "$${ver}" --glob '*pioasm*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-picotool --ver "$${ver}" --glob '*picotool*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-mklittlefs --ver "$${ver}" --glob '*mklittlefs*json' ; \
