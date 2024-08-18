@@ -51,7 +51,7 @@ jobs:
         mkdir build
         cd build
         if [ -e /mingw64/include/libusb-1.0/ ]; then cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -DLIBUSB_INCLUDE_DIR=/mingw64/include/libusb-1.0/ -S .. -B . ; else cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -DLIBUSB_INCLUDE_DIR=/mingw32/include/libusb-1.0/ -S .. -B . ; fi
-        make -j
+        make VERBOSE=1
         strip picotool.exe
 
         # Package
