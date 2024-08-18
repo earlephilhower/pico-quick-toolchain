@@ -42,7 +42,7 @@ jobs:
         # Package
         mkdir /tmp/picotool
         cp /mingw*/bin/libhidapi*.dll /tmp/picotool/.
-        cp /mingw*/bin/libusb*.dll /tmp/picotool/.
+        # cp /mingw*/bin/libusb*.dll /tmp/picotool/.
         cp -a picotool.exe /tmp/picotool/.
         cp -a ../LICENSE.TXT /tmp/picotool/.
         cp -a ../README.md /tmp/picotool/.
@@ -76,7 +76,7 @@ jobs:
         make install
         echo Copying needed DLLs and packaging as tarball
         cp /mingw*/bin/libhidapi*.dll /tmp/openocd/bin/.
-        cp /mingw*/bin/libusb*.dll /tmp/openocd/bin/.
+        #cp /mingw*/bin/libusb*.dll /tmp/openocd/bin/.
         popd
         strip /tmp/openocd/bin/openocd.exe
         tar cvf openocd.${{matrix.env}}.tar -C /tmp openocd
