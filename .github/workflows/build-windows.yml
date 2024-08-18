@@ -34,8 +34,8 @@ jobs:
         wget https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.7z
         ./7zr x libusb-1.0.27.7z
         cp -a include /mingw64/include/libusb-1.0
-        if [ ${{matrix.env}} == i686]; then cp MinGW32/static/* /mingw*/bin/; fi
-        if [ ${{matrix.env}} == x86_64]; then cp MinGW32/static/* /mingw*/bin/; fi
+        if [ ${{matrix.env}} == i686 ]; then cp MinGW32/static/* /mingw*/bin/; fi
+        if [ ${{matrix.env}} == x86_64 ]; then cp MinGW64/static/* /mingw*/bin/; fi
         cd ..
         
         # Check out this branch
