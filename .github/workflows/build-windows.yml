@@ -45,7 +45,7 @@ jobs:
         mkdir build
         cd build
         cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
-        make VERBOSE=1
+        make VERBOSE=1 -j
         strip picotool.exe
 
         # Package
