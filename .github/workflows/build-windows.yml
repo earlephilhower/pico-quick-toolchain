@@ -96,7 +96,7 @@ jobs:
                     --disable-ioutil --disable-bcm2835gpio --disable-imx_gpio --disable-ep93xx \
                     --disable-at91rm9200 --disable-gw16012 --disable-oocd_trace --disable-buspirate \
                     --disable-sysfsgpio --disable-xlnx-pcie-xvc --disable-minidriver-dummy \
-                    --disable-remote-bitbang
+                    --disable-remote-bitbang --disable-werror
         # RP2040 has "UINT" but it's not defined anywhere here.  Yay
         echo "typedef unsigned int uint;" >> config.h
         make -j
