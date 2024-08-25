@@ -20,10 +20,12 @@ jobs:
         install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config
     - name: Build Picotool ${{matrix.env}}
       run: |
+        pushd .
         # Manually bring in libusb from upstream, mingw not finding it anymore
         mkdir libusb
         cd libusb
-        tar jxvf ../blobs/libusb-1.0.27-windows.tar.bz2
+        wget https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libusb-1.0.27-windows.tar.bz2
+        tar jxvf ./libusb-1.0.27-windows.tar.bz2
         #wget https://www.7-zip.org/a/7zr.exe
         #wget https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.7z
         #./7zr x libusb-1.0.27.7z
@@ -62,6 +64,8 @@ jobs:
         cp -a ../README.md /tmp/picotool/.
         tar cvf ../../picotool.${{matrix.env}}.tar -C /tmp picotool
 
+        popd
+
     - name: Upload Picotool ${{matrix.env}}
       uses: actions/upload-artifact@v4
       with:
@@ -71,6 +75,12 @@ jobs:
     - name: Build OpenOCD ${{matrix.env}}
       run: |
         export LIBUSB_ROOT=$PWD/libusb
+        export LIBUSB1_CFLAGS=-I$PWD/libusb/include
+        if [ ${{matrix.env}} == i686 ]; then export LIBUSB1_LIBS="-L $PWD/libusb/MinGW32/static -lusb-1.0"; fi
+        if [ ${{matrix.env}} == x86_64 ]; then export LIBUSB1_LIBS="-L $PWD/libusb/MinGW64/static -lusb-1.0"; fi
+        echo LIBUSB_ROOT=\"$LIBUSB_ROOT\"
+        echo LIBUSB1_CFLAGS=\"$LIBUSB1_CFLAGS\"
+        echo LIBUSB1_LIBS=\"$LIBUSB1_LIBS\"
         git clone https://github.com/raspberrypi/openocd.git
         pushd openocd
         git checkout sdk-2.0.0
