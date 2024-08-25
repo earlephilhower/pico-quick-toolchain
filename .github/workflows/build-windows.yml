@@ -98,7 +98,7 @@ jobs:
                     --disable-sysfsgpio --disable-xlnx-pcie-xvc --disable-minidriver-dummy \
                     --disable-remote-bitbang
         # RP2040 has "UINT" but it's not defined anywhere here.  Yay
-        echo "typedef unsigned int uint" >> config.h
+        echo "typedef unsigned int uint;" >> config.h
         make -j
         make install
         echo Copying needed DLLs and packaging as tarball
