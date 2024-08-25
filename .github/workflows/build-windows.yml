@@ -76,8 +76,8 @@ jobs:
       run: |
         export LIBUSB_ROOT=$PWD/libusb
         export LIBUSB1_CFLAGS=-I$PWD/libusb/include
-        if [ ${{matrix.env}} == i686 ]; then export LIBUSB1_LIBS="-L $PWD/libusb/MinGW32/static -lusb-1.0"; fi
-        if [ ${{matrix.env}} == x86_64 ]; then export LIBUSB1_LIBS="-L $PWD/libusb/MinGW64/static -lusb-1.0"; fi
+        if [ ${{matrix.env}} == i686 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW32/static -lusb-1.0"; fi
+        if [ ${{matrix.env}} == x86_64 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW64/static -lusb-1.0"; fi
         echo LIBUSB_ROOT=\"$LIBUSB_ROOT\"
         echo LIBUSB1_CFLAGS=\"$LIBUSB1_CFLAGS\"
         echo LIBUSB1_LIBS=\"$LIBUSB1_LIBS\"
