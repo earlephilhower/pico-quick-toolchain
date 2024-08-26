@@ -29,7 +29,6 @@ jobs:
 
         cd ..
         export LIBUSB_ROOT=$PWD/libusb
-        export LIBUSB1_CFLAGS=-I$PWD/libusb/include
         if [ ${{matrix.env}} == i686 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW32/static -lusb-1.0"; fi
         if [ ${{matrix.env}} == x86_64 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW64/static -lusb-1.0"; fi
 
@@ -48,7 +47,7 @@ jobs:
         # Build!
         mkdir build
         cd build
-        cmake -G"MSYS Makefiles" -DLIBUSB_ROOT="$LIBUSB_ROOT" -DLIBUSB_INCLUDE_DIR="$LIBUSB1_CFLAGS" -DLIBUSB_LIBRARIES="$LIBUSB1_LIBS" -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
+        cmake -G"MSYS Makefiles" -DLIBUSB_ROOT="$LIBUSB_ROOT" -DLIBUSB_INCLUDE_DIR="../libusb/include" -DLIBUSB_LIBRARIES="$LIBUSB1_LIBS" -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
         make VERBOSE=1 -j
         strip picotool.exe
 
