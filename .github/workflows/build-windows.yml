@@ -53,8 +53,7 @@ jobs:
         # Build!
         mkdir build
         cd build
-        LIBUSB_INCLUDE_DIR AND LIBUSB_LIBRARIES
-        cmake -G"MSYS Makefiles" -DLIBUSB_INCLUDE_DIR=-I$LIBUSB1_CFLAGS -DLIBUSB_LIBRARIES=$LIBUSB1_LIBS -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
+        cmake -G"MSYS Makefiles" -DLIBUSB_ROOT=$LIBUSB_ROOT -DLIBUSB_INCLUDE_DIR=-I$LIBUSB1_CFLAGS -DLIBUSB_LIBRARIES=$LIBUSB1_LIBS -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
         make VERBOSE=1 -j
         strip picotool.exe
 
