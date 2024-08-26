@@ -24,7 +24,7 @@ jobs:
         # Manually bring in libusb from upstream, mingw not finding it anymore
         mkdir libusb
         cd libusb
-        wget https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libusb-1.0.27-windows.tar.bz2
+        wget --quiet https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libusb-1.0.27-windows.tar.bz2
         tar jxvf ./libusb-1.0.27-windows.tar.bz2
         #wget https://www.7-zip.org/a/7zr.exe
         #wget https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.7z
@@ -47,7 +47,7 @@ jobs:
         # Build!
         mkdir build
         cd build
-        cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
+        cmake -G"MSYS Makefiles" -DLIBUSB_ROOT=$LIBUSB_ROOT -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
         make VERBOSE=1 -j
         strip picotool.exe
 
