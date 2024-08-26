@@ -24,13 +24,13 @@ jobs:
         # Manually bring in libusb from upstream, mingw not finding it anymore
         mkdir libusb
         cd libusb
-        wget https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libusb-1.0.27-windows.tar.bz2
-        tar jxvf ./libusb-1.0.27-windows.tar.bz2
-        #wget https://www.7-zip.org/a/7zr.exe
-        #wget https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.7z
-        #./7zr x libusb-1.0.27.7z
+        wget --quiet https://github.com/earlephilhower/pico-quick-toolchain/raw/master/blobs/libusb-1.0.27-windows.tar.bz2
+        tar jxf ./libusb-1.0.27-windows.tar.bz2
+
         cd ..
         export LIBUSB_ROOT=$PWD/libusb
+        if [ ${{matrix.env}} == i686 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW32/static -lusb-1.0"; fi
+        if [ ${{matrix.env}} == x86_64 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW64/static -lusb-1.0"; fi
 
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
@@ -47,7 +47,7 @@ jobs:
         # Build!
         mkdir build
         cd build
-        cmake -G"MSYS Makefiles" -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
+        cmake -G"MSYS Makefiles" -DLIBUSB_ROOT="$LIBUSB_ROOT" -DLIBUSB_INCLUDE_DIR="../libusb/include" -DLIBUSB_LIBRARIES="$LIBUSB1_LIBS" -DPICO_SDK_PATH=../../pico-sdk -S .. -B .
         make VERBOSE=1 -j
         strip picotool.exe
 
@@ -78,9 +78,7 @@ jobs:
         export LIBUSB1_CFLAGS=-I$PWD/libusb/include
         if [ ${{matrix.env}} == i686 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW32/static -lusb-1.0"; fi
         if [ ${{matrix.env}} == x86_64 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW64/static -lusb-1.0"; fi
-        echo LIBUSB_ROOT=\"$LIBUSB_ROOT\"
-        echo LIBUSB1_CFLAGS=\"$LIBUSB1_CFLAGS\"
-        echo LIBUSB1_LIBS=\"$LIBUSB1_LIBS\"
+
         git clone https://github.com/raspberrypi/openocd.git
         pushd openocd
         git checkout sdk-2.0.0
