@@ -18,7 +18,7 @@ jobs:
       run: |
         uname -a
         brew update
-        brew install bash libtool automake libusb hidapi cmake
+        brew install bash libtool automake libusb hidapi cmake zip
 
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
@@ -31,6 +31,9 @@ jobs:
         git clone https://github.com/raspberrypi/picotool.git
         cd picotool
         git checkout 2.0.0
+        export gitrev=$(git rev-parse --short HEAD)
+        export pioarch=darwin_arm64
+        export piotup=aarch64-apple-darwin20.4
 
         # Build!
         mkdir build
@@ -51,7 +54,9 @@ jobs:
         otool -L /tmp/picotool/picotool
 
         # Create tarball
-        tar cvf ../../picotool.darwin-arm64.tar -C /tmp picotool
+        echo -e '{\n   "description": "picotool-utility",\n   "name": "tool-picotool-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/picotool/package.json
+        pushd /tmp; zip -9r /tmp/$piotup.picotool-$gitrev.$(date +%y%m%d).zip picotool; popd
+        tar cvf ../../picotool.darwin-arm64.tar -C /tmp /tmp/$piotup.picotool-$gitrev.$(date +%y%m%d).zip 
 
     - name: Upload Picotool
       uses: actions/upload-artifact@v4
@@ -67,6 +72,9 @@ jobs:
         git clone https://github.com/raspberrypi/openocd.git
         pushd openocd
         git checkout sdk-2.0.0
+        export gitrev=$(git rev-parse --short HEAD)
+        export pioarch=darwin_arm64
+        export piotup=aarch64-apple-darwin20.4
         # Remove TEXI warning
         grep -v raggedright doc/openocd.texi > p2
         mv p2 doc/openocd.texi
@@ -94,7 +102,9 @@ jobs:
         (cwd=$(pwd); cd /tmp/openocd/bin; bash $cwd/macos-relative-dylibs.sh)
         otool -L /tmp/openocd/bin/openocd
 
-        tar cvf openocd.darwin-arm64.tar -C /tmp openocd
+        echo -e '{\n   "description": "picotool-utility",\n   "name": "tool-openocd-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/openocd/package.json
+        pushd /tmp; zip -9r /tmp/$piotup.openocd-$gitrev.$(date +%y%m%d).zip openocd; popd
+        tar cvf openocd.darwin-arm64.tar -C /tmp /tmp/$piotup.openocd-$gitrev.$(date +%y%m%d).zip
 
     - name: Upload OpenOCD
       uses: actions/upload-artifact@v4
