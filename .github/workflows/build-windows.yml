@@ -43,7 +43,7 @@ jobs:
         git clone https://github.com/raspberrypi/picotool.git
         cd picotool
         git checkout 2.0.0
-        export gitrev=$(git rev-parse --short HEAD))
+        export gitrev=$(git rev-parse --short HEAD)
 
         # Build!
         mkdir build
