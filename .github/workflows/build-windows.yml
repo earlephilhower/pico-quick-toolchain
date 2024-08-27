@@ -17,7 +17,7 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
-        install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config mingw-w64-${{matrix.env}}-zip
+        install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config zip
     - name: Build Picotool ${{matrix.env}}
       run: |
         pushd .
