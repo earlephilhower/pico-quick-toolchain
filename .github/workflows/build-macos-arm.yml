@@ -18,7 +18,7 @@ jobs:
       run: |
         uname -a
         brew update
-        brew install bash libtool automake libusb hidapi cmake zip
+        brew install bash libtool automake libusb hidapi cmake
 
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
