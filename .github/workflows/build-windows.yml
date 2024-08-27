@@ -65,7 +65,7 @@ jobs:
         cp -a ../README.md /tmp/picotool/.
         echo -e '{\n   "description": "picotool-utility",\n   "name": "tool-picotool-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/picotool/package.json
         pushd /tmp; zip -9r /tmp/$piotup.picotool-$gitrev.$(date +%y%m%d).zip picotool; popd
-        tar cvf ../../picotool.${{matrix.env}}.tar -C /tmp /tmp/$piotup.picotool-$gitrev.$(date +%y%m%d).zip
+        tar cvf ../../picotool.${{matrix.env}}.tar -C /tmp $piotup.picotool-$gitrev.$(date +%y%m%d).zip
         popd
 
     - name: Upload Picotool ${{matrix.env}}
@@ -113,7 +113,7 @@ jobs:
         strip /tmp/openocd/bin/openocd.exe
         echo -e '{\n   "description": "picotool-utility",\n   "name": "tool-openocd-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/openocd/package.json
         pushd /tmp; zip -9r /tmp/$piotup.openocd-$gitrev.$(date +%y%m%d).zip openocd; popd
-        tar cvf openocd.${{matrix.env}}.tar -C /tmp /tmp/$piotup.openocd-$gitrev.$(date +%y%m%d).zip
+        tar cvf openocd.${{matrix.env}}.tar -C /tmp $piotup.openocd-$gitrev.$(date +%y%m%d).zip
 
     - name: Upload OpenOCD ${{matrix.env}}
       uses: actions/upload-artifact@v4
