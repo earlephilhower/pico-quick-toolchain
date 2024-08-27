@@ -43,6 +43,7 @@ jobs:
         git clone https://github.com/raspberrypi/picotool.git
         cd picotool
         git checkout 2.0.0
+        export gitrev=$(git rev-parse --short HEAD))
 
         # Build!
         mkdir build
@@ -54,16 +55,17 @@ jobs:
         # Package
         mkdir /tmp/picotool
         cp /mingw*/bin/libhidapi*.dll /tmp/picotool/.
-        if [ ${{matrix.env}} == i686 ]; then cp $LIBUSB_ROOT/MinGW32/DLL/* /tmp/picotool/.; fi
-        if [ ${{matrix.env}} == x86_64 ]; then cp $LIBUSB_ROOT/MinGW64/dll/* /tmp/picotool/.; fi
+        if [ ${{matrix.env}} == i686 ]; then cp $LIBUSB_ROOT/MinGW32/DLL/* /tmp/picotool/.; export pioarch=windows_x86; export piotup=i686-w64-mingw32; fi
+        if [ ${{matrix.env}} == x86_64 ]; then cp $LIBUSB_ROOT/MinGW64/dll/* /tmp/picotool/.; export pioarch=windows_amd64; export piotup=x86_64-w64-mingw32; fi
         cp /mingw*/bin/libstdc++*.dll /tmp/picotool/.
         cp /mingw*/bin/libwinpthread*.dll /tmp/picotool/.
         cp /mingw*/bin/libgcc*.dll /tmp/picotool/.
         cp -a picotool.exe /tmp/picotool/.
         cp -a ../LICENSE.TXT /tmp/picotool/.
         cp -a ../README.md /tmp/picotool/.
-        tar cvf ../../picotool.${{matrix.env}}.tar -C /tmp picotool
-
+        echo -e '{\n   "description": "picotool-utility",\n   "name": "tool-picotool-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/picotool/package.json
+        pushd /tmp; zip -9 /tmp/$piotup.piocotool-$gitrev.$(date +%y%m%d).zip piocotool; popd
+        tar cvf ../../picotool.${{matrix.env}}.tar -C /tmp picotool*zip
         popd
 
     - name: Upload Picotool ${{matrix.env}}
