@@ -18,7 +18,7 @@ jobs:
       run: |
         uname -a
         brew update
-        brew install bash libtool automake libusb hidapi cmake zip
+        brew install bash libtool automake libusb hidapi cmake
 
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
@@ -55,8 +55,8 @@ jobs:
 
         # Create tarball
         echo -e '{\n   "description": "picotool-utility",\n   "name": "tool-picotool-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/picotool/package.json
-        pushd /tmp; zip -9r /tmp/$piotup.picotool-$gitrev.$(date +%y%m%d).zip picotool; popd
-        tar cvf ../../picotool.darwin-arm64.tar -C /tmp /tmp/$piotup.picotool-$gitrev.$(date +%y%m%d).zip 
+        pushd /tmp; tar zcvf /tmp/$piotup.picotool-$gitrev.$(date +%y%m%d).tar.gz picotool; popd
+        tar cvf ../../picotool.darwin-arm64.tar -C /tmp $piotup.picotool-$gitrev.$(date +%y%m%d).tar.gz
 
     - name: Upload Picotool
       uses: actions/upload-artifact@v4
@@ -103,8 +103,8 @@ jobs:
         otool -L /tmp/openocd/bin/openocd
 
         echo -e '{\n   "description": "picotool-utility",\n   "name": "tool-openocd-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/openocd/package.json
-        pushd /tmp; zip -9r /tmp/$piotup.openocd-$gitrev.$(date +%y%m%d).zip openocd; popd
-        tar cvf openocd.darwin-arm64.tar -C /tmp /tmp/$piotup.openocd-$gitrev.$(date +%y%m%d).zip
+        pushd /tmp; tar zcvf /tmp/$piotup.openocd-$gitrev.$(date +%y%m%d).tar.gz openocd; popd
+        tar cvf openocd.darwin-arm64.tar -C /tmp $piotup.openocd-$gitrev.$(date +%y%m%d).tar.gz
 
     - name: Upload OpenOCD
       uses: actions/upload-artifact@v4
