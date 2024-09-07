@@ -45,6 +45,9 @@ jobs:
         git checkout 2.0.0
         export gitrev=$(git rev-parse --short HEAD)
 
+        # Make static-only binary
+        export LDFLAGS="-Wl,-static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic"
+
         # Build!
         mkdir build
         cd build
