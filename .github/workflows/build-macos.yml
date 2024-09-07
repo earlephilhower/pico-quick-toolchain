@@ -104,7 +104,7 @@ jobs:
         (cwd=$(pwd); cd /tmp/openocd/bin; bash $cwd/macos-relative-dylibs.sh)
         otool -L /tmp/openocd/bin/openocd
 
-        echo -e '{\n   "description": "picotool-utility",\n   "name": "tool-openocd-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/openocd/package.json
+        echo -e '{\n   "description": "openocd-utility",\n   "name": "tool-openocd-rp2040-earlephilhower",\n   "system": [ "'$pioarch'" ],\n   "url": "https://github.com/earlephilhower/pico-quick-toolchain",\n   "version": "5.120300.'$(date +%y%m%d)'"\n}'  > /tmp/openocd/package.json
         pushd /tmp; tar zcvf /tmp/$piotup.openocd-$gitrev.$(date +%y%m%d).tar.gz openocd; popd
         tar cvf openocd.darwin-x86_64.tar -C /tmp $piotup.openocd-$gitrev.$(date +%y%m%d).tar.gz
 
