@@ -48,7 +48,7 @@ jobs:
         export gitrev=$(git rev-parse --short HEAD)
 
         # Make static-only binary
-        export LDFLAGS="-Wl,-static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread $LIBUSB1_LIBS -Wl,-Bdynamic"
+        export LDFLAGS="-Wl,-static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -l:libwinpthread.a $LIBUSB1_LIBS -Wl,-Bdynamic"
 
         # Build!
         mkdir build
