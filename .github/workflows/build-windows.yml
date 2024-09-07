@@ -29,8 +29,8 @@ jobs:
 
         cd ..
         export LIBUSB_ROOT=$PWD/libusb
-        if [ ${{matrix.env}} == i686 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW32/static -lusb-1.0"; fi
-        if [ ${{matrix.env}} == x86_64 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW64/static -lusb-1.0"; fi
+        if [ ${{matrix.env}} == i686 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW32/static -l:libusb-1.0.a"; fi
+        if [ ${{matrix.env}} == x86_64 ]; then export LIBUSB1_LIBS="-L$PWD/libusb/MinGW64/static -l:libusb-1.0.a"; fi
 
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
@@ -103,6 +103,8 @@ jobs:
                     --disable-remote-bitbang --disable-werror
         # RP2040 has "UINT" but it's not defined anywhere here.  Yay
         echo "typedef unsigned int uint;" >> config.h
+        # Make static-only binary
+        export LDFLAGS="-Wl,-static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread $LIBUSB1_LIBS -Wl,-Bdynamic"
         make -j
         make install
         echo Copying needed DLLs and packaging as tarball
