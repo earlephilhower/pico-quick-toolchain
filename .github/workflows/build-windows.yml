@@ -20,8 +20,8 @@ jobs:
         install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config zip
     - name: Build Picotool ${{matrix.env}}
       run: |
-        find D:/a/_temp/msys64/ -name libwinpthread* -print
-        find D:/a/_temp/msys64/ -name libhidapi* -print
+        # find D:/a/_temp/msys64/ -name libwinpthread* -print # D:/a/_temp/msys64/mingw32/bin/libwinpthread-1.dll D:/a/_temp/msys64/mingw32/lib/libwinpthread.a D:/a/_temp/msys64/mingw32/lib/libwinpthread.dll.a
+        # find D:/a/_temp/msys64/ -name libhidapi* -print # D:/a/_temp/msys64/mingw32/lib/libhidapi.a D:/a/_temp/msys64/mingw32/lib/libhidapi.dll.a D:/a/_temp/msys64/mingw32/bin/libhidapi-0.dll
         pushd .
         # Manually bring in libusb from upstream, mingw not finding it anymore
         mkdir libusb
@@ -48,7 +48,7 @@ jobs:
         export gitrev=$(git rev-parse --short HEAD)
 
         # Make static-only binary
-        export LDFLAGS="-Wl,-static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -l:libwinpthread.a $LIBUSB1_LIBS -Wl,-Bdynamic"
+        export LDFLAGS="-Wl,-static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lstdc++ -lpthread $LIBUSB1_LIBS -Wl,-Bdynamic"
 
         # Build!
         mkdir build
