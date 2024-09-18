@@ -311,7 +311,7 @@ CONFIGURENEWLIBCOM += --disable-newlib-io-c99-formats
 CONFIGURENEWLIBCOM += --disable-newlib-supplied-syscalls
 CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
 CONFIGURENEWLIBCOM += --enable-newlib-reent-small
-CONFIGURENEWLIBCOM += --enable-target-optspace
+CONFIGURENEWLIBCOM += --disable-target-optspace
 CONFIGURENEWLIBCOM += --disable-option-checking
 CONFIGURENEWLIBCOM += --target=$(ARCH)
 CONFIGURENEWLIBCOM += --disable-shared
@@ -380,7 +380,7 @@ CONFIGOPENOCD += --disable-remote-bitbang
 INSTALLBRANCH ?= master
 
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
-CFFT := "-Os -g -free -fipa-pta"
+CFFT := "-O2 -g -free -fipa-pta"
 
 # Sets the environment variables for a subshell while building
 setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
