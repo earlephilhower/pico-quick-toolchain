@@ -1,100 +1,13 @@
 diff --git a/newlib/libc/misc/lock.c b/newlib/libc/misc/lock.c
-index 545511e78..bae9ec187 100644
+index c03c36a1e..8a2a0ba13 100644
 --- a/newlib/libc/misc/lock.c
 +++ b/newlib/libc/misc/lock.c
-@@ -83,7 +83,7 @@ subroutines are required for linking multi-threaded applications.
- */
- 
- /* dummy lock routines and static locks for single-threaded apps */
--
+@@ -1,3 +1,4 @@
 +#if 0
- #ifndef __SINGLE_THREAD__
- 
- #include <sys/lock.h>
-@@ -92,66 +92,77 @@ struct __lock {
-   char unused;
- };
- 
--struct __lock __lock___sinit_recursive_mutex;
--struct __lock __lock___sfp_recursive_mutex;
--struct __lock __lock___atexit_recursive_mutex;
--struct __lock __lock___at_quick_exit_mutex;
--struct __lock __lock___malloc_recursive_mutex;
--struct __lock __lock___env_recursive_mutex;
--struct __lock __lock___tz_mutex;
--struct __lock __lock___dd_hash_mutex;
--struct __lock __lock___arc4random_mutex;
--
-+struct __lock __lock___sinit_recursive_mutex __attribute__((weak));
-+struct __lock __lock___sfp_recursive_mutex __attribute__((weak));
-+struct __lock __lock___atexit_recursive_mutex __attribute__((weak));
-+struct __lock __lock___at_quick_exit_mutex __attribute__((weak));
-+struct __lock __lock___malloc_recursive_mutex __attribute__((weak));
-+struct __lock __lock___env_recursive_mutex __attribute__((weak));
-+struct __lock __lock___tz_mutex __attribute__((weak));
-+struct __lock __lock___dd_hash_mutex __attribute__((weak));
-+struct __lock __lock___arc4random_mutex __attribute__((weak));
-+
-+void __retarget_lock_init (_LOCK_T *lock) __attribute__((weak));
- void
- __retarget_lock_init (_LOCK_T *lock)
- {
- }
- 
-+void __retarget_lock_init_recursive(_LOCK_T *lock) __attribute__((weak));
- void
- __retarget_lock_init_recursive(_LOCK_T *lock)
- {
- }
- 
-+void __retarget_lock_close(_LOCK_T lock) __attribute__((weak));
- void
- __retarget_lock_close(_LOCK_T lock)
- {
- }
- 
-+void __retarget_lock_close_recursive(_LOCK_T lock) __attribute__((weak));
- void
- __retarget_lock_close_recursive(_LOCK_T lock)
- {
- }
- 
-+void __retarget_lock_acquire (_LOCK_T lock) __attribute__((weak));
- void
- __retarget_lock_acquire (_LOCK_T lock)
- {
- }
- 
-+void __retarget_lock_acquire_recursive (_LOCK_T lock) __attribute__((weak));
- void
- __retarget_lock_acquire_recursive (_LOCK_T lock)
- {
- }
- 
-+int __retarget_lock_try_acquire(_LOCK_T lock) __attribute__((weak));
- int
- __retarget_lock_try_acquire(_LOCK_T lock)
- {
-   return 1;
- }
- 
-+int __retarget_lock_try_acquire_recursive(_LOCK_T lock) __attribute__((weak));
- int
- __retarget_lock_try_acquire_recursive(_LOCK_T lock)
- {
-   return 1;
- }
- 
-+void __retarget_lock_release (_LOCK_T lock) __attribute__((weak));
- void
- __retarget_lock_release (_LOCK_T lock)
- {
- }
- 
-+void __retarget_lock_release_recursive (_LOCK_T lock) __attribute__((weak));
- void
- __retarget_lock_release_recursive (_LOCK_T lock)
- {
+ /*
+ FUNCTION
+ <<__retarget_lock_init>>, <<__retarget_lock_init_recursive>>, <<__retarget_lock_close>>, <<__retarget_lock_close_recursive>>, <<__retarget_lock_acquire>>, <<__retarget_lock_acquire_recursive>>, <<__retarget_lock_try_acquire>>, <<__retarget_lock_try_acquire_recursive>>, <<__retarget_lock_release>>, <<__retarget_lock_release_recursive>>---locking routines
+@@ -151,3 +152,4 @@ __retarget_lock_release_recursive (_LOCK_T lock)
  }
  
  #endif /* !defined(__SINGLE_THREAD__) */

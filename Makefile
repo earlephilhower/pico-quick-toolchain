@@ -30,7 +30,7 @@ PLATFORMIO := ~/.platformio/penv/bin/platformio
 
 NEWLIB_DIR    := newlib
 NEWLIB_REPO   := git://sourceware.org/git/newlib-cygwin.git
-NEWLIB_BRANCH := newlib-4.0.0
+NEWLIB_BRANCH := newlib-4.3.0
 
 # Depending on the GCC version get proper branch and support libs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
@@ -667,7 +667,8 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.%.post: .stage.%.strip
 	echo STAGE: $@
 	for sh in post/$(GCC)*.sh; do \
-	    [ -x "$${sh}" ] && $${sh} $(call ext,$@) ; \
+	    test -r "$${sh}" || continue ; \
+            [ -x "$${sh}" ] && $${sh} $(call ext,$@) ; \
 	done > $(call log,$@) 2>&1
 	touch $@
 
