@@ -9,14 +9,20 @@ endif
 
 REL     := $(if $(REL),$(REL),1.0.0)
 ARDUINO := $(if $(ARDUINO),$(ARDUINO),$(shell pwd)/arduino)
-GCC     := $(if $(GCC),$(GCC),12.3)
+GCC     := $(if $(GCC),$(GCC),12.4)
 
 # General constants
 PWD      := $(shell pwd)
 REPODIR  := $(PWD)/repo
 PATCHDIR := $(PWD)/patches
 STAMP    := $(shell date +%y%m%d)
+ifneq ($(RISCV), 1)
 ARCH     := arm-none-eabi
+CPPLIBPATH := thumb
+else
+ARCH     := riscv32-unknown-elf
+CPPLIBPATH := rv32imac/ilp32
+endif
 
 # For uploading, the GH user and PAT
 GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
@@ -132,6 +138,15 @@ else ifeq ($(GCC), 13.2)
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := gdb-13.2-release #binutils-2_41
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 14.2)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-14.2.0
+    GCC_PKGREL    := 140200
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_43_1
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else
@@ -298,8 +313,10 @@ configure += --disable-lto
 configure += --enable-static=yes
 configure += --disable-libstdcxx-verbose
 configure += --disable-decimal-float
+ifneq ($(RISCV), 1)
 configure += --with-cpu=cortex-m0plus
 configure += --with-no-thumb-interwork
+endif
 configure += --disable-tui
 configure += --disable-pie-tools
 configure += --disable-libquadmath
@@ -315,8 +332,10 @@ CONFIGURENEWLIBCOM += --disable-target-optspace
 CONFIGURENEWLIBCOM += --disable-option-checking
 CONFIGURENEWLIBCOM += --target=$(ARCH)
 CONFIGURENEWLIBCOM += --disable-shared
+ifneq ($(RISCV), 1)
 CONFIGURENEWLIBCOM += --with-cpu=cortex-m0plus
 CONFIGURENEWLIBCOM += --with-no-thumb-interwork
+endif
 CONFIGURENEWLIBCOM += --enable-newlib-retargetable-locking
 
 # Configuration for newlib normal build
@@ -380,7 +399,7 @@ CONFIGOPENOCD += --disable-remote-bitbang
 INSTALLBRANCH ?= master
 
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
-CFFT := "-O2 -g -free -fipa-pta"
+CFFT := "-O2 -g -free -fipa-pta -Wno-implicit-function-declaration"
 
 # Sets the environment variables for a subshell while building
 setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
@@ -515,8 +534,9 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	    test -r "$$p" || continue ; \
 	    (cd $(REPODIR)/$(GCC_DIR); echo "---- $$p:"; patch -s -p1 < $$p) ; \
 	done > $(call log,$@) 2>&1
-	for p in $(PATCHDIR)/bin-*.patch; do \
+	for p in $(PATCHDIR)/bin-*.patch $(PATCHDIR)/binutils-$(BINUTILS_BRANCH); do \
 	    test -r "$$p" || continue ; \
+	    test -f "$$p" || continue ; \
 	    (cd $(REPODIR)/$(BINUTILS_DIR); echo "---- $$p:"; patch -s -p1 < $$p) ; \
 	done >> $(call log,$@) 2>&1
 	for p in $(PATCHDIR)/lib-*.patch; do \
@@ -549,7 +569,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=$(ARCH), $(call configure,$@)) --prefix=$(call arena,$@)/gmp && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 # Build GMP for proper GDB support - MacOS has linker error without --disable-assembly
@@ -559,7 +579,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=arm-none-eabi, $(call configure,$@)) --prefix=$(call arena,$@)/gmp --disable-assembly && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=$(ARCH), $(call configure,$@)) --prefix=$(call arena,$@)/gmp --disable-assembly && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
 # Build ncurses for GDB
@@ -647,11 +667,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.%.libstdcpp-nox: .stage.%.libstdcpp
 	echo STAGE: $@
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
-	cp $(call install,$@)/$(ARCH)/lib/thumb/libstdc++.a $(call install,$@)/$(ARCH)/lib/thumb/libstdc++-exc.a >> $(call log,$@) 2>&1
+	cp $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++.a $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++-exc.a >> $(call log,$@) 2>&1
 	rm -rf $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox > $(call log,$@) 2>&1
 	cp -a $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(call install,$@)/$(ARCH)/lib/thumb/libstdc++.a >> $(call log,$@) 2>&1
+	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.MACOSARM.strip: .stage.MACOSARM.libstdcpp-nox

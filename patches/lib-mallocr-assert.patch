@@ -1,0 +1,12 @@
+diff --git a/newlib/libc/stdlib/_mallocr.c b/newlib/libc/stdlib/_mallocr.c
+index 1997b6db1..bc22940d3 100644
+--- a/newlib/libc/stdlib/_mallocr.c
++++ b/newlib/libc/stdlib/_mallocr.c
+@@ -389,6 +389,7 @@ extern void __malloc_unlock();
+ #if DEBUG 
+ #include <assert.h>
+ #else
++#undef assert
+ #define assert(x) ((void)0)
+ #endif
+ 
