@@ -670,7 +670,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	cp $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++.a $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++-exc.a >> $(call log,$@) 2>&1
 	rm -rf $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox > $(call log,$@) 2>&1
 	cp -a $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions -march=rv32imac_zicsr_zifencei_zba_zbb_zbs_zbkb -mabi=ilp32/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
 	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
