@@ -295,10 +295,11 @@ OPENOCD_BRANCH  := sdk-2.0.0
 PICOTOOL_BRANCH := 2.0.0
 
 # GCC et. al configure options
-configure  = --prefix=$(call install,$(1))
+#configure  = --prefix=$(call install,$(1))
+configure  =
 configure += --build=$(shell gcc -dumpmachine)
 configure += --host=$(call host,$(1))
-configure += --target=$(ARCH)
+#configure += --target=$(ARCH)
 configure += --disable-shared
 configure += --with-newlib
 configure += --enable-threads=no
@@ -313,14 +314,13 @@ configure += --disable-lto
 configure += --enable-static=yes
 configure += --disable-libstdcxx-verbose
 configure += --disable-decimal-float
-ifneq ($(RISCV), 1)
-configure += --with-cpu=cortex-m0plus
-configure += --with-no-thumb-interwork
-endif
+#configure += --with-cpu=cortex-m0plus
+#configure += --with-no-thumb-interwork
 configure += --disable-tui
 configure += --disable-pie-tools
 configure += --disable-libquadmath
 configure += $(call over,$(1))
+
 
 # Newlib configuration common
 CONFIGURENEWLIBCOM  = --with-newlib
@@ -330,22 +330,11 @@ CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
 CONFIGURENEWLIBCOM += --enable-newlib-reent-small
 CONFIGURENEWLIBCOM += --disable-target-optspace
 CONFIGURENEWLIBCOM += --disable-option-checking
-CONFIGURENEWLIBCOM += --target=$(ARCH)
+#CONFIGURENEWLIBCOM += --target=$(ARCH)
 CONFIGURENEWLIBCOM += --disable-shared
-ifneq ($(RISCV), 1)
-CONFIGURENEWLIBCOM += --with-cpu=cortex-m0plus
-CONFIGURENEWLIBCOM += --with-no-thumb-interwork
-endif
+#CONFIGURENEWLIBCOM += --with-cpu=cortex-m0plus
+#CONFIGURENEWLIBCOM += --with-no-thumb-interwork
 CONFIGURENEWLIBCOM += --enable-newlib-retargetable-locking
-
-# Configuration for newlib normal build
-configurenewlib  = --prefix=$(call install,$(1))
-configurenewlib += $(CONFIGURENEWLIBCOM)
-
-# Configuration for newlib install-to-arduino target
-CONFIGURENEWLIBINSTALL  = --prefix=$(ARDUINO)/tools/sdk/libc
-CONFIGURENEWLIBINSTALL += --with-target-subdir=$(ARCH)
-CONFIGURENEWLIBINSTALL += $(CONFIGURENEWLIBCOM)
 
 # OpenOCD configuration
 CONFIGOPENOCD  = --enable-picoprobe
@@ -409,6 +398,14 @@ setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
          export LDFLAGS="-L$(call install,$(1))/lib -L$(call arena,$(1))/cross/lib"; \
          export PATH="$(call install,.stage.LINUX.stage)/bin:$${PATH}"; \
          export LD_LIBRARY_PATH="$(call install,.stage.LINUX.stage)/lib:$${LD_LIBRARY_PATH}"
+
+setenvtgt = export CFLAGS_FOR_TARGET=$(CFFT); \
+            export CXXFLAGS_FOR_TARGET=$(CFFT); \
+            export CFLAGS="-I$(call arena,$(1))/$$TGT/include -I$(call arena,$(1))/cross/include -pipe -g -O2"; \
+            export CXXFLAGS="-pipe -g -O2"; \
+            export LDFLAGS="-L$(call arena,$(1))/$$TGT/lib -L$(call arena,$(1))/cross/lib"; \
+            export PATH="$(call arena,$(1))/$$TGT/bin:$${PATH}"; \
+            export LD_LIBRARY_PATH="$(call arena,$(1))/$$TGT/lib:$${LD_LIBRARY_PATH}"
 
 # Creates a package.json file for PlatformIO
 # Package version **must** conform with Semantic Versioning specicfication:
@@ -551,7 +548,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.start: .stage.patch
 	echo STAGE: $@
-	mkdir -p $(call arena,$@) > $(call log,$@) 2>&1
+	#mkdir -p $(call arena,$@) > $(call log,$@) 2>&1
 
 .stage.%.cleancross: .stage.%.start
 	rm -rf $(call arena,$@)/cross
@@ -559,6 +556,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 # Build expat for proper GDB support
 .stage.%.expat: .stage.%.cleancross
 	echo STAGE: $@
+	mkdir -p $(call arena,$@)
 	rm -rf $(call arena,$@)/expat > $(call log,$@) 2>&1
 	cp -a $(REPODIR)/libexpat/expat $(call arena,$@)/expat >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/expat && bash buildconf.sh && ./configure $(call configure,$@) --prefix=$(call arena,$@)/cross && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
@@ -567,6 +565,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 # Build GMP for proper GDB support
 .stage.%.gmp: .stage.%.start
 	echo STAGE: $@
+	mkdir -p $(call arena,$@)
 	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=$(ARCH), $(call configure,$@)) --prefix=$(call arena,$@)/gmp && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
@@ -577,6 +576,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 .stage.MACOSARM.gmp: .stage.MACOSARM.start
 .stage.MACOSX86.gmp .stage.MACOSARM.gmp:
 	echo STAGE: $@
+	mkdir -p $(call arena,$@)
 	rm -rf $(call arena,$@)/gmp $(call arena,$@)/gmp-$(GMP_VER) > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(REPODIR)/gmp-$(GMP_VER).tar.bz2) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/gmp-$(GMP_VER); $(call setenv,$@); ./configure $(filter-out --target=$(ARCH), $(call configure,$@)) --prefix=$(call arena,$@)/gmp --disable-assembly && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
@@ -585,6 +585,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 # Build ncurses for GDB
 .stage.LINUX.ncurses: .stage.%.start
 	echo STAGE: $@
+	mkdir -p $(call arena,$@)
 	rm -rf $(call arena,$@)/ncurses* > $(call log,$@) 2>&1
 	(cd $(call arena,$@) && tar xvf $(BLOBS)/ncurses-6.4.tar.gz) >> $(call log,$@) 2>&1
 	(cd $(call arena,$@)/ncurses-6.4 && ./configure --prefix=$(call arena,$@)/cross --without-progs --without-manpages --without-shared --with-termlib --without-tack --without-tests --disable-widec && $(MAKE) && $(MAKE) install) >> $(call log,$@) 2>&1
@@ -594,84 +595,178 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	echo STAGE: $@
 
 # Build binutils
-.stage.%.binutils-config: .stage.%.gmp .stage.%.expat .stage.%.ncurses
-	echo STAGE: $@
-	rm -rf $(call arena,$@)/$(BINUTILS_DIR) > $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/$(BINUTILS_DIR) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(REPODIR)/$(BINUTILS_DIR)/configure $(call configure,$@) --with-libgmp-prefix=$(call arena,$@)/gmp) >> $(call log,$@) 2>&1
-	touch $@
+# TODO - This is a hack.  If you have a more concise way of doing multiple passes with slightly different options, please do contribute!
+binutils-config  = echo STAGE: $(1);
+binutils-config += export TGT=$$(echo $(1) | cut -f2 -d_);
+binutils-config += rm -rf $(call arena,$(1))/$$TGT.$(BINUTILS_DIR) > $(call log,$(1)) 2>&1;
+binutils-config += mkdir -p $(call arena,$(1))/$$TGT.$(BINUTILS_DIR) >> $(call log,$(1)) 2>&1;
+binutils-config += (cd $(call arena,$(1))/$$TGT.$(BINUTILS_DIR); $(call setenv,$(1)); $(REPODIR)/$(BINUTILS_DIR)/configure --prefix=$(call arena,$(1))/$$TGT $(2) --target=$$TGT $(call configure,$(1)) --with-libgmp-prefix=$(call arena,$(1))/gmp) >> $(call log,$(1)) 2>&1;
+binutils-config += touch $(1)
 
-.stage.%.binutils-make: .stage.%.binutils-config
+.stage.%.binutils-config: .stage.%.binutils-config_arm-none-eabi .stage.%.binutils-config_riscv32-unknown-elf
 	echo STAGE: $@
-	# Need LDFLAGS override to guarantee gdb is made static
-	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE) LSSP=$(call lssp,$@)) > $(call log,$@) 2>&1
+
+.stage.%.binutils-config_arm-none-eabi: .stage.%.gmp .stage.%.expat .stage.%.ncurses
+	$(call binutils-config,$@,--with-cpu=cortex-m0plus --with-no-thumb-interwork)
+
+.stage.%.binutils-config_riscv32-unknown-elf: .stage.%.gmp .stage.%.expat .stage.%.ncurses
+	$(call binutils-config,$@,)
+
+# $(MAKE) in a $(call) block doesn't seem to pass in the parallel options, so need to explicitly call the $(MAKE) inside each target (cut-n-paste!)
+#binutils-make  = echo STAGE: $(1);
+#binutils-make += export TGT=$$(echo $(1) | cut -f2 -d_);
+#binutils-make += (cd $(call arena,$(1))/$$TGT.$(BINUTILS_DIR); $(call setenv,$(1)); export LDFLAGS="$$LDFLAGS -static"; $(MAKE) -j2 LSSP=$(call lssp,$(1))) > $(call log,$(1)) 2>&1
+
+.stage.%.binutils-make: .stage.%.binutils-make_arm-none-eabi .stage.%.binutils-make_riscv32-unknown-elf
+	echo STAGE: $@
+
+.stage.%.binutils-make_arm-none-eabi: .stage.%.binutils-config_arm-none-eabi
+	echo STAGE: $@
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE) LSSP=$(call lssp,$@)) > $(call log,$@) 2>&1
+
+.stage.%.binutils-make_riscv32-unknown-elf: .stage.%.binutils-config_riscv32-unknown-elf
+	echo STAGE: $@
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(BINUTILS_DIR); $(call setenv,$@); export LDFLAGS="$$LDFLAGS -static"; $(MAKE) LSSP=$(call lssp,$@)) > $(call log,$@) 2>&1
 
 .stage.LINUX.binutils-gdbrelink: .stage.LINUX.binutils-make
 	# Replace any termcap(tinfo) with the static lib instead
-	sed -i 's/-ltermcap/..\/..\/cross\/lib\/libtinfo.a/' $(call arena,$@)/$(BINUTILS_DIR)/gdb/Makefile > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(BINUTILS_DIR)/gdb && rm -f ./gdb && $(call setenv,$@) && $(MAKE)) >> $(call log,$@) 2>&1
+	sed -i 's/-ltermcap/..\/..\/cross\/lib\/libtinfo.a/' $(call arena,$@)/arm-none-eabi.$(BINUTILS_DIR)/gdb/Makefile > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/arm-none-eabi.$(BINUTILS_DIR)/gdb && rm -f ./gdb && $(call setenv,$@) && $(MAKE)) >> $(call log,$@) 2>&1
+	sed -i 's/-ltermcap/..\/..\/cross\/lib\/libtinfo.a/' $(call arena,$@)/riscv32-unknown-elf.$(BINUTILS_DIR)/gdb/Makefile > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/riscv32-unknown-elf.$(BINUTILS_DIR)/gdb && rm -f ./gdb && $(call setenv,$@) && $(MAKE)) >> $(call log,$@) 2>&1
 
 .stage.%.binutils-gdbrelink: .stage.%.binutils-make
 	echo STAGE: $@
 
 .stage.%.binutils-install: .stage.%.binutils-gdbrelink
-	(cd $(call arena,$@)/$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) > $(call log,$@) 2>&1
-	(cd $(call install,$@)/bin; ln -sf $(ARCH)-gcc$(call exe,$@) $(ARCH)-cc$(call exe,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/arm-none-eabi.$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/arm-none-eabi/bin; ln -sf arm-none-eabi-gcc$(call exe,$@) arm-none-eabi-cc$(call exe,$@)) >> $(call log,$@) 2>&1
+	(cd $(call arena,$@)/riscv32-unknown-elf.$(BINUTILS_DIR); $(call setenv,$@); $(MAKE) install) > $(call log,$@) 2>&1
+	(cd $(call arena,$@)/riscv32-unknown-elf/bin; ln -sf riscv32-unknown-elf-gcc$(call exe,$@) riscv32-unknown-elf-cc$(call exe,$@)) >> $(call log,$@) 2>&1
 	touch $@
 
 # Copy certain DLLs needed by GDB for Windows installations, no-op otherwise
 .stage.WIN32.binutils-post: .stage.WIN32.binutils-install
 	echo STAGE: $@ - copying GDB support files
-	cp /usr/lib/gcc/i686-w64-mingw32/*-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/*-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN32.binutils-post)/bin >> $(call log,$@) 2>&1
+	cp /usr/lib/gcc/i686-w64-mingw32/*-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/*-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call arena,$@)/arm-none-eabi/bin >> $(call log,$@) 2>&1
+	cp /usr/lib/gcc/i686-w64-mingw32/*-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/*-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call arena,$@)/riscv32-unknown-elf/bin >> $(call log,$@) 2>&1
 
 .stage.WIN64.binutils-post: .stage.WIN64.binutils-install
 	echo STAGE: $@ - copying GDB support files
-	cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call install,.stage.WIN64.binutils-post)/bin >> $(call log,$@) 2>&1
+	cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call arena,$@)/arm-none-eabi/bin >> $(call log,$@) 2>&1
+	cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call arena,$@)//riscv32-unknown-elf/bin >> $(call log,$@) 2>&1
 
 .stage.%.binutils-post: .stage.%.binutils-install
 	echo STAGE: $@
 
-.stage.%.gcc1-config: .stage.%.binutils-post
+gcc1-config  = echo STAGE: $(1);
+gcc1-config += export TGT=$$(echo $(1) | cut -f2 -d_);
+gcc1-config += rm -rf $(call arena,$(1))/$$TGT.$(GCC_DIR) > $(call log,$(1)) 2>&1;
+gcc1-config += mkdir -p $(call arena,$(1))/$$TGT.$(GCC_DIR) >> $(call log,$(1)) 2>&1;
+gcc1-config += (cd $(call arena,$(1))/$$TGT.$(GCC_DIR); $(call setenv,$(1)); $(REPODIR)/$(GCC_DIR)/configure $(2) --prefix=$(call arena,$(1))/$$TGT --target=$$TGT $(call configure,$(1))) >> $(call log,$(1)) 2>&1;
+gcc1-config += touch $(1)
+
+.stage.%.gcc1-config: .stage.%.gcc1-config_arm-none-eabi .stage.%.gcc1-config_riscv32-unknown-elf
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/$(GCC_DIR) > $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/$(GCC_DIR) >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(REPODIR)/$(GCC_DIR)/configure $(call configure,$@)) >> $(call log,$@) 2>&1
+
+.stage.%.gcc1-config_arm-none-eabi: .stage.%.binutils-post
+	$(call gcc1-config,$@,--with-cpu=cortex-m0plus --with-no-thumb-interwork)
+
+.stage.%.gcc1-config_riscv32-unknown-elf: .stage.%.binutils-post
+	$(call gcc1-config,$@,)
+
+#gcc1-make  = echo STAGE: $(1);
+#gcc1-make += export TGT=$$(echo $(1) | cut -f2 -d_);
+#gcc1-make += (cd $(call arena,$(1))/$$TGT.$(GCC_DIR); $(call setenv,$(1)); $(MAKE) all-gcc) > $(call log,$(1)) 2>&1;
+gcc1-make2 += (TGT=$$(echo $(1) | cut -f2 -d_); cd $(call arena,$(1))/$$TGT.$(GCC_DIR); $(call setenv,$(1)); $(MAKE) install-gcc) >> $(call log,$(1)) 2>&1;
+gcc1-make2 += touch $(1)
+
+.stage.%.gcc1-make: .stage.%.gcc1-make_arm-none-eabi .stage.%.gcc1-make_riscv32-unknown-elf
+	echo STAGE: $@
+
+.stage.%.gcc1-make_arm-none-eabi: .stage.%.gcc1-config
+	echo STAGE: $@
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR); $(call setenv,$@); $(MAKE) all-gcc) > $(call log,$@) 2>&1;
+	$(call gcc1-make2,$@)
+
+.stage.%.gcc1-make_riscv32-unknown-elf: .stage.%.gcc1-config
+	echo STAGE: $@
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR); $(call setenv,$@); $(MAKE) all-gcc) > $(call log,$@) 2>&1;
+	$(call gcc1-make2,$@)
+
+
+newlib-conf  = echo STAGE: $(1);
+newlib-conf += export TGT=$$(echo $(1) | cut -f2 -d_);
+newlib-conf += rm -rf $(call arena,$(1))/$$TGT.newlib > $(call log,$(1)) 2>&1;
+newlib-conf += mkdir -p $(call arena,$(1))/$$TGT.newlib >> $(call log,$(1)) 2>&1;
+newlib-conf += (cd $(call arena,$(1))/$$TGT.newlib; $(call setenvtgt,$(1)); $(REPODIR)/newlib/configure $(2) --prefix=$(call arena,$(1))/$$TGT --target=$$TGT $(CONFIGURENEWLIBCOM)) >> $(call log,$(1)) 2>&1;
+newlib-conf += touch $(1)
+
+.stage.%.newlib-config: .stage.%.newlib-config_arm-none-eabi .stage.%.newlib-config_riscv32-unknown-elf
+	echo STAGE: $@
+
+.stage.%.newlib-config_arm-none-eabi: .stage.%.gcc1-make
+	$(call newlib-conf,$@,--with-cpu=cortex-m0plus --with-no-thumb-interwork)
+
+.stage.%.newlib-config_riscv32-unknown-elf: .stage.%.gcc1-make
+	$(call newlib-conf,$@,)
+
+.stage.%.newlib-make: .stage.%.newlib-make_arm-none-eabi .stage.%.newlib-make_riscv32-unknown-elf
+	echo STAGE: $@
+
+.stage.%.newlib-make_arm-none-eabi: .stage.%.newlib-config
+	echo STAGE: $@
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.newlib; $(call setenvtgt,$@); $(MAKE)) > $(call log,$@) 2>&1
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.newlib; $(call setenvtgt,$@); $(MAKE) install -j1) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.gcc1-make: .stage.%.gcc1-config
+.stage.%.newlib-make_riscv32-unknown-elf: .stage.%.newlib-config
 	echo STAGE: $@
-	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) all-gcc) > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) install-gcc) >> $(call log,$@) 2>&1
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.newlib; $(call setenvtgt,$@); $(MAKE)) > $(call log,$@) 2>&1
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.newlib; $(call setenvtgt,$@); $(MAKE) install -j1) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.newlib-config: .stage.%.gcc1-make
+.stage.%.libstdcpp:.stage.%.libstdcpp_arm-none-eabi .stage.%.libstdcpp_riscv32-unknown-elf
 	echo STAGE: $@
-	rm -rf $(call arena,$@)/newlib > $(call log,$@) 2>&1
-	mkdir -p $(call arena,$@)/newlib >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(REPODIR)/newlib/configure $(call configurenewlib,$@)) >> $(call log,$@) 2>&1
-	touch $@
 
-.stage.%.newlib-make: .stage.%.newlib-config
-	echo STAGE: $@
-	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/newlib; $(call setenv,$@); $(MAKE) install -j1) >> $(call log,$@) 2>&1
-	touch $@
-
-.stage.%.libstdcpp: .stage.%.newlib-make
+.stage.%.libstdcpp_arm-none-eabi: .stage.%.newlib-make
 	echo STAGE: $@
 	# stage 2 (build libstdc++)
-	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(GCC_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR); $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.libstdcpp-nox: .stage.%.libstdcpp
+.stage.%.libstdcpp_riscv32-unknown-elf: .stage.%.newlib-make
 	echo STAGE: $@
+	# stage 2 (build libstdc++)
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR); $(call setenv,$@); $(MAKE)) > $(call log,$@) 2>&1
+	(TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR); $(call setenv,$@); $(MAKE) install) >> $(call log,$@) 2>&1
+	touch $@
+
+.stage.%.libstdcpp-nox: .stage.%.libstdcpp-nox_arm-none-eabi .stage.%.libstdcpp-nox_riscv32-unknown-elf
+	echo STAGE: $@
+
+.stage.%.libstdcpp-nox_arm-none-eabi: .stage.%.libstdcpp
+	echo STAGE: $@
+	export TGT=$$(echo $@ | cut -f2 -d_)
 	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
-	cp $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++.a $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++-exc.a >> $(call log,$@) 2>&1
-	rm -rf $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox > $(call log,$@) 2>&1
-	cp -a $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3 $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox >> $(call log,$@) 2>&1
-	(cd $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions -march=rv32imac_zicsr_zifencei_zba_zbb_zbs_zbkb -mabi=ilp32/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
-	cp $(call arena,$@)/$(GCC_DIR)/$(ARCH)/libstdc++-v3-nox/src/.libs/libstdc++.a $(call install,$@)/$(ARCH)/lib/$(CPPLIBPATH)/libstdc++.a >> $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); cp $(call arena,$@)/$$TGT/$$TGT/lib/thumb/libstdc++.a $(call arena,$@)/$$TGT/$$TGT/lib/thumb/libstdc++-exc.a >> $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); rm -rf $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox > $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); cp -a $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3 $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox >> $(call log,$@) 2>&1
+	(export TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); cp $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox/src/.libs/libstdc++.a $(call arena,$@)/$$TGT/$$TGT/lib/thumb/libstdc++.a >> $(call log,$@) 2>&1
+	touch $@
+
+.stage.%.libstdcpp-nox_riscv32-unknown-elf: .stage.%.libstdcpp
+	echo STAGE: $@
+	export TGT=$$(echo $@ | cut -f2 -d_)
+	# We copy existing stdc, adjust the makefile, and build a single .a to save much time
+	export TGT=$$(echo $@ | cut -f2 -d_); cp $(call arena,$@)/$$TGT/$$TGT/lib/rv32imac/ilp32/libstdc++.a $(call arena,$@)/$$TGT/$$TGT/lib/rv32imac/ilp32/libstdc++-exc.a >> $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); rm -rf $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox > $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); cp -a $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3 $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox >> $(call log,$@) 2>&1
+	#(export TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions -march=rv32imac_zicsr_zifencei_zba_zbb_zbs_zbkb -mabi=ilp32/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
+	(export TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions -march=rv32imac_zicsr_zifencei_zba_zbb_zbs_zbkb -mabi=ilp32/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); cp $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox/src/.libs/libstdc++.a $(call arena,$@)/$$TGT/$$TGT/lib/rv32imac/ilp32/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.MACOSARM.strip: .stage.MACOSARM.libstdcpp-nox
@@ -681,7 +776,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 
 .stage.%.strip: .stage.%.libstdcpp-nox
 	echo STAGE: $@
-	($(call setenv,$@); $(call host,$@)-strip $(call install,$@)/bin/*$(call exe,$@) $(call install,$@)/libexec/gcc/$(ARCH)/*/c*$(call exe,$@) || true ) > $(call log,$@) 2>&1
+	for TGT in arm-none-eabi riscv32-unknown-elf; do ($(call setenv,$@); $(call host,$@)-strip $(call arena,$@)/$$TGT/bin/*$(call exe,$@) $(call arena,$@)/$$TGT/libexec/gcc/$$TGT/*/c*$(call exe,$@) || true ) ; done > $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.post: .stage.%.strip
@@ -692,15 +787,31 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	done > $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.package: .stage.%.post
+.stage.%.package: .stage.%.package_arm-none-eabi .stage.%.package_riscv32-unknown-elf
 	echo STAGE: $@
+
+.stage.%.package_arm-none-eabi: .stage.%.post
+	echo STAGE: $@
+	export TGT=$$(echo $@ | cut -f2 -d_)
 	rm -rf pkg.$(call arch,$@) > $(call log,$@) 2>&1
 	mkdir -p pkg.$(call arch,$@) >> $(call log,$@) 2>&1
-	cp -a $(call install,$@) pkg.$(call arch,$@)/$(ARCH) >> $(call log,$@) 2>&1
-	(cd pkg.$(call arch,$@)/$(ARCH); $(call setenv,$@); pkgdesc="$(ARCH)-gcc"; pkgname="toolchain-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
-	(tarball=$(call host,$@).$(ARCH)-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
-	    cd pkg.$(call arch,$@) && cp -a $(PATCHDIR) $(ARCH)/. && $(call makegitlog) > $(ARCH)/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} $(ARCH)/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); cp -a $(call arena,$@)/$$TGT pkg.$(call arch,$@)/$$TGT >> $(call log,$@) 2>&1
+	(export TGT=$$(echo $@ | cut -f2 -d_); cd pkg.$(call arch,$@)/$$TGT; $(call setenv,$@); pkgdesc="$$TGT-gcc"; pkgname="toolchain-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	(export TGT=$$(echo $@ | cut -f2 -d_); tarball=$(call host,$@).$$TGT-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd pkg.$(call arch,$@) && cp -a $(PATCHDIR) $$TGT/. && $(call makegitlog) > $$TGT/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} $$TGT/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
+	touch $@
+
+.stage.%.package_riscv32-unknown-elf: .stage.%.post
+	echo STAGE: $@
+	export TGT=$$(echo $@ | cut -f2 -d_)
+	rm -rf pkgb.$(call arch,$@) > $(call log,$@) 2>&1
+	mkdir -p pkgb.$(call arch,$@) >> $(call log,$@) 2>&1
+	export TGT=$$(echo $@ | cut -f2 -d_); cp -a $(call arena,$@)/$$TGT pkgb.$(call arch,$@)/$$TGT >> $(call log,$@) 2>&1
+	(export TGT=$$(echo $@ | cut -f2 -d_); cd pkgb.$(call arch,$@)/$$TGT; $(call setenv,$@); pkgdesc="$$TGT-gcc"; pkgname="toolchain-rp2040-earlephilhower"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+	(export TGT=$$(echo $@ | cut -f2 -d_); tarball=$(call host,$@).$$TGT-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
+	    cd pkgb.$(call arch,$@) && cp -a $(PATCHDIR) $$TGT/. && $(call makegitlog) > $$TGT/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} $$TGT/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+	rm -rf pkgb.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.mklittlefs: .stage.%.start
@@ -853,7 +964,8 @@ install: .stage.LINUX.install
 	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
 	echo "-------- Updating package.json"
 	ver=$(REL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_pico_index.template.json; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc --ver "$${ver}" --glob '*$(ARCH)*.json' ; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc --ver "$${ver}" --glob '*arm-none-eabi*.json' ; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc-riscv --ver "$${ver}" --glob '*riscv32-unknown-elf*.json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-pioasm --ver "$${ver}" --glob '*pioasm*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-picotool --ver "$${ver}" --glob '*picotool*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-mklittlefs --ver "$${ver}" --glob '*mklittlefs*json' ; \
@@ -881,4 +993,3 @@ publish: .stage.LINUX.publish
 dumpvars:
 	echo SETENV:    '$(call setenv,.stage.LINUX.stage)'
 	echo CONFIGURE: '$(call configure,.stage.LINUX.stage)'
-	echo NEWLIBCFG: '$(call configurenewlib,.stage.LINUX.stage)'
