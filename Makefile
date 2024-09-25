@@ -764,7 +764,6 @@ newlib-conf += touch $(1)
 	export TGT=$$(echo $@ | cut -f2 -d_); cp $(call arena,$@)/$$TGT/$$TGT/lib/rv32imac/ilp32/libstdc++.a $(call arena,$@)/$$TGT/$$TGT/lib/rv32imac/ilp32/libstdc++-exc.a >> $(call log,$@) 2>&1
 	export TGT=$$(echo $@ | cut -f2 -d_); rm -rf $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox > $(call log,$@) 2>&1
 	export TGT=$$(echo $@ | cut -f2 -d_); cp -a $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3 $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox >> $(call log,$@) 2>&1
-	#(export TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions -march=rv32imac_zicsr_zifencei_zba_zbb_zbs_zbkb -mabi=ilp32/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
 	(export TGT=$$(echo $@ | cut -f2 -d_); cd $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox; $(call setenv,$@); $(MAKE) clean; find . -name Makefile -exec sed -i 's/-free/-free -fno-exceptions -march=rv32imac_zicsr_zifencei_zba_zbb_zbs_zbkb -mabi=ilp32/' \{\} \; ; $(MAKE)) >> $(call log,$@) 2>&1
 	export TGT=$$(echo $@ | cut -f2 -d_); cp $(call arena,$@)/$$TGT.$(GCC_DIR)/$$TGT/libstdc++-v3-nox/src/.libs/libstdc++.a $(call arena,$@)/$$TGT/$$TGT/lib/rv32imac/ilp32/libstdc++.a >> $(call log,$@) 2>&1
 	touch $@
