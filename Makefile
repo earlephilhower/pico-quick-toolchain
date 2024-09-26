@@ -219,7 +219,7 @@ MACOSX86_ASYS   := darwin_x86_64
 MACOSX86_STATIC := -static-libgcc -static-libstdc++
 
 MACOSARM_HOST   := aarch64-apple-darwin20.4
-MACOSARM_AHOST  := aarch64-apple-darwin
+MACOSARM_AHOST  := arm64-apple-darwin
 MACOSARM_EXT    := .macosarm
 MACOSARM_EXE    :=
 MACOSARM_MKTGT  := macosarm
