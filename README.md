@@ -2,10 +2,6 @@
 
 Allows building Win32, Win64, OSX, Linux x86_64, ARM64 (aarch64) and Raspberry Pi for Raspberry Pi Pico toolchains in a Docker container.
 
-## RISC-V Support
-
-Add `RISCV=1` to the `make` command line to build for the RP2350 Hazard-3.  Only GCC 14.x supports this CPU.
-
 ## Work In Progesss
 
 Builds work for GCC 9.3, 10.x, and 12.x.  Others not fully tested but were building last time they were tried.
