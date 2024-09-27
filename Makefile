@@ -814,6 +814,7 @@ newlib-conf += touch $(1)
 	rm -rf pkgb.$(call arch,$@) > $(call log,$@) 2>&1
 	mkdir -p pkgb.$(call arch,$@) >> $(call log,$@) 2>&1
 	export TGT=$$(echo $@ | cut -f2 -d_); cp -a $(call arena,$@)/$$TGT pkgb.$(call arch,$@)/$$TGT >> $(call log,$@) 2>&1
+	for i in rv32i rv32iac rv32im rv32imafc rv64imac rv64imafdc; do rm -r pkgb.$(call arch,$@)/riscv32-unknown-elf/riscv32-unknown-elf/lib/$$i; done >> $(call log,$@) 2>&1
 	(export TGT=$$(echo $@ | cut -f2 -d_); cd pkgb.$(call arch,$@)/$$TGT; $(call setenvtgtcross,$@); pkgdesc="$$TGT-gcc"; pkgname="toolchain-rp2040-earlephilhower-riscv"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
 	(export TGT=$$(echo $@ | cut -f2 -d_); tarball=$(call host,$@).$$TGT-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
 	    cd pkgb.$(call arch,$@) && cp -a $(PATCHDIR) $$TGT/. && $(call makegitlog) > $$TGT/gitlog.txt && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} $$TGT/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
