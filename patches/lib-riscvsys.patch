@@ -1,0 +1,152 @@
+diff --git a/libgloss/riscv/sys_access.c b/libgloss/riscv/sys_access.c
+index 45bedb3f6..c0f468b60 100644
+--- a/libgloss/riscv/sys_access.c
++++ b/libgloss/riscv/sys_access.c
+@@ -5,5 +5,5 @@
+ int
+ _access(const char *file, int mode)
+ {
+-  return syscall_errno (SYS_access, 2, file, mode, 0, 0, 0, 0);
++  return syscall_errno (SYS_access, 2, (long)file, mode, 0, 0, 0, 0);
+ }
+diff --git a/libgloss/riscv/sys_faccessat.c b/libgloss/riscv/sys_faccessat.c
+index 6418ef423..8d4bbe83e 100644
+--- a/libgloss/riscv/sys_faccessat.c
++++ b/libgloss/riscv/sys_faccessat.c
+@@ -4,5 +4,5 @@
+ /* Permissions of a file (by name) in a given directory.  */
+ int _faccessat(int dirfd, const char *file, int mode, int flags)
+ {
+-  return syscall_errno (SYS_faccessat, 4, dirfd, file, mode, flags, 0, 0);
++  return syscall_errno (SYS_faccessat, 4, dirfd, (long)file, mode, flags, 0, 0);
+ }
+diff --git a/libgloss/riscv/sys_fstat.c b/libgloss/riscv/sys_fstat.c
+index d97ba445e..021f44382 100644
+--- a/libgloss/riscv/sys_fstat.c
++++ b/libgloss/riscv/sys_fstat.c
+@@ -9,7 +9,7 @@ int
+ _fstat(int file, struct stat *st)
+ {
+   struct kernel_stat kst;
+-  int rv = syscall_errno (SYS_fstat, 2, file, &kst, 0, 0, 0, 0);
++  int rv = syscall_errno (SYS_fstat, 2, file, (long)&kst, 0, 0, 0, 0);
+   _conv_stat (st, &kst);
+   return rv;
+ }
+diff --git a/libgloss/riscv/sys_fstatat.c b/libgloss/riscv/sys_fstatat.c
+index bf0335513..d85892426 100644
+--- a/libgloss/riscv/sys_fstatat.c
++++ b/libgloss/riscv/sys_fstatat.c
+@@ -8,7 +8,7 @@ int
+ _fstatat(int dirfd, const char *file, struct stat *st, int flags)
+ {
+   struct kernel_stat kst;
+-  int rv = syscall_errno (SYS_fstatat, 4, dirfd, file, &kst, flags, 0, 0);
++  int rv = syscall_errno (SYS_fstatat, 4, dirfd, (long)file, (long)&kst, flags, 0, 0);
+   _conv_stat (st, &kst);
+   return rv;
+ }
+diff --git a/libgloss/riscv/sys_gettimeofday.c b/libgloss/riscv/sys_gettimeofday.c
+index 81bea8e55..5b05cd34a 100644
+--- a/libgloss/riscv/sys_gettimeofday.c
++++ b/libgloss/riscv/sys_gettimeofday.c
+@@ -26,6 +26,6 @@ _gettimeofday(struct timeval *tp, void *tzp)
+   tp->tv_usec = ts64.tv_nsec * 1000;
+   return rv;
+ #else
+-  return syscall_errno (SYS_gettimeofday, 1, tp, 0, 0, 0, 0, 0);
++  return syscall_errno (SYS_gettimeofday, 1, (long)tp, 0, 0, 0, 0, 0);
+ #endif
+ }
+diff --git a/libgloss/riscv/sys_link.c b/libgloss/riscv/sys_link.c
+index 83cd1b239..bbfe5b7a1 100644
+--- a/libgloss/riscv/sys_link.c
++++ b/libgloss/riscv/sys_link.c
+@@ -4,5 +4,5 @@
+ /* Establish a new name for an existing file.  */
+ int _link(const char *old_name, const char *new_name)
+ {
+-  return syscall_errno (SYS_link, 2, old_name, new_name, 0, 0, 0, 0);
++  return syscall_errno (SYS_link, 2, (long)old_name, (long)new_name, 0, 0, 0, 0);
+ }
+diff --git a/libgloss/riscv/sys_lstat.c b/libgloss/riscv/sys_lstat.c
+index dd5dc5268..2b575c26b 100644
+--- a/libgloss/riscv/sys_lstat.c
++++ b/libgloss/riscv/sys_lstat.c
+@@ -7,7 +7,7 @@
+ int _lstat(const char *file, struct stat *st)
+ {
+   struct kernel_stat kst;
+-  int rv = syscall_errno (SYS_lstat, 2, file, &kst, 0, 0, 0, 0);
++  int rv = syscall_errno (SYS_lstat, 2, (long)file, (long)&kst, 0, 0, 0, 0);
+   _conv_stat (st, &kst);
+   return rv;
+ }
+diff --git a/libgloss/riscv/sys_open.c b/libgloss/riscv/sys_open.c
+index eb1a99ba2..d7182fc4b 100644
+--- a/libgloss/riscv/sys_open.c
++++ b/libgloss/riscv/sys_open.c
+@@ -5,5 +5,5 @@
+ int
+ _open(const char *name, int flags, int mode)
+ {
+-  return syscall_errno (SYS_open, 3, name, flags, mode, 0, 0, 0);
++  return syscall_errno (SYS_open, 3, (long)name, flags, mode, 0, 0, 0);
+ }
+diff --git a/libgloss/riscv/sys_openat.c b/libgloss/riscv/sys_openat.c
+index 652ab2ea7..44d215615 100644
+--- a/libgloss/riscv/sys_openat.c
++++ b/libgloss/riscv/sys_openat.c
+@@ -4,5 +4,5 @@
+ /* Open file relative to given directory.  */
+ int _openat(int dirfd, const char *name, int flags, int mode)
+ {
+-  return syscall_errno (SYS_openat, 4, dirfd, name, flags, mode, 0, 0);
++  return syscall_errno (SYS_openat, 4, dirfd, (long)name, flags, mode, 0, 0);
+ }
+diff --git a/libgloss/riscv/sys_read.c b/libgloss/riscv/sys_read.c
+index dd3bc339c..a2d0d2528 100644
+--- a/libgloss/riscv/sys_read.c
++++ b/libgloss/riscv/sys_read.c
+@@ -5,5 +5,5 @@
+ /* Read from a file.  */
+ ssize_t _read(int file, void *ptr, size_t len)
+ {
+-  return syscall_errno (SYS_read, 3, file, ptr, len, 0, 0, 0);
++  return syscall_errno (SYS_read, 3, file, (long)ptr, len, 0, 0, 0);
+ }
+diff --git a/libgloss/riscv/sys_stat.c b/libgloss/riscv/sys_stat.c
+index 1e03700df..e330f49b0 100644
+--- a/libgloss/riscv/sys_stat.c
++++ b/libgloss/riscv/sys_stat.c
+@@ -8,7 +8,7 @@ int
+ _stat(const char *file, struct stat *st)
+ {
+   struct kernel_stat kst;
+-  int rv = syscall_errno (SYS_stat, 2, file, &kst, 0, 0, 0, 0);
++  int rv = syscall_errno (SYS_stat, 2, (long)file, (long)&kst, 0, 0, 0, 0);
+   _conv_stat (st, &kst);
+   return rv;
+ }
+diff --git a/libgloss/riscv/sys_unlink.c b/libgloss/riscv/sys_unlink.c
+index 1cf6bbe8b..49b13dd80 100644
+--- a/libgloss/riscv/sys_unlink.c
++++ b/libgloss/riscv/sys_unlink.c
+@@ -5,5 +5,5 @@
+ int
+ _unlink(const char *name)
+ {
+-  return syscall_errno (SYS_unlink, 1, name, 0, 0, 0, 0, 0);
++  return syscall_errno (SYS_unlink, 1, (long)name, 0, 0, 0, 0, 0);
+ }
+diff --git a/libgloss/riscv/sys_write.c b/libgloss/riscv/sys_write.c
+index ce2edd36a..5288d5a5d 100644
+--- a/libgloss/riscv/sys_write.c
++++ b/libgloss/riscv/sys_write.c
+@@ -6,5 +6,5 @@
+ ssize_t
+ _write(int file, const void *ptr, size_t len)
+ {
+-  return syscall_errno (SYS_write, 3, file, ptr, len, 0, 0, 0);
++  return syscall_errno (SYS_write, 3, file, (long)ptr, len, 0, 0, 0);
+ }

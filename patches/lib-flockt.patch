@@ -12,7 +12,7 @@ index 74b70e9c0..f5294812d 100644
  
  #ifndef __Long
 diff --git a/newlib/libc/include/sys/lock.h b/newlib/libc/include/sys/lock.h
-index 528904957..0653c77fd 100644
+index 528904957..7fc7bf12f 100644
 --- a/newlib/libc/include/sys/lock.h
 +++ b/newlib/libc/include/sys/lock.h
 @@ -30,7 +30,7 @@ typedef int _LOCK_RECURSIVE_T;
@@ -24,7 +24,16 @@ index 528904957..0653c77fd 100644
  typedef struct __lock * _LOCK_T;
  #define _LOCK_RECURSIVE_T _LOCK_T
  
-@@ -45,7 +45,7 @@ extern void __retarget_lock_init_recursive(_LOCK_T *lock);
+@@ -38,14 +38,14 @@ typedef struct __lock * _LOCK_T;
+        class _LOCK_T lock = &__lock_ ## lock
+ #define __LOCK_INIT_RECURSIVE(class,lock) __LOCK_INIT(class,lock)
+
+-extern void __retarget_lock_init(_LOCK_T *lock);
++extern void __retarget_lock_init(_LOCK_T lock);
+ #define __lock_init(lock) __retarget_lock_init(&lock)
+-extern void __retarget_lock_init_recursive(_LOCK_T *lock);
++extern void __retarget_lock_init_recursive(_LOCK_T lock);
+ #define __lock_init_recursive(lock) __retarget_lock_init_recursive(&lock)
  extern void __retarget_lock_close(_LOCK_T lock);
  #define __lock_close(lock) __retarget_lock_close(lock)
  extern void __retarget_lock_close_recursive(_LOCK_T lock);
