@@ -287,7 +287,7 @@ install = $(call arena,$(1))/$(ARCH)
 BLOBS = $(PWD)/blobs
 
 # GNU infra
-GMP_VER := 6.1.2
+GMP_VER := 6.2.1
 
 # RPI stuff
 PICOSDK_BRANCH  := 2.0.0

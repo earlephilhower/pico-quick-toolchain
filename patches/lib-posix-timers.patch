@@ -1,0 +1,15 @@
+diff --git a/newlib/libc/include/sys/features.h b/newlib/libc/include/sys/features.h
+index 325acdf5f..b0c22e16c 100644
+--- a/newlib/libc/include/sys/features.h
++++ b/newlib/libc/include/sys/features.h
+@@ -570,6 +570,10 @@ extern "C" {
+ 
+ #endif /* __CYGWIN__ */
+ 
++#ifndef _POSIX_TIMERS
++#define _POSIX_TIMERS 0
++#endif
++
+ #ifdef __cplusplus
+ }
+ #endif
