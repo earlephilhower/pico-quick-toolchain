@@ -1,0 +1,30 @@
+From 32f3168585c291273ab3cb27bb4805e95d8ea042 Mon Sep 17 00:00:00 2001
+From: "Earle F. Philhower, III" <earlephilhower@yahoo.com>
+Date: Thu, 6 Mar 2025 14:50:37 -0800
+Subject: [PATCH] Remove "VECTRESET is not supported" on RP2350
+
+The "cortex_m reset_config sysresetreq" setting in the
+RP2350.tcl script doesn't seem to set the value for core1,
+leading to warning messages during successful runs:
+````
+Warn : [rp2350.dap.core1] VECTRESET is not supported on this Cortex-M core, using SYSRESETREQ instead.
+Warn : [rp2350.dap.core1] Set 'cortex_m reset_config sysresetreq'.
+````
+
+Explicitly add the setting to the RP2350 config file to silence
+the warnings.
+
+Fixes #120
+---
+ tcl/target/rp2350.cfg | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tcl/target/rp2350.cfg b/tcl/target/rp2350.cfg
+index 104e8ecc4..f5285d855 100644
+--- a/tcl/target/rp2350.cfg
++++ b/tcl/target/rp2350.cfg
+@@ -77,3 +77,4 @@ if { $_BOTH_CORES } {
+ 
+ # srst does not exist; use SYSRESETREQ to perform a soft reset
+ cortex_m reset_config sysresetreq
++rp2350.dap.core1 cortex_m reset_config sysresetreq

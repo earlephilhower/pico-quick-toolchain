@@ -290,9 +290,9 @@ BLOBS = $(PWD)/blobs
 GMP_VER := 6.2.1
 
 # RPI stuff
-PICOSDK_BRANCH  := 2.0.0
+PICOSDK_BRANCH  := develop
 OPENOCD_BRANCH  := sdk-2.0.0
-PICOTOOL_BRANCH := 2.0.0
+PICOTOOL_BRANCH := 2.1.1
 
 # GCC et. al configure options
 #configure  = --prefix=$(call install,$(1))
