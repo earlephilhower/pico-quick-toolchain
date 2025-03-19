@@ -103,6 +103,7 @@ jobs:
 
         # Apply patches
         for p in ../patches/openocd-*.patch; do
+            echo PATCH: Applying $p
             patch -s -p1 < $p
         done
 

@@ -84,6 +84,7 @@ jobs:
         export piotup=x86_64-apple-darwin20.4
         # Apply patches
         for p in ../patches/openocd-*.patch; do
+            echo PATCH: Applying $p
             patch -s -p1 < $p
         done
         # Remove TEXI warning
