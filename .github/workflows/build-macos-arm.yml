@@ -81,6 +81,12 @@ jobs:
         export gitrev=$(git rev-parse --short HEAD)
         export pioarch=darwin_arm64
         export piotup=aarch64-apple-darwin20.4
+
+        # Apply patches
+        for p in ../patches/openocd-*.patch; do
+            patch -s -p1 < $p
+        done
+
         # Remove TEXI warning
         grep -v raggedright doc/openocd.texi > p2
         mv p2 doc/openocd.texi

@@ -100,6 +100,13 @@ jobs:
         pushd openocd
         git checkout $openocdtag
         export gitrev=$(git rev-parse --short HEAD)
+
+        # Apply patches
+        for p in ../patches/openocd-*.patch; do
+            patch -s -p1 < $p
+        done
+
+        # Build!
         bash bootstrap
         ./configure --prefix=/tmp/openocd --enable-picoprobe --enable-cmsis-dap-v2 --enable-cmsis-dap \
                     --disable-dummy --disable-rshim --disable-ftdi  --disable-stlink --disable-ti-icdi \
