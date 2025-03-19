@@ -20,17 +20,21 @@ jobs:
         brew update
         brew install bash libtool automake libusb hidapi cmake
 
+        sdktag=$(grep PICOSDK_BRANCH Makefile | head -1 | awk '{print $3}')
+        picotooltag=$(grep PICOTOOL_BRANCH Makefile | head -1 | awk '{print $3}')
+        echo SDK=$sdktag PICOTOOL=$picotooltag
+
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
         cd pico-sdk
-        git checkout 2.0.0
+        git checkout sdktag
         git submodule update --init
         cd ..
 
         # Check out this branch
         git clone https://github.com/raspberrypi/picotool.git
         cd picotool
-        git checkout 2.0.0
+        git checkout $picotooltag
         export gitrev=$(git rev-parse --short HEAD)
         export pioarch=darwin_arm64
         export piotup=aarch64-apple-darwin20.4
@@ -69,9 +73,11 @@ jobs:
         uname -a
         brew update
         brew install bash libtool automake libusb hidapi
+        openocdtag=$(grep OPENOCD_BRANCH Makefile | head -1 | awk '{print $3}')
+        echo OPENOCD=$openocdtag
         git clone https://github.com/raspberrypi/openocd.git
         pushd openocd
-        git checkout sdk-2.0.0
+        git checkout $openocdtag
         export gitrev=$(git rev-parse --short HEAD)
         export pioarch=darwin_arm64
         export piotup=aarch64-apple-darwin20.4
