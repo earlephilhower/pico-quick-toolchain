@@ -36,7 +36,7 @@ PLATFORMIO := ~/.platformio/penv/bin/platformio
 
 NEWLIB_DIR    := newlib
 NEWLIB_REPO   := git://sourceware.org/git/newlib-cygwin.git
-NEWLIB_BRANCH := newlib-4.3.0
+NEWLIB_BRANCH := newlib-4.5.0
 
 # Depending on the GCC version get proper branch and support libs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
@@ -143,6 +143,15 @@ else ifeq ($(GCC), 13.2)
 else ifeq ($(GCC), 14.2)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-14.2.0
+    GCC_PKGREL    := 140200
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_43_1
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 14.3)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-14.3.0
     GCC_PKGREL    := 140200
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
@@ -290,9 +299,11 @@ BLOBS = $(PWD)/blobs
 GMP_VER := 6.2.1
 
 # RPI stuff
-PICOSDK_BRANCH  := develop
+PICOSDK_BRANCH  := develop # 2.1.1
 OPENOCD_BRANCH  := sdk-2.0.0
-PICOTOOL_BRANCH := 2.1.1
+PICOTOOL_BRANCH := develop # 2.1.1
+MKLITTLEFS_BRANCH := 4.0.2
+LIBEXPAT_BRANCH := R_2_4_4
 
 # GCC et. al configure options
 #configure  = --prefix=$(call install,$(1))
@@ -519,10 +530,11 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
 	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/$(NEWLIB_DIR) && git reset --hard && git checkout $(NEWLIB_BRANCH)) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSDK_BRANCH)) && git submodule update --init --recursive >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/openocd && git reset --hard && git checkout $(OPENOCD_BRANCH) && git submodule update --init --recursive) >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/picotool && git reset --hard && git checkout $(PICOTOOL_BRANCH) && git submodule update --init --recursive) >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/libexpat && git reset --hard && git checkout R_2_4_4 && git submodule update --init --recursive) >> $(call log,$@) 2>&1
-	(cd $(REPODIR)/pico-sdk && git reset --hard && git checkout $(PICOSDK_BRANCH)) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/libexpat && git reset --hard && git checkout $(LIBEXPAT_BRANCH) && git submodule update --init --recursive) >> $(call log,$@) 2>&1
+	(cd $(REPODIR)/mklittlefs && git reset --hard && git checkout $(MKLITTLEFS_BRANCH) && git submodule update --init --recursive) >> $(call log,$@) 2>&1
 	touch $@
 
 # Apply our patches
