@@ -338,6 +338,7 @@ CONFIGURENEWLIBCOM  = --with-newlib
 CONFIGURENEWLIBCOM += --disable-newlib-io-c99-formats
 CONFIGURENEWLIBCOM += --disable-newlib-supplied-syscalls
 CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
+CONFIGURENEWLIBCOM += --disable-newlib-wide-orient
 CONFIGURENEWLIBCOM += --enable-newlib-reent-small
 CONFIGURENEWLIBCOM += --disable-target-optspace
 CONFIGURENEWLIBCOM += --disable-option-checking
