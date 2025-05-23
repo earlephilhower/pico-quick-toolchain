@@ -14,12 +14,19 @@ jobs:
           - { sys: mingw64, env: x86_64 }
           - { sys: mingw32, env: i686 }
     steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
     - uses: msys2/setup-msys2@v2
       with:
         msystem: ${{matrix.sys}}
         install: development mingw-w64-${{matrix.env}}-make mingw-w64-${{matrix.env}}-pkg-config mingw-w64-${{matrix.env}}-autotools texinfo mingw-w64-${{matrix.env}}-hidapi git mingw-w64-${{matrix.env}}-toolchain patch mingw-w64-${{matrix.env}}-cmake pkg-config zip
     - name: Build Picotool ${{matrix.env}}
       run: |
+        sdktag=$(grep PICOSDK_BRANCH Makefile | head -1 | awk '{print $3}')
+        picotooltag=$(grep PICOTOOL_BRANCH Makefile | head -1 | awk '{print $3}')
+        echo SDK=$sdktag PICOTOOL=$picotooltag
+
         # find D:/a/_temp/msys64/ -name libwinpthread* -print # D:/a/_temp/msys64/mingw32/bin/libwinpthread-1.dll D:/a/_temp/msys64/mingw32/lib/libwinpthread.a D:/a/_temp/msys64/mingw32/lib/libwinpthread.dll.a
         # find D:/a/_temp/msys64/ -name libhidapi* -print # D:/a/_temp/msys64/mingw32/lib/libhidapi.a D:/a/_temp/msys64/mingw32/lib/libhidapi.dll.a D:/a/_temp/msys64/mingw32/bin/libhidapi-0.dll
         pushd .
@@ -37,14 +44,14 @@ jobs:
         # Get the SDK ready
         git clone https://github.com/raspberrypi/pico-sdk.git
         cd pico-sdk
-        git checkout 2.0.0
+        git checkout $sdktag
         git submodule update --init
         cd ..
 
         # Check out this branch
         git clone https://github.com/raspberrypi/picotool.git
         cd picotool
-        git checkout 2.0.0
+        git checkout $picotooltag
         export gitrev=$(git rev-parse --short HEAD)
 
         # Make static-only binary
@@ -81,6 +88,8 @@ jobs:
 
     - name: Build OpenOCD ${{matrix.env}}
       run: |
+        openocdtag=$(grep OPENOCD_BRANCH Makefile | head -1 | awk '{print $3}')
+        echo OPENOCD=$openocdtag
         # Set up LibUSB
         export LIBUSB_ROOT=$PWD/libusb
         export LIBUSB1_CFLAGS=-I$PWD/libusb/include
@@ -89,8 +98,16 @@ jobs:
 
         git clone https://github.com/raspberrypi/openocd.git
         pushd openocd
-        git checkout sdk-2.0.0
+        git checkout $openocdtag
         export gitrev=$(git rev-parse --short HEAD)
+
+        # Apply patches
+        for p in ../patches/openocd-*.patch; do
+            echo PATCH: Applying $p
+            patch -s -p1 < $p
+        done
+
+        # Build!
         bash bootstrap
         ./configure --prefix=/tmp/openocd --enable-picoprobe --enable-cmsis-dap-v2 --enable-cmsis-dap \
                     --disable-dummy --disable-rshim --disable-ftdi  --disable-stlink --disable-ti-icdi \
