@@ -40,26 +40,7 @@ NEWLIB_BRANCH := newlib-4.5.0
 
 # Depending on the GCC version get proper branch and support libs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
-ifeq ($(GCC), 6.3)
-    ISL           := 0.16.1
-    GCC_BRANCH    := releases/gcc-6.3.0
-    GCC_PKGREL    := 60300
-    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
-    GCC_DIR       := gcc-gnu
-    BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
-    BINUTILS_DIR  := binutils-gdb-gnu
-    NEWLIB_BRANCH := newlib-2_4_0
-else ifeq ($(GCC), 9.3)
-    ISL           := 0.18
-    GCC_BRANCH    := releases/gcc-9.3.0
-    GCC_PKGREL    := 90300
-    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
-    GCC_DIR       := gcc-gnu
-    BINUTILS_BRANCH := binutils-2_32
-    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
-    BINUTILS_DIR  := binutils-gdb-gnu
-else ifeq ($(GCC), 10.2)
+ifeq ($(GCC), 10.2)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-10.2.0
     GCC_PKGREL    := 100200
@@ -159,7 +140,7 @@ else ifeq ($(GCC), 14.3)
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
 else
-    $(error Need to specify a supported GCC version "GCC={9.3, 10.2, 10.3, 12.1}")
+    $(error Need to specify a supported GCC version "GCC={10.2, 10.3, 12.1}")
 endif
 
 # Define the build and output naming, don't use directly (see below)
@@ -337,15 +318,10 @@ configure += $(call over,$(1))
 CONFIGURENEWLIBCOM  = --with-newlib
 CONFIGURENEWLIBCOM += --disable-newlib-io-c99-formats
 CONFIGURENEWLIBCOM += --disable-newlib-supplied-syscalls
-CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
-CONFIGURENEWLIBCOM += --disable-newlib-wide-orient
 CONFIGURENEWLIBCOM += --enable-newlib-reent-small
 CONFIGURENEWLIBCOM += --disable-target-optspace
 CONFIGURENEWLIBCOM += --disable-option-checking
-#CONFIGURENEWLIBCOM += --target=$(ARCH)
 CONFIGURENEWLIBCOM += --disable-shared
-#CONFIGURENEWLIBCOM += --with-cpu=cortex-m0plus
-#CONFIGURENEWLIBCOM += --with-no-thumb-interwork
 CONFIGURENEWLIBCOM += --enable-newlib-retargetable-locking
 
 # OpenOCD configuration
