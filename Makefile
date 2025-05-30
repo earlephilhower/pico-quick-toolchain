@@ -316,7 +316,8 @@ configure += $(call over,$(1))
 
 # Newlib configuration common
 CONFIGURENEWLIBCOM  = --with-newlib
-CONFIGURENEWLIBCOM += --disable-newlib-io-c99-formats
+CONFIGURENEWLIBCOM += --enable-newlib-io-c99-formats
+CONFIGURENEWLIBCOM += --enable-newlib-io-long-long
 CONFIGURENEWLIBCOM += --disable-newlib-supplied-syscalls
 CONFIGURENEWLIBCOM += --enable-newlib-reent-small
 CONFIGURENEWLIBCOM += --disable-target-optspace
