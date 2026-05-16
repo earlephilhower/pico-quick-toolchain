@@ -647,11 +647,13 @@ binutils-config += touch $(1)
 	echo STAGE: $@ - copying GDB support files
 	cp /usr/lib/gcc/i686-w64-mingw32/*-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/*-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call arena,$@)/arm-none-eabi/bin >> $(call log,$@) 2>&1
 	cp /usr/lib/gcc/i686-w64-mingw32/*-posix/libgcc_s_sjlj-1.dll /usr/lib/gcc/i686-w64-mingw32/*-posix/libstdc++-6.dll /usr/i686-w64-mingw32/lib/libwinpthread-1.dll $(call arena,$@)/riscv32-unknown-elf/bin >> $(call log,$@) 2>&1
+	rm $(call arena,$@)/arm-none-eabi/lib/bfd-plugins/libdep.a $(call arena,$@)/riscv32-unknown-elf/lib/bfd-plugins/libdep.a # See https://github.com/earlephilhower/arduino-pico/issues/3434
 
 .stage.WIN64.binutils-post: .stage.WIN64.binutils-install
 	echo STAGE: $@ - copying GDB support files
 	cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call arena,$@)/arm-none-eabi/bin >> $(call log,$@) 2>&1
 	cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(call arena,$@)//riscv32-unknown-elf/bin >> $(call log,$@) 2>&1
+	rm $(call arena,$@)/arm-none-eabi/lib/bfd-plugins/libdep.a $(call arena,$@)/riscv32-unknown-elf/lib/bfd-plugins/libdep.a # See https://github.com/earlephilhower/arduino-pico/issues/3434
 
 .stage.%.binutils-post: .stage.%.binutils-install
 	echo STAGE: $@
