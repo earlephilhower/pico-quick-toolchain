@@ -133,7 +133,25 @@ else ifeq ($(GCC), 14.2)
 else ifeq ($(GCC), 14.3)
     ISL           := 0.18
     GCC_BRANCH    := releases/gcc-14.3.0
-    GCC_PKGREL    := 140200
+    GCC_PKGREL    := 140300
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_43_1
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 14.4)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-14.4.0
+    GCC_PKGREL    := 140400
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_43_1
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 16.1)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-16.1.0
+    GCC_PKGREL    := 160100
     GCC_REPO      := https://gcc.gnu.org/git/gcc.git
     GCC_DIR       := gcc-gnu
     BINUTILS_BRANCH := binutils-2_43_1
@@ -280,9 +298,9 @@ BLOBS = $(PWD)/blobs
 GMP_VER := 6.2.1
 
 # RPI stuff
-PICOSDK_BRANCH  := develop # 2.1.1
-OPENOCD_BRANCH  := sdk-2.0.0
-PICOTOOL_BRANCH := develop # 2.1.1
+PICOSDK_BRANCH  := 2.3.0
+OPENOCD_BRANCH  := sdk-2.3.0
+PICOTOOL_BRANCH := 2.3.0
 MKLITTLEFS_BRANCH := 4.0.2
 LIBEXPAT_BRANCH := R_2_4_4
 
@@ -372,6 +390,7 @@ CONFIGOPENOCD += --disable-buspirate
 CONFIGOPENOCD += --disable-xlnx-pcie-xvc
 CONFIGOPENOCD += --disable-minidriver-dummy
 CONFIGOPENOCD += --disable-remote-bitbang
+CONFIGOPENOCD += --enable-internal-jimtcl
 
 # The branch in which to store the new toolchain
 INSTALLBRANCH ?= master
@@ -831,10 +850,14 @@ newlib-conf += touch $(1)
 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
 	touch $@
 
-.stage.%.pioasm: .stage.%.start
+.stage.LINUX.pioasm-prep: .stage.patch
+	echo STAGE: $@
+	(cd $(REPODIR)/pico-sdk/tools/pioasm; sed s/'$${PIOASM_VERSION_STRING}'/`git describe --tags`/ version.h.in > version.h)
+
+.stage.%.pioasm: .stage.LINUX.pioasm-prep .stage.%.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/pioasm > $(call log,$@) 2>&1
-	mkdir $(call arena,$@)/pioasm >> $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/pioasm >> $(call log,$@) 2>&1
 	(cd $(REPODIR)/pico-sdk/tools/pioasm; CXX=$(call host,$@)-g++ $(call over,$@); $$CXX -std=gnu++11 -o $(call arena,$@)/pioasm/pioasm$(call exe,$@) main.cpp pio_assembler.cpp pio_disassembler.cpp gen/lexer.cpp gen/parser.cpp c_sdk_output.cpp python_output.cpp hex_output.cpp -Igen/ -I. $(call static, $@)) >> $(call log,$@) 2>&1
 	rm -rf pkg.pioasm.$(call arch,$@) >> $(call log,$@) 2>&1
 	mkdir -p pkg.pioasm.$(call arch,$@)/pioasm >> $(call log,$@) 2>&1
@@ -849,7 +872,7 @@ newlib-conf += touch $(1)
 .stage.LINUX.picotool-prep: .stage.LINUX.start
 	echo STAGE: $@
 	rm -rf $(call arena,$@)/picotool > $(call log,$@) 2>&1
-	mkdir $(call arena,$@)/picotool >> $(call log,$@) 2>&1
+	mkdir -p $(call arena,$@)/picotool >> $(call log,$@) 2>&1
 	# Make libusb.a static, which means we ned to manually list the pthrread and udev dependencies
 	(cd $(call arena,$@)/picotool; PICO_SDK_PATH=$(REPODIR)/pico-sdk cmake $(REPODIR)/picotool -DCMAKE_CXX_STANDARD_LIBRARIES=/lib/x86_64-linux-gnu/libudev.so.1 -DCMAKE_EXE_LINKER_FLAGS_INIT="-pthread" -DLIBUSB_LIBRARIES="/usr/lib/x86_64-linux-gnu/libusb-1.0.a") >> $(call log,$@) 2>&1
 
