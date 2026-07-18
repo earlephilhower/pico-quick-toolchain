@@ -342,6 +342,8 @@ CONFIGURENEWLIBCOM += --disable-target-optspace
 CONFIGURENEWLIBCOM += --disable-option-checking
 CONFIGURENEWLIBCOM += --disable-shared
 CONFIGURENEWLIBCOM += --enable-newlib-retargetable-locking
+CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
+CONFIGURENEWLIBCOM += --disable-newlib-wide-orient
 
 # OpenOCD configuration
 CONFIGOPENOCD  = --enable-picoprobe
