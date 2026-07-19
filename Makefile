@@ -987,7 +987,7 @@ install: .stage.LINUX.install
 	echo STAGE: $@
 	rm -rf $(ARDUINO)
 	git clone https://github.com/$(GHUSER)/arduino-pico $(ARDUINO)
-	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
+	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule update --init --recursive)
 	echo "-------- Updating package.json"
 	ver=$(REL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_pico_index.template.json; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-gcc --ver "$${ver}" --glob '*arm-none-eabi*.json' ; \
@@ -995,7 +995,11 @@ install: .stage.LINUX.install
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-pioasm --ver "$${ver}" --glob '*pioasm*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-picotool --ver "$${ver}" --glob '*picotool*json' ; \
 	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-mklittlefs --ver "$${ver}" --glob '*mklittlefs*json' ; \
-	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-openocd --ver "$${ver}" --glob '*openocd*json' ; \
+	./patch_json.py --pkgfile "$${pkgfile}" --tool pqt-openocd --ver "$${ver}" --glob '*openocd*json' ;
+	(cd $(ARDUINO)/tools; python3 ./get.py)
+	(cd $(ARDUINO)/tools/libpico; bash make-libpico.sh)
+	(cd $(ARDUINO)/tools/libbearssl; make clean && make install -j && make install2 -j && make install2rv -j)
+	(cd $(ARDUINO)/ota; bash make-ota.sh)
 	echo "Install done"
 
 # Upload a draft toolchain release
