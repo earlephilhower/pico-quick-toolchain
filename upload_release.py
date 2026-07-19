@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from github import Github
+from github import Auth
+
 import argparse
 import collections
 import glob
@@ -21,7 +23,8 @@ if len(args.files) == 0:
     print("ERROR:  No files specified")
     quit()
 
-gh = Github(login_or_token=args.token)
+token = Auth.Token(args.token)
+gh = Github(auth=token)
 repo = gh.get_repo(str(args.user) + "/pico-quick-toolchain")
 release = repo.create_git_release(args.tag, args.name, args.msg, draft=True)
 for fn in args.files:

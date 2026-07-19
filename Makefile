@@ -36,7 +36,7 @@ PLATFORMIO := ~/.platformio/penv/bin/platformio
 
 NEWLIB_DIR    := newlib
 NEWLIB_REPO   := git://sourceware.org/git/newlib-cygwin.git
-NEWLIB_BRANCH := newlib-4.5.0
+NEWLIB_BRANCH := newlib-4.6.0
 
 # Depending on the GCC version get proper branch and support libs
 GNUHTTP := https://gcc.gnu.org/pub/gcc/infrastructure
@@ -329,6 +329,7 @@ configure += --disable-decimal-float
 configure += --disable-tui
 configure += --disable-pie-tools
 configure += --disable-libquadmath
+configure += --disable-wchar_t
 configure += $(call over,$(1))
 
 
@@ -344,6 +345,7 @@ CONFIGURENEWLIBCOM += --disable-shared
 CONFIGURENEWLIBCOM += --enable-newlib-retargetable-locking
 CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
 CONFIGURENEWLIBCOM += --disable-newlib-wide-orient
+CONFIGURENEWLIBCOM += --disable-newlib-mb
 
 # OpenOCD configuration
 CONFIGOPENOCD  = --enable-picoprobe
