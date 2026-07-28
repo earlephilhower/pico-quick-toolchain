@@ -1,10 +1,6 @@
 # pico-quick-toolchain - Build Raspberry Pi Pico toolchain for multiple architectures
 
-Allows building Win32, Win64, OSX, Linux x86_64, ARM64 (aarch64) and Raspberry Pi for Raspberry Pi Pico toolchains in a Docker container.
-
-## Work In Progesss
-
-Builds work for GCC 9.3, 10.x, and 12.x.  Others not fully tested but were building last time they were tried.
+Allows building Win32, Win64, OSX (x86 and ARM), Linux x86_64, ARM64 (aarch64) and Raspberry Pi for Raspberry Pi Pico toolchains in a Docker container.
 
 ## Downloading GCC/etc. sources
 
