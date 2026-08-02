@@ -400,7 +400,7 @@ CONFIGOPENOCD += --enable-internal-jimtcl
 INSTALLBRANCH ?= master
 
 # Environment variables for configure and building targets.  Only use $(call setenv,$@)
-CFFT := "-O2 -g -free -fipa-pta -Wno-implicit-function-declaration"
+CFFT := "-O2 -g -free -fipa-pta -Wno-implicit-function-declaration -ffunction-sections -fdata-sections"
 
 # Sets the environment variables for a subshell while building
 setenvtgtcross = export CFLAGS_FOR_TARGET=$(CFFT); \
