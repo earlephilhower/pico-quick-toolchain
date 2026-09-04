@@ -558,6 +558,10 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .c
             test -r "$$p" || continue ; \
 	    (cd $(REPODIR)/openocd; echo "---- $$p: "; patch -s -p1 < $$p) ; \
 	done >> $(call log,$@) 2>&1
+	for p in $(PATCHDIR)/picotool-*.patch; do \
+	    test -r "$$p" || continue ; \
+	    (cd $(REPODIR)/picotool; echo "---- $$p: "; patch -s -p1 < $$p) ; \
+	done >> $(call log,$@) 2>&1
 	touch $@
 
 .stage.%.start: .stage.patch

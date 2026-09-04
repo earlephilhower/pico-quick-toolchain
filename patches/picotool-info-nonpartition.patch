@@ -1,0 +1,28 @@
+From 282a3ca05edde0375ec3481be56d59e2c256a8ce Mon Sep 17 00:00:00 2001
+From: Ivan Shapovalov <intelfx@intelfx.name>
+Date: Tue, 14 Jul 2026 15:23:16 +0300
+Subject: [PATCH] main: fix `picotool info` for non-partition-capable devices
+ (#338)
+
+Fixes #336.
+---
+ main.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/main.cpp b/main.cpp
+index 0c3b093..19a9106 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -4670,7 +4670,8 @@ std::shared_ptr<tuple<resident_partition_t, std::shared_ptr<vector<partition_det
+ }
+ 
+ std::shared_ptr<vector<partition_details>> get_partitions(picoboot::connection &con) {
+-    return std::get<1>(*get_partition_info(con));
++    auto pi = get_partition_info(con);
++    return pi ? std::get<1>(*pi) : nullptr;
+ }
+ #endif
+ 
+-- 
+2.53.0
+
