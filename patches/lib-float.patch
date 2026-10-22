@@ -1,0 +1,58 @@
+diff --git a/newlib/libc/stdio/nano-vfprintf.c b/newlib/libc/stdio/nano-vfprintf.c
+index bdcc9b218..be1b903f4 100644
+--- a/newlib/libc/stdio/nano-vfprintf.c
++++ b/newlib/libc/stdio/nano-vfprintf.c
+@@ -621,7 +621,7 @@ _VFPRINTF_R (struct _reent *data,
+ 	{
+ 	  /* Consume floating point argument if _printf_float is not
+ 	     linked.  */
+-	  if (_printf_float == NULL)
++/*	  if (_printf_float == NULL)
+ 	    {
+ 	      if (prt_data.flags & LONGDBL)
+ 		GET_ARG (N, ap_copy, _LONG_DOUBLE);
+@@ -629,7 +629,7 @@ _VFPRINTF_R (struct _reent *data,
+ 		GET_ARG (N, ap_copy, double);
+ 	      n = 0;
+ 	    }
+-	  else
++	  else */
+             n = _printf_float (data, &prt_data, fp, pfunc, &ap_copy);
+ 	}
+       else
+diff --git a/newlib/libc/stdio/nano-vfprintf_local.h b/newlib/libc/stdio/nano-vfprintf_local.h
+index 15ddce08e..478b75f0e 100644
+--- a/newlib/libc/stdio/nano-vfprintf_local.h
++++ b/newlib/libc/stdio/nano-vfprintf_local.h
+@@ -230,5 +230,5 @@ _printf_float (struct _reent *data,
+ 	       FILE *fp,
+ 	       int (*pfunc)(struct _reent *, FILE *,
+ 			    const char *, size_t len),
+-	       va_list *ap) _ATTRIBUTE((__weak__));
++	       va_list *ap) /*_ATTRIBUTE((__weak__))*/;
+ #endif
+diff --git a/newlib/libc/stdio/nano-vfscanf.c b/newlib/libc/stdio/nano-vfscanf.c
+index 57d25b82a..4e6b37dba 100644
+--- a/newlib/libc/stdio/nano-vfscanf.c
++++ b/newlib/libc/stdio/nano-vfscanf.c
+@@ -427,7 +427,7 @@ __SVFSCANF_R (struct _reent *rptr,
+       else if (scan_data.code < CT_FLOAT)
+ 	ret = _scanf_i (rptr, &scan_data, fp, &ap_copy);
+ #ifdef FLOATING_POINT
+-      else if (_scanf_float)
++      else /*if (_scanf_float)*/
+ 	ret = _scanf_float (rptr, &scan_data, fp, &ap_copy);
+ #endif
+ 
+diff --git a/newlib/libc/stdio/nano-vfscanf_local.h b/newlib/libc/stdio/nano-vfscanf_local.h
+index d696ec0cc..7cd067afe 100644
+--- a/newlib/libc/stdio/nano-vfscanf_local.h
++++ b/newlib/libc/stdio/nano-vfscanf_local.h
+@@ -173,6 +173,6 @@ _scanf_i (struct _reent *rptr,
+ extern int
+ _scanf_float (struct _reent *rptr,
+ 	      struct _scan_data_t *pdata,
+-	      FILE *fp, va_list *ap) _ATTRIBUTE((__weak__));
++	      FILE *fp, va_list *ap) /*_ATTRIBUTE((__weak__))*/;
+ 
+ #endif
