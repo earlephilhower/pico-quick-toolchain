@@ -157,6 +157,15 @@ else ifeq ($(GCC), 16.1)
     BINUTILS_BRANCH := binutils-2_43_1
     BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
     BINUTILS_DIR  := binutils-gdb-gnu
+else ifeq ($(GCC), 16.2)
+    ISL           := 0.18
+    GCC_BRANCH    := releases/gcc-16.2.0
+    GCC_PKGREL    := 160100
+    GCC_REPO      := https://gcc.gnu.org/git/gcc.git
+    GCC_DIR       := gcc-gnu
+    BINUTILS_BRANCH := binutils-2_43_1
+    BINUTILS_REPO := https://sourceware.org/git/binutils-gdb.git
+    BINUTILS_DIR  := binutils-gdb-gnu
 else
     $(error Need to specify a supported GCC version "GCC={10.2, 10.3, 12.1}")
 endif
