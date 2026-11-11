@@ -355,6 +355,7 @@ CONFIGURENEWLIBCOM += --enable-newlib-retargetable-locking
 CONFIGURENEWLIBCOM += --enable-newlib-nano-formatted-io
 CONFIGURENEWLIBCOM += --disable-newlib-wide-orient
 CONFIGURENEWLIBCOM += --disable-newlib-mb
+CONFIGURENEWLIBCOM += --disable-newlib-hw-misaligned-access
 
 # OpenOCD configuration
 CONFIGOPENOCD  = --enable-picoprobe
